@@ -6,7 +6,7 @@
   "watched": 533,
   "ratings": 512,
   "diary": 324,
-  "table_films": 514
+  "table_films": 920
  },
  "timeline": {
   "events": 241,
@@ -42,14 +42,14 @@
   "n_watched": 533,
   "events": 241,
   "n_watched_in_table": 514,
-  "crowd_source": "histogram plain mean",
+  "crowd_source": "Letterboxd displayed average",
   "n_rated": 512,
   "n_rated_missing": 19,
   "n_elig": 450,
-  "b": -0.15892266666666666,
-  "pa25": 0.892844633124571,
-  "pairs": 71373,
-  "dpa": 0.8977069487481261,
+  "b": -0.12993333333333332,
+  "pa25": 0.8908363085578276,
+  "pairs": 73944,
+  "dpa": 0.8741952349751162,
   "pace": 4.977777777777778,
   "peak_n": 16,
   "peak_month": "Nov 2022",
@@ -68,17 +68,18 @@
   "n1": 264,
   "gt": 0.4748201438848921,
   "top_dir": "Christopher Nolan",
-  "top_dir_n": 8
+  "top_dir_n": 8,
+  "gt60": 0.8701676826674365
  },
  "grades": {
   "PWR": {
    "stat": "PWR",
-   "value": 0.1566486842105263,
-   "p": 0.7216838088724303,
-   "letter": "B",
+   "value": 0.12890505263157895,
+   "p": 0.6232875413535476,
+   "letter": "C",
    "status": "measured",
    "canon": 4.0,
-   "plot": 4.0
+   "plot": 3.0
   },
   "SPD": {
    "stat": "SPD",
@@ -92,7 +93,7 @@
   "RNG": {
    "stat": "RNG",
    "value": 3.332848113946345,
-   "p": 0.9095925280009173,
+   "p": 0.9093591928695449,
    "letter": "A",
    "status": "provisional",
    "canon": 5.0,
@@ -109,8 +110,8 @@
   },
   "PRC": {
    "stat": "PRC",
-   "value": 0.8977069487481261,
-   "p": 0.9899333327158665,
+   "value": 0.8741952349751162,
+   "p": 0.9668863925007973,
    "letter": "A",
    "status": "measured",
    "canon": 5.0,
@@ -118,43 +119,19 @@
   },
   "DEV": {
    "stat": "DEV",
-   "value": 0.4748201438848921,
-   "p": null,
-   "letter": "?",
-   "status": "ungraded",
-   "canon": null,
-   "plot": 3.0
+   "value": 0.8701676826674365,
+   "p": 0.9430677867306262,
+   "letter": "A",
+   "status": "provisional",
+   "canon": 5.0,
+   "plot": 5.0
   }
  },
  "type": "unclassified",
  "nearest": [
   {
-   "name": "All Along Watchtower",
-   "dist": 1.5491933384829668,
-   "grades": [
-    "C",
-    "B",
-    "A",
-    "A",
-    "A",
-    "E"
-   ]
-  },
-  {
-   "name": "Clash",
-   "dist": 2.449489742783178,
-   "grades": [
-    "D",
-    "A",
-    "B",
-    "A",
-    "A",
-    "C"
-   ]
-  },
-  {
    "name": "Dirty Deeds Done Dirt Cheap",
-   "dist": 2.449489742783178,
+   "dist": 2.23606797749979,
    "grades": [
     "A",
     "A",
@@ -163,13 +140,37 @@
     "A",
     "A"
    ]
+  },
+  {
+   "name": "Kiss",
+   "dist": 2.23606797749979,
+   "grades": [
+    "A",
+    "A",
+    "A",
+    "A",
+    "C",
+    "A"
+   ]
+  },
+  {
+   "name": "The World",
+   "dist": 2.6457513110645907,
+   "grades": [
+    "A",
+    "A",
+    "C",
+    "A",
+    "B",
+    "B"
+   ]
   }
  ],
  "ability": {
   "template": 12,
-  "ability": "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 71,373 film pairs it can compare (difficulty-adjusted score 0.90).",
+  "ability": "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 73,944 film pairs it can compare (difficulty-adjusted score 0.87).",
   "film": "Signature film: Seven Pounds (2008), 1.0★ against the crowd's 3.54★ (-2.54), 167,511 ratings.",
-  "weakness": "No weakness found: your lowest graded stat, Power, is still B.",
-  "why": "Why: Precision A (99th percentile, z +2.32; runner-up Stamina z +1.45) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Power B is your lowest graded stat, so the limitation comes from it."
+  "weakness": "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.13★ below the crowd on average, about what a human would.",
+  "why": "Why: Precision A (96.7th percentile, z +1.84; runner-up Potential z +1.58) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Power C is your lowest graded stat, so the limitation comes from it."
  }
 }

@@ -31,7 +31,7 @@ function chosenTheme(kind) {
 }
 
 function exec(bytes, name, extra) {
-  const out = JSON.parse(run(bytes, name, table, extra, $('joined').value || '', $('username').value.trim()));
+  const out = JSON.parse(run(bytes, name, table, extra, $('joined').value || '', $('username').value.trim(), new Date().toISOString().slice(0, 10)));
   if (out.error) throw new Error(out.error);
   return out;
 }
@@ -111,6 +111,7 @@ function show(a, svg) {
   const items = [
     `${c.watched_in_table} of ${c.watched} watched films are in the lookup (${c.unknown_films.length} are not).`,
     `${c.eligible} of ${c.rated} rated films have a Letterboxd crowd average with enough ratings.`,
+    ...(c.table_built ? [`Film table built ${c.table_built}.`] : []),
     ...a.notes,
   ];
   for (const t of items) notes.appendChild(Object.assign(document.createElement('li'), { textContent: t }));

@@ -92,7 +92,8 @@ fn main() -> ExitCode {
             return ExitCode::from(1);
         }
     };
-    let a = analysis::analyze(&ex, &lk);
+    let today = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok().map(|d| (d.as_secs() / 86400) as i64);
+    let a = analysis::analyze_at(&ex, &lk, today);
 
     if let Err(e) = std::fs::create_dir_all(&out) {
         eprintln!("cannot create {}: {e}", out.display());

@@ -14,6 +14,9 @@ pub struct StatCuts {
     pub letter_cuts: Option<Vec<f64>>,
     pub canon_cuts: Option<Vec<f64>>,
     pub canon_cum: Vec<f64>,
+    /// Value above which a stat becomes ∞ (99.9th percentile of the calibration population).
+    #[serde(default)]
+    pub inf_cut: Option<f64>,
     pub status: String,
     pub source: String,
 }
@@ -199,6 +202,16 @@ pub fn grade_value(cuts: &Cuts, stat: &str, v: f64, provisional: bool, note: &st
     }
 }
 
+/// Turn Potential into 完成: the vertex stays at E level, the percentile is the extreme low end.
+pub fn make_complete(mut g: Grade) -> Grade {
+    g.letter = "完成".into();
+    g.symbol = Some(Symbol::Complete);
+    g.canon = Some(1.0);
+    g.plot = 1.0;
+    g.p = Some(0.001);
+    g
+}
+
 /// Turn a graded stat into the ∞ symbol (vertex on the ring).
 pub fn make_inf(mut g: Grade) -> Grade {
     g.letter = "∞".into();
@@ -223,26 +236,41 @@ mod tests {
     #[test]
     fn knots_reproduce_and_extrapolate() {
         let c = Cuts::embedded();
-        let prc = c.stat("PRC");
-        assert!((prc.percentile(0.8023).unwrap() - 0.70).abs() < 1e-6);
-        assert!((prc.percentile(0.8475).unwrap() - 0.90).abs() < 1e-6);
-        let hi = prc.percentile(0.8833).unwrap();
-        assert!(hi > 0.95 && hi < 0.99, "{hi}");
-        assert!(prc.percentile(0.5).unwrap() < 0.01);
+        for stat in ["PWR", "PRC", "RNG", "SPD", "STA", "DEV"] {
+            let sc = c.stat(stat);
+            let k = sc.knots.as_ref().unwrap();
+            for kn in k {
+                assert!((sc.percentile(kn[0]).unwrap() - kn[1]).abs() < 1e-6, "{stat} {kn:?}");
+            }
+            // monotone, and tails extend past the last knot
+            let (lo, hi) = (k[0][0], k[k.len() - 1][0]);
+            assert!(sc.percentile(lo - 1.0).unwrap() < k[0][1]);
+            assert!(sc.percentile(hi + 1.0).unwrap() > k[k.len() - 1][1]);
+        }
     }
 
     #[test]
-    fn letters_and_canon() {
+    fn letters_follow_the_cuts() {
         let c = Cuts::embedded();
-        assert_eq!(c.stat("PWR").letter(0.0522), Some(3)); // C
-        assert_eq!(c.stat("PWR").canon_grade(0.0522), Some(4)); // canon-equivalent B
-        assert_eq!(c.stat("PRC").letter(0.8833), Some(5));
-        assert_eq!(c.stat("PRC").canon_grade(0.8833), Some(5));
+        for stat in ["PWR", "PRC", "RNG", "SPD", "STA", "DEV"] {
+            let cuts = c.stat(stat).letter_cuts.clone().unwrap();
+            let sc = c.stat(stat);
+            assert_eq!(sc.letter(cuts[0] - 1e-3), Some(1), "{stat}");
+            for (i, &x) in cuts.iter().enumerate() {
+                assert_eq!(sc.letter(x), Some(i as u8 + 2), "{stat}: a value on a cut goes to the higher grade");
+            }
+            assert_eq!(sc.letter(cuts[3] + 1.0), Some(5));
+            // the letter cuts sit at the 10/30/70/90th percentiles of the population they were cut from
+            for (x, p) in cuts.iter().zip([0.10, 0.30, 0.70, 0.90]) {
+                assert!((sc.percentile(*x).unwrap() - p).abs() < 0.02, "{stat} {x} {p}");
+            }
+            // canon-equivalent grade is monotone in the value
+            let cg = |v: f64| sc.canon_grade(v).unwrap();
+            assert!(cg(cuts[0] - 10.0) <= cg(cuts[1]) && cg(cuts[1]) <= cg(cuts[3] + 10.0));
+        }
+        // Speed and Stamina keep the MovieTweetings cuts of the spec
         assert_eq!(c.stat("SPD").letter(4.978), Some(4));
         assert_eq!(c.stat("STA").letter(0.900), Some(5));
-        assert_eq!(c.stat("RNG").letter(2.557), Some(3));
-        assert!(c.stat("DEV").letter(0.5).is_none());
-        // on a cut goes up
-        assert_eq!(c.stat("PWR").letter(0.1360), Some(4));
+        assert_eq!(c.stat("SPD").canon_grade(4.978), Some(5));
     }
 }

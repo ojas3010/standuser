@@ -59,13 +59,25 @@ cuts = {
                 canon_cum=[27.9, 42.2, 70.1, 81.5], status="ungraded",
                 source="no valid cut-points (spec: MT and ML medians disagree)"),
 }
-json.dump(dict(stats=cuts, mu_b=0.0139, lambda_=6.0, pa_pop=0.7562, crowd_min_ratings=30000,
+mu_b, pa_pop = 0.0139, 0.7562
+gap = list(csv.DictReader(open(SW / "stats2/rating/out/gap_curve_K100.csv")))
+gap_lo, gap_h = [float(r["gap_lo"]) for r in gap], [round(float(r["hit_rate_iso"]), 6) for r in gap]
+calib = ROOT / "tools/calibration.json"
+meta = dict(calibrated=False)
+if calib.exists():   # recalibration against the films in our table (tools/calibrate.py)
+    c = json.loads(calib.read_text())
+    for k, v in c["stats"].items():
+        cuts[k].update(knots=v["knots"], letter_cuts=v["letter_cuts"], canon_cuts=v["canon_cuts"],
+                       status="provisional" if k in ("RNG", "DEV") else "measured",
+                       source=f"pooled Letterboxd users on our film table (built {c['built']}, {c['table_films']} films, {c['users']})")
+    if "RNG" in c["stats"]:
+        cuts["RNG"]["inf_cut"] = c["inf_cut_RNG"]
+    mu_b, pa_pop, gap_h = c["mu_b"], c["pa_pop"], c["h"]
+    meta = dict(calibrated=True, built=c["built"], table_films=c["table_films"], users=c["users"], crowd=c["source"])
+json.dump(dict(stats=cuts, mu_b=mu_b, lambda_=6.0, pa_pop=pa_pop, crowd_min_ratings=30000, calibration=meta,
                speed_stamina_filter="MT users with >=20 clean events and >=12 months"),
           open(OUT / "cuts.json", "w"), indent=1)
-
-gap = list(csv.DictReader(open(SW / "stats2/rating/out/gap_curve_K100.csv")))
-json.dump(dict(gap_lo=[float(r["gap_lo"]) for r in gap], h=[round(float(r["hit_rate_iso"]), 6) for r in gap]),
-          open(OUT / "gap_h.json", "w"))
+json.dump(dict(gap_lo=gap_lo, h=gap_h), open(OUT / "gap_h.json", "w"))
 
 shutil.copy(SW / "canon/stand_stats.csv", OUT / "canon.csv")
 src = ROOT.parent / "research_notes/Stand naming algorithm/canon_name_sources.csv"

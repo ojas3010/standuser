@@ -7,7 +7,7 @@
 //! Precision = difficulty-adjusted pairwise agreement (DPA)
 //! Potential = Good-Turing share of director credits seen once
 
-use crate::grading::{grade_value, make_inf, Cuts, Grade, Status};
+use crate::grading::{grade_value, make_complete, make_inf, Cuts, Grade, Status};
 use crate::lookup::{FilmMeta, Lookup};
 use crate::parse::{boxd_code, Export};
 use crate::rng::SplitMix64;
@@ -19,6 +19,9 @@ pub const GAP_BINS: usize = 36;
 pub const RANGE_DRAWS: usize = 20;
 pub const RANGE_SAMPLE: usize = 50;
 pub const RANGE_SEED: u64 = 5;
+pub const POTENTIAL_DRAWS: usize = 20;
+pub const POTENTIAL_SAMPLE: usize = 60;
+pub const POTENTIAL_SEED: u64 = 6;
 /// Letterboxd's own "shorts" cut: films of 40 minutes or less are ignored for countries and directors.
 pub const MIN_RUNTIME: u16 = 41;
 
@@ -60,6 +63,8 @@ pub struct Facts {
     pub credits: usize,
     pub films_with_credits: usize,
     pub gt: f64,
+    /// Good-Turing share on 20 seeded draws of 60 director-credited films (volume-matched; the Potential letter uses it).
+    pub gt60: f64,
     pub top_dir: String,
     pub top_dir_n: usize,
     pub n_watched: usize,
@@ -151,6 +156,23 @@ pub fn rarefied_range(films: &[&Vec<String>], size: usize, draws: usize, seed: u
     total / draws as f64
 }
 
+/// Volume-matched Good-Turing: mean over seeded draws of (directors seen once) / (director credits) on `size` films.
+pub fn rarefied_gt(films: &[Vec<u32>], size: usize, draws: usize, seed: u64) -> f64 {
+    let mut rng = SplitMix64::new(seed);
+    let mut total = 0.0;
+    for _ in 0..draws {
+        let mut cnt: BTreeMap<u32, usize> = BTreeMap::new();
+        for i in rng.sample(films.len(), size) {
+            for d in &films[i] {
+                *cnt.entry(*d).or_default() += 1;
+            }
+        }
+        let credits: usize = cnt.values().sum();
+        total += cnt.values().filter(|&&c| c == 1).count() as f64 / credits as f64;
+    }
+    total / draws as f64
+}
+
 fn gap_table() -> Vec<f64> {
     #[derive(serde::Deserialize)]
     struct G {
@@ -166,7 +188,7 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
     let meta_of = |name: &str, year: i32, uri: &str| -> Option<&FilmMeta> { lk.find(boxd_code(uri), name, year) };
     f.n_watched_in_table = ex.watched.iter().filter(|w| meta_of(&w.name, w.year, &w.uri).is_some()).count();
 
-    // ---- crowd source: the one giving more eligible films (ties: histogram plain mean)
+    // ---- crowd: the Letterboxd displayed average, the one value every table film has; the cut-points are calibrated on it
     let min_n = cuts.crowd_min_ratings;
     let mut pool: Vec<(&crate::parse::Rating, &FilmMeta)> = Vec::new();
     let mut missing = 0usize;
@@ -176,15 +198,11 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
             None => missing += 1,
         }
     }
-    let n_hist = pool.iter().filter(|(_, m)| m.lb_hist_mean.is_some() && m.lb_count.unwrap_or(0) >= min_n).count();
-    let n_avg = pool.iter().filter(|(_, m)| m.lb_avg.is_some() && m.lb_count.unwrap_or(0) >= min_n).count();
-    let use_hist = n_hist >= n_avg;
-    f.crowd_source = if use_hist { "histogram plain mean" } else { "displayed average" }.to_string();
+    f.crowd_source = "Letterboxd displayed average".to_string();
     let mut rated: Vec<RatedFilm> = Vec::new();
     for (r, m) in &pool {
-        let crowd = if use_hist { m.lb_hist_mean } else { m.lb_avg };
         let n = m.lb_count.unwrap_or(0);
-        if let (Some(crowd), true) = (crowd, n >= min_n) {
+        if let (Some(crowd), true) = (m.lb_avg, n >= min_n) {
             rated.push(RatedFilm { name: r.name.clone(), year: r.year, own: r.rating, crowd, n, uri: boxd_code(&r.uri).unwrap_or("").to_string() });
         }
     }
@@ -272,6 +290,7 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
     let mut cty_count: BTreeMap<String, usize> = BTreeMap::new();
     let mut dir_count: BTreeMap<u32, usize> = BTreeMap::new();
     let mut credit_films = 0usize;
+    let mut dir_films: Vec<Vec<u32>> = Vec::new();
     for w in &ex.watched {
         let Some(m) = meta_of(&w.name, w.year, &w.uri) else { continue };
         if m.runtime != 0 && m.runtime < MIN_RUNTIME {
@@ -288,9 +307,10 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
             let mut seen = m.directors.clone();
             seen.sort();
             seen.dedup();
-            for d in seen {
-                *dir_count.entry(d).or_default() += 1;
+            for d in &seen {
+                *dir_count.entry(*d).or_default() += 1;
             }
+            dir_films.push(seen);
         }
     }
     f.n_films_cty = cty_films.len();
@@ -311,7 +331,7 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
             Grade::unknown("RNG", Some(d), "needs 50 films with country data")
         } else {
             let g = grade_value(cuts, "RNG", d, cty_films.len() < 100, &format!("{} films with country data", cty_films.len()));
-            if d >= 5.7 && cty_films.len() >= 150 { make_inf(g) } else { g }
+            if d >= cuts.stat("RNG").inf_cut.unwrap_or(5.7) && cty_films.len() >= 150 { make_inf(g) } else { g }
         }
     };
     f.films_with_credits = credit_films;
@@ -322,12 +342,17 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
         f.top_dir = lk.person(*id);
         f.top_dir_n = *n;
     }
+    // Potential: the letter comes from the volume-matched Good-Turing share (60 films), so a long history is not
+    // marked down for volume alone; the raw share stays in the text. 完成 needs 1,000 credited films and the lowest band.
     let potential = if ex.watched.is_empty() {
         Grade::none("DEV", "no watched films")
     } else if credit_films < 40 {
         Grade::unknown("DEV", if credit_films > 0 { Some(f.gt) } else { None }, "needs 40 films with director credits")
     } else {
-        grade_value(cuts, "DEV", f.gt, credit_films < 60, &format!("{} director credits", f.credits))
+        let size = POTENTIAL_SAMPLE.min(dir_films.len());
+        f.gt60 = rarefied_gt(&dir_films, size, POTENTIAL_DRAWS, POTENTIAL_SEED);
+        let g = grade_value(cuts, "DEV", f.gt60, credit_films < 60, &format!("{} director credits", f.credits));
+        if credit_films >= 1000 && g.letter == "E" { make_complete(g) } else { g }
     };
 
     let examples = examples(ex, lk, tl, &rated, &dir_count, f.b);

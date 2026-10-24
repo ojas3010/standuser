@@ -4,10 +4,10 @@ Usage: python3 -I tools/build_table.py <out_dir_of_collector>... [--out crates/s
 Several collector output folders can be given; the first record for a film wins (own films before sample films).
 
 Format (see crates/standuser-core/src/lookup.rs):
-  {"v":1,"countries":{code:name},"people":{id:name},
+  {"v":1,"built":"YYYY-MM-DD","countries":{code:name},"people":{id:name},
    "films":[[key,lid,tmdb,year,runtime,lang,"US|PL","dirIds","composerIds",avg,histMean,count], ...]}
 """
-import json, sys, unicodedata
+import datetime, json, sys, unicodedata
 from pathlib import Path
 
 
@@ -28,11 +28,14 @@ def read_jsonl(p):
 
 def main(argv):
     out = Path("crates/standuser-core/data/films.json")
+    built = datetime.date.today().isoformat()   # TMDB data may be cached for at most six months from this date
     dirs = []
     i = 0
     while i < len(argv):
         if argv[i] == "--out":
             out = Path(argv[i + 1]); i += 2
+        elif argv[i] == "--built":
+            built = argv[i + 1]; i += 2
         else:
             dirs.append(Path(argv[i])); i += 1
     countries, people, films, seen = {}, {}, [], set()
@@ -75,7 +78,7 @@ def main(argv):
                           r.get("lb_avg"), hm, count])
             stats["kept"] += 1
     films.sort(key=lambda f: f[0])
-    out.write_text(json.dumps(dict(v=1, countries=dict(sorted(countries.items())), people=dict(sorted(people.items(), key=lambda kv: int(kv[0]))),
+    out.write_text(json.dumps(dict(v=1, built=built, countries=dict(sorted(countries.items())), people=dict(sorted(people.items(), key=lambda kv: int(kv[0]))),
                                   films=films), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
     print(stats, "->", out, f"{out.stat().st_size/1024:.0f} KB")
 

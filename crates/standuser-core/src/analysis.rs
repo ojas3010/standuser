@@ -22,6 +22,9 @@ pub struct Coverage {
     pub eligible: usize,
     /// Films of the export the lookup table does not know (the page can ask the TMDB proxy about them).
     pub unknown_films: Vec<(String, i32)>,
+    /// Build date of the film table, and its age when the caller gave today's date.
+    pub table_built: Option<String>,
+    pub table_age_days: Option<i64>,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -65,6 +68,11 @@ fn metric(i: usize, g: &Grade, f: &stats::Facts) -> String {
 }
 
 pub fn analyze(ex: &Export, lk: &Lookup) -> Analysis {
+    analyze_at(ex, lk, None)
+}
+
+/// `today` (days since 1970-01-01) lets the card warn when the film table is older than TMDB's six-month caching limit.
+pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) -> Analysis {
     let cuts = Cuts::embedded();
     let joined = timeline::effective_join(ex);
     let as_of = timeline::effective_as_of(ex);
@@ -88,6 +96,12 @@ pub fn analyze(ex: &Export, lk: &Lookup) -> Analysis {
     }
     if st.facts.n_rated_missing * 2 > st.facts.n_rated && st.facts.n_rated > 0 {
         notes.push(format!("{} of {} rated films are not in the lookup table, so Power and Precision are not graded", st.facts.n_rated_missing, st.facts.n_rated));
+    }
+    let age = today.and_then(|t| lk.age_days(t));
+    if let Some(a) = age {
+        if a > crate::lookup::MAX_AGE_DAYS {
+            notes.push(format!("the film table is {a} days old; TMDB data may be kept for at most six months, so it should be rebuilt (tools/refresh_table.sh)"));
+        }
     }
     let any_prov = grades.iter().any(|g| matches!(g.status, Status::Provisional | Status::Ungraded | Status::Unknown));
     let evidence: Vec<(String, String)> = (0..6)
@@ -122,6 +136,8 @@ pub fn analyze(ex: &Export, lk: &Lookup) -> Analysis {
         rated_missing: st.facts.n_rated_missing,
         eligible: st.facts.n_elig,
         unknown_films,
+        table_built: lk.built.map(iso),
+        table_age_days: age,
     };
     Analysis { username, joined: iso(joined), as_of: iso(as_of), timeline: tl, stats: st, kind, nearest, ability: ab, name: nm, card, coverage, notes }
 }

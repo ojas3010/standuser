@@ -249,13 +249,10 @@ def compute(W, R, D, T, tl_out, ev, J, as_of):
         m = T.find(r["uri"], r["name"], r["year"])
         (pool.append((r, m)) if m else None)
         missing += m is None
-    n_hist = sum(m["hist"] is not None and (m["count"] or 0) >= minn for _, m in pool)
-    n_avg = sum(m["avg"] is not None and (m["count"] or 0) >= minn for _, m in pool)
-    use_hist = n_hist >= n_avg
-    f["crowd_source"] = "histogram plain mean" if use_hist else "displayed average"
+    f["crowd_source"] = "Letterboxd displayed average"
     rated = []
     for r, m in pool:
-        c = m["hist"] if use_hist else m["avg"]
+        c = m["avg"]
         n = m["count"] or 0
         if c is not None and n >= minn:
             rated.append(dict(name=r["name"], year=r["year"], own=r["rating"], crowd=c, n=n, uri=boxd(r["uri"]) or ""))
@@ -304,7 +301,7 @@ def compute(W, R, D, T, tl_out, ev, J, as_of):
             stamina = grade("STA", m["share"], True)
             if m["months"] >= 60 and m["active"] == m["months"]:
                 stamina = inf(stamina)
-    cty_films, cty_count, dir_count, credit_films = [], Counter(), Counter(), 0
+    cty_films, cty_count, dir_count, credit_films, dir_films = [], Counter(), Counter(), 0, []
     for w in W:
         t = T.find(w["uri"], w["name"], w["year"])
         if not t or (t["runtime"] != 0 and t["runtime"] < 41):
@@ -315,7 +312,8 @@ def compute(W, R, D, T, tl_out, ev, J, as_of):
                 cty_count[c] += 1
         if t["dirs"]:
             credit_films += 1
-            for d in sorted(set(t["dirs"])):
+            dir_films.append(sorted(set(t["dirs"])))
+            for d in dir_films[-1]:
                 dir_count[d] += 1
     f["n_films_cty"] = len(cty_films)
     if not W:
@@ -345,7 +343,7 @@ def compute(W, R, D, T, tl_out, ev, J, as_of):
             rng = unknown("RNG", dval)
         else:
             rng = grade("RNG", dval, len(cty_films) < 100)
-            if dval >= 5.7 and len(cty_films) >= 150:
+            if dval >= (CUTS['stats']['RNG'].get('inf_cut') or 5.7) and len(cty_films) >= 150:
                 rng = inf(rng)
     f.update(films_with_credits=credit_films, credits=sum(dir_count.values()), n1=sum(1 for v in dir_count.values() if v == 1))
     f["gt"] = f["n1"] / f["credits"] if f["credits"] else 0.0
@@ -357,7 +355,19 @@ def compute(W, R, D, T, tl_out, ev, J, as_of):
     elif credit_films < 40:
         pot = unknown("DEV", f["gt"] if credit_films else None)
     else:
-        pot = grade("DEV", f["gt"], credit_films < 60)
+        size = min(60, len(dir_films))
+        r = SplitMix64(6)
+        tot = 0.0
+        for _ in range(20):
+            cnt = Counter()
+            for i in r.sample(len(dir_films), size):
+                for d in dir_films[i]:
+                    cnt[d] += 1
+            tot += sum(1 for v in cnt.values() if v == 1) / sum(cnt.values())
+        f["gt60"] = tot / 20
+        pot = grade("DEV", f["gt60"], credit_films < 60)
+        if credit_films >= 1000 and pot["letter"] == "E":
+            pot = dict(pot, letter="完成", symbol="complete", canon=1.0, plot=1.0, p=0.001)
     return dict(PWR=power, SPD=speed, RNG=rng, STA=stamina, PRC=prec, DEV=pot), f, rated
 
 

@@ -33,6 +33,9 @@ struct Row(
 struct Table {
     #[serde(default)]
     v: u32,
+    /// Date the table was built from TMDB and Letterboxd data ("YYYY-MM-DD").
+    #[serde(default)]
+    built: Option<String>,
     #[serde(default)]
     countries: HashMap<String, String>,
     #[serde(default)]
@@ -64,7 +67,12 @@ pub struct Lookup {
     by_lid: HashMap<String, usize>,
     pub country_names: HashMap<String, String>,
     pub people: HashMap<u32, String>,
+    /// Build date of the table (the oldest one when tables were merged).
+    pub built: Option<crate::dates::Day>,
 }
+
+/// TMDB's terms allow caching its data for at most six months.
+pub const MAX_AGE_DAYS: i64 = 183;
 
 fn ids(s: &str) -> Vec<u32> {
     s.split(',').filter_map(|x| x.trim().parse().ok()).collect()
@@ -80,6 +88,9 @@ impl Lookup {
     /// Add rows (e.g. from the TMDB proxy). Existing keys are kept.
     pub fn merge_json(&mut self, json: &str) -> Result<(), String> {
         let t: Table = serde_json::from_str(json).map_err(|e| format!("bad lookup table: {e}"))?;
+        if let Some(b) = t.built.as_deref().and_then(crate::dates::parse_date) {
+            self.built = Some(self.built.map_or(b, |x| x.min(b)));
+        }
         for (k, v) in t.countries {
             self.country_names.entry(k).or_insert(v);
         }
@@ -125,6 +136,11 @@ impl Lookup {
         self.by_key.get(&film_key(name, year)).map(|&i| &self.films[i])
     }
 
+    /// Days since the table was built, when it carries a build date.
+    pub fn age_days(&self, today: crate::dates::Day) -> Option<i64> {
+        self.built.map(|b| today - b)
+    }
+
     pub fn len(&self) -> usize {
         self.films.len()
     }
@@ -164,7 +180,7 @@ mod tests {
 
     #[test]
     fn load_find_merge() {
-        let j = r#"{"v":1,"countries":{"US":"United States of America"},"people":{"1":"A B"},
+        let j = r#"{"v":1,"built":"2026-10-24","countries":{"US":"United States of America"},"people":{"1":"A B"},
           "films":[["seven|1995","7x",807,1995,127,"en","US","1","2,3",3.9,3.91,2000000]]}"#;
         let mut l = Lookup::from_json(j).unwrap();
         let f = l.find(Some("7x"), "zzz", 0).unwrap();
@@ -172,6 +188,7 @@ mod tests {
         assert_eq!(f.directors, vec![1]);
         assert_eq!(f.composers, vec![2, 3]);
         assert!(l.find(None, "Seven", 1995).is_some());
+        assert_eq!(l.age_days(crate::dates::parse_date("2026-11-03").unwrap()), Some(10));
         assert_eq!(l.country_phrase("US"), "the United States");
         l.merge_json(r#"{"films":[["seven|1995","",1,1995,1,"x","","","",null,null,null],["new|2000","",5,2000,90,"fr","FR","","",null,null,null]]}"#).unwrap();
         assert_eq!(l.len(), 2);

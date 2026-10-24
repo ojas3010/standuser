@@ -34,14 +34,14 @@
   "n_watched": 273,
   "events": 233,
   "n_watched_in_table": 270,
-  "crowd_source": "displayed average",
+  "crowd_source": "Letterboxd displayed average",
   "n_rated": 250,
   "n_rated_missing": 3,
   "n_elig": 210,
   "b": 0.05190476190476189,
   "pa25": 0.8940056197315017,
   "pairs": 16015,
-  "dpa": 0.9017514984077428,
+  "dpa": 0.8878069441773335,
   "pace": 6.108108108108108,
   "peak_n": 13,
   "peak_month": "Jul 2024",
@@ -60,13 +60,14 @@
   "n1": 92,
   "gt": 0.34074074074074073,
   "top_dir": "Director 06",
-  "top_dir_n": 15
+  "top_dir_n": 15,
+  "gt60": 0.6341666666666668
  },
  "grades": {
   "PWR": {
    "stat": "PWR",
-   "value": -0.050849074074074053,
-   "p": 0.45284199701764866,
+   "value": -0.04902451851851851,
+   "p": 0.39683941959671637,
    "letter": "C",
    "status": "measured",
    "canon": 3.0,
@@ -102,8 +103,8 @@
   },
   "PRC": {
    "stat": "PRC",
-   "value": 0.9017514984077428,
-   "p": 0.9919759338078191,
+   "value": 0.8878069441773335,
+   "p": 0.9825931200544541,
    "letter": "A",
    "status": "measured",
    "canon": 5.0,
@@ -111,19 +112,19 @@
   },
   "DEV": {
    "stat": "DEV",
-   "value": 0.34074074074074073,
-   "p": null,
-   "letter": "?",
-   "status": "ungraded",
-   "canon": null,
-   "plot": 3.0
+   "value": 0.6341666666666668,
+   "p": 0.08419713457529084,
+   "letter": "E",
+   "status": "provisional",
+   "canon": 1.0,
+   "plot": 1.0
   }
  },
  "type": "long_distance",
  "nearest": [
   {
    "name": "All Along Watchtower",
-   "dist": 1.5491933384829668,
+   "dist": 1.4142135623730951,
    "grades": [
     "C",
     "B",
@@ -134,24 +135,24 @@
    ]
   },
   {
+   "name": "Hierophant Green",
+   "dist": 2.8284271247461903,
+   "grades": [
+    "C",
+    "B",
+    "A",
+    "B",
+    "C",
+    "D"
+   ]
+  },
+  {
    "name": "Marilyn Manson",
-   "dist": 2.449489742783178,
+   "dist": 3.0,
    "grades": [
     "E",
     "A",
     "A",
-    "A",
-    "A",
-    "C"
-   ]
-  },
-  {
-   "name": "Clash",
-   "dist": 2.449489742783178,
-   "grades": [
-    "D",
-    "A",
-    "B",
     "A",
     "A",
     "C"
@@ -162,7 +163,7 @@
   "template": 7,
   "ability": "Fictional Manifestation. Fiction from every nation walks into the world: 7.5 effective production countries per 50 films, across 270 films. [provisional]",
   "film": "Signature film: Signal Orchestra 115 (1999), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.",
-  "weakness": "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.05★ above the crowd on average, about what a human would.",
-  "why": "Why: Range ∞ (99.9th percentile, z +3.00; runner-up Precision z +2.41) is your most extreme graded stat, which selects Fictional Manifestation after Bohemian Rhapsody, whose canon Range is ∞. Canon: “a Stand ability that breaks the barrier between fiction and reality”. Power C is your lowest graded stat, so the limitation comes from it."
+  "weakness": "Weakness: nothing left to learn (Potential E). Only 34% of your director credits are one-offs, so there is little room to grow. [provisional]",
+  "why": "Why: Range ∞ (99.9th percentile, z +3.00; runner-up Precision z +2.11) is your most extreme graded stat, which selects Fictional Manifestation after Bohemian Rhapsody, whose canon Range is ∞. Canon: “a Stand ability that breaks the barrier between fiction and reality”. Potential E is your lowest graded stat, so the limitation comes from it."
  }
 }
