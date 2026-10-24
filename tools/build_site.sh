@@ -3,6 +3,8 @@
 # Needs: rustup with the wasm32-unknown-unknown target, and wasm-pack (cargo install wasm-pack).
 set -euo pipefail
 cd "$(dirname "$0")/.."
+# keep build-machine paths (home directory, user name) out of the committed binary
+export RUSTFLAGS="${RUSTFLAGS:-} --remap-path-prefix=$HOME/.cargo=/cargo --remap-path-prefix=$HOME/.rustup=/rustup --remap-path-prefix=$PWD=/src"
 wasm-pack build crates/standuser-wasm --target web --release --out-dir ../../site/pkg --out-name standuser
 rm -f site/pkg/.gitignore site/pkg/package.json site/pkg/*.d.ts   # the repo commits site/pkg so Vercel needs no build step
 cp crates/standuser-core/data/films.json site/films.json
