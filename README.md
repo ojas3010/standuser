@@ -124,6 +124,8 @@ Nearest canon: All Along Watchtower · Marilyn Manson · Clash
 
 ## Limits
 
+The choices behind these are written down in [docs/DECISIONS.md](docs/DECISIONS.md).
+
 - **Cut-points.** Power and Precision use measured percentile cuts from a pool of 24,929 Letterboxd users, on a pool-scale crowd; they should be recalibrated on Letterboxd plain means. Speed and Stamina use MovieTweetings cuts and stay provisional until real dated Letterboxd exports exist. Range uses a US-heavy TMDB-5000 proxy and is provisional. **Potential has no valid cut-points, so it is shown as `?` with its raw value.**
 - **Film coverage.** Crowd averages come from a built-in table of films. A film missing from it counts for Range and Potential (through the TMDB proxy) but not for Power or Precision. If more than half of your rated films are missing, Power and Precision show `?`.
 - **Names.** The music-title naming route needs soundtrack track lists from MusicBrainz or Discogs, which cannot ship in a static site and are not fetched. Names therefore come from the composer or Part 3 routes.
