@@ -49,7 +49,7 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 
 ## Behaviour the spec left open
 
-- **Join day** comes from `profile.csv` (`Date Joined`) when present, else the earliest `watched.csv` date. **Export date** comes from the ZIP file name, else the latest date in the export.
+- **Join day** comes from the `Date Joined` column of `profile.csv`; only when the file or that column is missing (or the value is unreadable) is it the earliest `watched.csv` date, and `stand.json` says so in `notes`. **Export date** comes from the ZIP file name, else the latest date in the export.
 - **Type ∅ or ?** on a stat a rule reads skips that rule. A user with all-∅ stats (an empty export) matches the canon Stand whose cells are all ∅ (Gold Experience Requiem).
 - **Matching** with unknown user stats rescales by 6/k and needs 4 known stats. Twins (identical charts) are split by FNV-1a of the lower-cased username; the top 3 are distinct charts.
 - **Example film per stat** (the second line of each card cell): Power, the film furthest from the crowd in your direction; Speed, your highest-rated film of the busiest month; Range, your highest-rated film from your least common country; Stamina, your highest-rated film of the last month of your longest streak; Precision, the most-rated film you scored within 0.25 of the crowd; Potential, your highest-rated film by a director you saw only once.
@@ -60,6 +60,6 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 
 ## Privacy
 
-- `profile.csv` is read through an allowlist (`Date Joined`, `Username`); the other columns, the e-mail address included, are skipped as raw bytes. The committed fixtures use a synthetic `profile.csv` with an invalid address.
+- `profile.csv` is read through an allowlist of one column, `Date Joined`, in memory; every other column (the e-mail address and the username included) is never decoded, stored, shown or logged, and an unreadable `profile.csv` counts as absent. The username comes from the ZIP file name (or `--username`). The committed fixtures use a synthetic `profile.csv` with an invalid address.
 - The real export was run without `profile.csv`; the join day was passed as `--joined 2022-07-06` (from the spec) and the username came from the file name.
 - The export never leaves the browser, and the page makes no request after it has loaded: no proxy, no analytics, no fonts or images from other sites. A browser test asserts zero requests while an export is processed. The only outbound thing on the page is the TMDB logo link, which the visitor has to click.

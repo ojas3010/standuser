@@ -18,7 +18,7 @@ The pipeline, one module per stage:
 
 | Stage | What it does |
 |---|---|
-| `parse` | Reads `watched.csv`, `ratings.csv`, `diary.csv` from the ZIP, and only the `Date Joined` and `Username` columns of `profile.csv`. Every other `profile.csv` column (the e-mail address included) is skipped as raw bytes and never stored. |
+| `parse` | Reads `watched.csv`, `ratings.csv`, `diary.csv` from the ZIP, and only the `Date Joined` column of `profile.csv`, in memory. Every other `profile.csv` column (the e-mail address and the username included) is never decoded, stored, shown or logged. Without `profile.csv` or that column the join day is the earliest watch date, and the username comes from the ZIP file name. |
 | `timeline` | Builds a clean activity timeline: drops the join day and bulk-marking days (14 or more films, or 8 or more with fewer than half corroborated by the diary), one event per film, rewatches ignored. |
 | `stats` | Power, Speed, Range, Stamina, Precision, Potential from the timeline, your ratings and film data (see below). |
 | `grading` | Card letters E to A from population percentiles (cuts at 10, 30, 70 and 90), plus a canon-equivalent grade used only for the type and the match. Rare symbols: ∞, ∅, and `?` below a stat's minimum data. |

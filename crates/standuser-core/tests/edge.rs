@@ -71,7 +71,7 @@ fn zip_without_profile_uses_defaults() {
     assert_eq!(a.joined, "2024-01-05");
     assert_eq!(a.as_of, "2026-10-19");
     assert_eq!(a.username, "edge");
-    assert!(a.notes.iter().any(|n| n.contains("profile.csv not found")));
+    assert!(a.notes.iter().any(|n| n.contains("no Date Joined found")));
 }
 
 #[test]

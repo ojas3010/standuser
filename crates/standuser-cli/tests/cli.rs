@@ -26,6 +26,13 @@ fn writes_svg_png_and_json() {
     assert_eq!(u32::from_be_bytes(png[20..24].try_into().unwrap()), 1350);
     let j: serde_json::Value = serde_json::from_slice(&std::fs::read(out.join("stand.json")).unwrap()).unwrap();
     assert_eq!(j["username"], "synthuser");
+    // the join day is read from the zip's profile.csv; no other profile field reaches any output
+    assert_eq!(j["joined"], "2023-01-05");
+    let everything = [std::fs::read(out.join("card.svg")).unwrap(), std::fs::read(out.join("stand.json")).unwrap(), r.stdout.clone(), r.stderr.clone()].concat();
+    let everything = String::from_utf8_lossy(&everything);
+    for field in ["synthetic@example.invalid", "Thetic"] {
+        assert!(!everything.contains(field), "profile field {field} leaked");
+    }
     let stdout = String::from_utf8_lossy(&r.stdout);
     assert!(stdout.contains("synthuser") && stdout.contains("Nearest canon"));
     let _ = std::fs::remove_dir_all(&out);

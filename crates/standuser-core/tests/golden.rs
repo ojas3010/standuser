@@ -86,7 +86,18 @@ fn run(zip: &Path, table: &Path, joined: &str, golden: &Path) {
     let a = analysis::analyze(&ex, &lk);
     let g: Value = serde_json::from_str(&std::fs::read_to_string(golden).unwrap()).unwrap();
     assert_eq!(g["inputs"]["username"], a.username.as_str());
+    if joined.is_empty() {
+        assert_eq!(a.joined, g["inputs"]["joined"].as_str().unwrap(), "join day read from the fixture's profile.csv");
+    }
     check(&a, &g);
+    if joined.is_empty() {
+        // the join day came from the zip's own profile.csv, and no other profile field reached the output
+        assert!(a.notes.iter().all(|n| !n.contains("Date Joined")), "{:?}", a.notes);
+        let all = serde_json::to_string(&a).unwrap() + &svg::card_svg(&a.card, svg::Theme::Auto);
+        for field in ["synthetic@example.invalid", "Thetic", "\"Syn\""] {
+            assert!(!all.contains(field), "profile field {field} leaked");
+        }
+    }
     // the card for this analysis renders and keeps the colour classes
     let s = svg::card_svg(&a.card, svg::Theme::Auto);
     assert!(s.contains("class=\"f-ink\"") && !s.contains("class=\"ink\""));

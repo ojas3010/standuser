@@ -18,7 +18,7 @@
   <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
     <input id="file" type="file" accept=".zip,application/zip" hidden>
     <p><strong>Drop letterboxd-…-utc.zip here</strong><br>or <button id="pick" type="button">choose the file</button></p>
-    <p class="small">Letterboxd → Settings → Data → Export your data. The ZIP is read in this tab. Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and two columns of <code>profile.csv</code> (Date Joined, Username) are used.</p>
+    <p class="small">Letterboxd → Settings → Data → Export your data. The ZIP is read in this tab. Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and one column of <code>profile.csv</code> (Date Joined) are used.</p>
   </section>
 
   <section class="opts">
@@ -28,9 +28,9 @@
     </label>
     <details>
       <summary>Advanced</summary>
-      <label>Username <input id="username" type="text" placeholder="from the file name or profile.csv" autocomplete="off"></label>
+      <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
       <label>Join date <input id="joined" type="date"></label>
-      <p class="small">Only needed when the ZIP has no <code>profile.csv</code>. Without it the join day is the earliest date in <code>watched.csv</code>.</p>
+      <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
     </details>
   </section>
 

@@ -1,7 +1,9 @@
 //! Letterboxd export reading: ZIP (or a map of file name -> bytes) to plain rows.
 //!
-//! profile.csv is read through an allowlist: only the `Date Joined` and `Username` columns are decoded. Every other
-//! column (the e-mail address included) is skipped as raw bytes and never stored. profile.csv may be absent.
+//! profile.csv is read through an allowlist of one column: `Date Joined`, in memory. Every other column (the e-mail
+//! address, name, location, bio, favourite films, the username included) is never decoded, stored, shown or logged.
+//! profile.csv or the column may be absent, and an unreadable profile.csv is treated as absent; the username then
+//! comes from the ZIP file name or a flag.
 
 use crate::dates::{parse_date, Day};
 use std::collections::BTreeMap;
@@ -173,25 +175,24 @@ pub fn parse_files(files: &BTreeMap<String, Vec<u8>>, file_name: Option<&str>) -
     }
 
     if let Some(b) = files.get("profile.csv") {
-        // Allowlist: decode only "Date Joined" and "Username". Other fields stay raw bytes and are dropped.
-        let mut rd = reader(b);
-        let h = rd.headers().map_err(|e| ParseError::Csv(e.to_string()))?.clone();
-        let (cj, cu) = (col(&h, "Date Joined"), col(&h, "Username"));
-        let mut br = csv::ByteRecord::new();
-        if rd.read_byte_record(&mut br).map_err(|e| ParseError::Csv(e.to_string()))? {
-            if let Some(i) = cj {
-                ex.joined = br.get(i).and_then(|f| std::str::from_utf8(f).ok()).and_then(parse_date);
-            }
-            if let Some(i) = cu {
-                if let Some(u) = br.get(i).and_then(|f| std::str::from_utf8(f).ok()) {
-                    if !u.trim().is_empty() {
-                        ex.username = Some(u.trim().to_string());
-                    }
-                }
-            }
-        }
+        ex.joined = joined_from_profile(b);
     }
     Ok(ex)
+}
+
+/// The `Date Joined` value of profile.csv, or None when the column or value is missing or the file cannot be read.
+/// Only the header names and that one field are decoded; errors carry no file content.
+fn joined_from_profile(bytes: &[u8]) -> Option<Day> {
+    let mut rd = reader(bytes);
+    let cj = {
+        let h = rd.headers().ok()?;
+        col(h, "Date Joined")?
+    };
+    let mut br = csv::ByteRecord::new();
+    if !rd.read_byte_record(&mut br).ok()? {
+        return None;
+    }
+    br.get(cj).and_then(|f| std::str::from_utf8(f).ok()).and_then(parse_date)
 }
 
 pub fn parse_zip(bytes: &[u8], file_name: Option<&str>) -> Result<Export, ParseError> {
@@ -218,21 +219,58 @@ mod tests {
         assert_eq!(parse_file_name("export.zip"), (None, None));
     }
 
-    #[test]
-    fn rows_and_profile_allowlist() {
+    fn base() -> BTreeMap<String, Vec<u8>> {
         let mut f = BTreeMap::new();
         f.insert("watched.csv".into(), b"Date,Name,Year,Letterboxd URI\n2022-07-06,\"Film, The\",1999,https://boxd.it/abc\n".to_vec());
         f.insert("ratings.csv".into(), b"Date,Name,Year,Letterboxd URI,Rating\n2022-07-06,\"Film, The\",1999,https://boxd.it/abc,4.5\n".to_vec());
         f.insert("diary.csv".into(), b"Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date\n2022-07-07,\"Film, The\",1999,u,4.5,,,2022-07-05\n".to_vec());
-        f.insert("profile.csv".into(), b"Date Joined,Username,Given Name,Family Name,Email Address,Location\n2022-07-06,someone,A,B,secret@example.com,X\n".to_vec());
+        f
+    }
+
+    #[test]
+    fn rows_and_only_the_join_date_from_profile() {
+        let mut f = base();
+        f.insert("profile.csv".into(), b"Date Joined,Username,Given Name,Family Name,Email Address,Location\n2022-07-06,someone,Gina,Sentinel,secret@example.com,Nowhere\n".to_vec());
         let e = parse_files(&f, None).unwrap();
         assert_eq!(e.watched[0].name, "Film, The");
         assert_eq!(e.ratings[0].rating, 4.5);
         assert_eq!(e.diary[0].view_day, crate::dates::parse_date("2022-07-05").unwrap());
-        assert_eq!(e.username.as_deref(), Some("someone"));
         assert_eq!(crate::dates::iso(e.joined.unwrap()), "2022-07-06");
-        assert!(!format!("{e:?}").contains("secret@example.com"));
+        // the profile username is NOT read: it comes only from the file name or a flag
+        assert_eq!(e.username, None);
+        let dump = format!("{e:?}");
+        for secret in ["secret@example.com", "someone", "Gina", "Sentinel", "Nowhere"] {
+            assert!(!dump.contains(secret), "{secret} leaked into the parsed export");
+        }
+        let named = parse_files(&f, Some("letterboxd-fromname-2026-10-19-13-22-utc.zip")).unwrap();
+        assert_eq!(named.username.as_deref(), Some("fromname"));
         assert_eq!(boxd_code("https://boxd.it/abc"), Some("abc"));
+    }
+
+    #[test]
+    fn join_date_column_anywhere_quoted_with_bom() {
+        let mut f = base();
+        f.insert("profile.csv".into(), b"\xEF\xBB\xBFEmail Address,\"Bio\",Date Joined,Website\n\"a@b.invalid\",\"likes, commas\",2021-03-09,x\n".to_vec());
+        assert_eq!(crate::dates::iso(parse_files(&f, None).unwrap().joined.unwrap()), "2021-03-09");
+    }
+
+    #[test]
+    fn missing_or_unusable_profile_means_no_join_date() {
+        for body in [
+            &b"Username,Email Address\nsomeone,secret@example.com\n"[..], // no Date Joined column
+            b"Date Joined,Username\n",                                     // header only
+            b"Date Joined,Username\nnot-a-date,someone\n",                // unparsable value
+            b"\xff\xfe\x00garbage\n\xff",                                 // not UTF-8 / not CSV
+            b"",
+        ] {
+            let mut f = base();
+            f.insert("profile.csv".into(), body.to_vec());
+            let e = parse_files(&f, None).expect("an unreadable profile.csv must not fail the export");
+            assert!(e.joined.is_none());
+            assert!(!format!("{e:?}").contains("secret@example.com"));
+        }
+        // no profile.csv at all
+        assert!(parse_files(&base(), None).unwrap().joined.is_none());
     }
 
     #[test]

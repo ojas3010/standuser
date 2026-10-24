@@ -91,7 +91,7 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
 
     let mut notes = vec![];
     if ex.joined.is_none() {
-        notes.push("profile.csv not found: the join day is taken as the earliest watched.csv date".to_string());
+        notes.push("no Date Joined found in profile.csv (file or column missing): the join day is taken as the earliest watched.csv date".to_string());
     }
     if ex.as_of.is_none() {
         notes.push("the export date could not be read from the file name: the latest date in the export is used".to_string());
