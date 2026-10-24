@@ -20,31 +20,48 @@ fn usage() -> ExitCode {
     ExitCode::from(2)
 }
 
+fn bad(msg: String) -> ExitCode {
+    eprintln!("standuser: {msg}");
+    ExitCode::from(2)
+}
+
 fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
     let mut input: Option<String> = None;
     let (mut out, mut table, mut theme, mut joined, mut user, mut json) = (PathBuf::from("."), None::<String>, "light".to_string(), None::<String>, None::<String>, false);
     while let Some(a) = args.next() {
-        let mut val = |name: &str| -> Option<String> {
-            let v = args.next();
-            if v.is_none() {
-                eprintln!("{name} needs a value");
-            }
-            v
-        };
+        // every option that takes a value must get one; a bad command line stops here with exit code 2
+        macro_rules! value {
+            () => {
+                match args.next() {
+                    Some(v) if !v.starts_with("--") => v,
+                    _ => return bad(format!("{a} needs a value")),
+                }
+            };
+        }
         match a.as_str() {
-            "--out" => match val("--out") { Some(v) => out = PathBuf::from(v), None => return usage() },
-            "--table" => table = val("--table"),
-            "--theme" => match val("--theme") { Some(v) => theme = v, None => return usage() },
-            "--joined" => joined = val("--joined"),
-            "--username" => user = val("--username"),
+            "--out" => out = PathBuf::from(value!()),
+            "--table" => table = Some(value!()),
+            "--theme" => {
+                theme = value!();
+                if theme != "light" && theme != "dark" {
+                    return bad(format!("--theme must be light or dark, not {theme:?}"));
+                }
+            }
+            "--joined" => joined = Some(value!()),
+            "--username" => user = Some(value!()),
             "--json" => json = true,
             "-h" | "--help" => return usage(),
             x if x.starts_with("--") => {
                 eprintln!("unknown option {x}");
                 return usage();
             }
-            x => input = Some(x.to_string()),
+            x => {
+                if input.is_some() {
+                    return bad(format!("only one export ZIP can be given (got {x:?} after {:?})", input.unwrap()));
+                }
+                input = Some(x.to_string())
+            }
         }
     }
     let Some(input) = input else { return usage() };

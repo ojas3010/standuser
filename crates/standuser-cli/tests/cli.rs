@@ -66,3 +66,32 @@ fn friendly_errors() {
     assert!(String::from_utf8_lossy(&r.stderr).contains("ZIP"));
     let _ = std::fs::remove_file(&bad);
 }
+
+/// A bad command line must fail (exit 2) and never carry on with defaults.
+#[test]
+fn bad_options_exit_nonzero_without_writing_anything() {
+    let (zip, _) = fixture();
+    let bin = env!("CARGO_BIN_EXE_standuser");
+    let out = out_dir("badopts");
+    for args in [
+        vec!["--table"],
+        vec!["--joined"],
+        vec!["--username"],
+        vec!["--out"],
+        vec!["--theme"],
+        vec!["--table", "--json"],
+        vec!["--theme", "purple"],
+        vec!["--joined", "yesterday"],
+        vec!["--bogus"],
+    ] {
+        let r = Command::new(bin).arg(&zip).args(&args).args(["--out"]).arg(&out).output().unwrap();
+        // "--out" is appended after the bad option, so for `--out` alone the bad option swallows nothing and fails on its own
+        let r = if args == vec!["--out"] { Command::new(bin).arg(&zip).arg("--out").output().unwrap() } else { r };
+        assert_eq!(r.status.code(), Some(2), "{args:?}: stdout {:?} stderr {:?}", String::from_utf8_lossy(&r.stdout), String::from_utf8_lossy(&r.stderr));
+        assert!(!out.join("card.svg").exists(), "{args:?} still wrote a card");
+    }
+    // two ZIPs are rejected instead of one being ignored
+    let r = Command::new(bin).arg(&zip).arg(&zip).output().unwrap();
+    assert_eq!(r.status.code(), Some(2));
+    let _ = std::fs::remove_dir_all(&out);
+}

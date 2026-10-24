@@ -265,9 +265,12 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         Theme::Auto => (css(&LIGHT), format!("@media (prefers-color-scheme:dark){{{}}}", css(&DARK))),
     };
     let title = format!("Stand card for {}: {}, {} type", d.user, d.name, d.type_en);
+    // the same asterisks the card shows, so a screen reader hears which grades are provisional
+    let any_prov = d.prov.iter().any(|p| *p);
     let desc = format!(
-        "JoJo-style Stand stat chart. {}. Provisional grades are marked with an asterisk.",
-        (0..6).map(|i| format!("{} {}", EN[i], d.grades[i])).collect::<Vec<_>>().join(", ")
+        "JoJo-style Stand stat chart. {}.{}",
+        (0..6).map(|i| format!("{} {}{}", EN[i], d.grades[i], if d.prov[i] { "*" } else { "" })).collect::<Vec<_>>().join(", "),
+        if any_prov { " Grades marked with an asterisk are provisional." } else { "" }
     );
     format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {W} {H}\" width=\"{W}\" height=\"{H}\" role=\"img\" aria-labelledby=\"t d\"><title id=\"t\">{}</title><desc id=\"d\">{}</desc><style>{base}{extra}</style>{}</svg>",
@@ -312,6 +315,20 @@ mod tests {
         }
         assert!(s.contains("prefers-color-scheme:dark"));
         assert!(!s.contains("<text"), "text is outlined");
+    }
+
+    #[test]
+    fn desc_marks_provisional_grades_with_asterisks() {
+        let d = sample();
+        let s = card_svg(&d, Theme::Light);
+        let desc = &s[s.find("<desc").unwrap()..s.find("</desc>").unwrap()];
+        assert!(desc.contains("Speed B*") && desc.contains("Range C*") && desc.contains("Power C,"), "{desc}");
+        assert!(desc.contains("provisional"));
+        let mut none = sample();
+        none.prov = vec![false; 6];
+        let s = card_svg(&none, Theme::Light);
+        let desc = &s[s.find("<desc").unwrap()..s.find("</desc>").unwrap()];
+        assert!(!desc.contains('*') && !desc.contains("provisional"), "{desc}");
     }
 
     #[test]
