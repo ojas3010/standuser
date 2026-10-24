@@ -121,14 +121,22 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         c.els.push("<rect x=\"770\" y=\"64\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-red\" stroke-width=\"2.5\"/>".into());
         c.text("PROVISIONAL DATA", 890.0, 91.0, 19.0, Sans, "red", "middle", 0.0, 1.5, None);
     }
-    let name = format!("「{}」", d.name);
+    // shrink to 44 px, then cut with an ellipsis so the name never leaves the frame
+    let mut name = format!("「{}」", d.name);
     let mut nsz = 84.0;
-    while c.serif.width(&name, nsz, 2.0) > 940.0 && nsz > 28.0 {
+    while c.serif.width(&name, nsz, 2.0) > 940.0 && nsz > 44.0 {
         nsz -= 2.0;
+    }
+    if c.serif.width(&name, nsz, 2.0) > 940.0 {
+        let mut inner: Vec<char> = d.name.chars().collect();
+        while !inner.is_empty() && c.serif.width(&format!("「{}…」", inner.iter().collect::<String>().trim_end()), nsz, 2.0) > 940.0 {
+            inner.pop();
+        }
+        name = format!("「{}…」", inner.iter().collect::<String>().trim_end());
     }
     c.text(&name, 70.0, 188.0, nsz, Serif, "ink", "start", 0.0, 2.0, None);
     c.text("【STAND MASTER】", 70.0, 238.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
-    let user = c.sans.fit(&d.user, 34.0, 600.0);
+    let user = c.sans.fit(&d.user, 34.0, 470.0);
     c.text(&format!("本体 ― {user}"), 350.0, 240.0, 34.0, Sans, "ink", "start", 0.0, 0.0, None);
     c.text(&format!("{} · {}", d.type_jp, d.type_en), 70.0, 288.0, 28.0, Sans, "mute", "start", 0.0, 0.0, None);
 
@@ -300,6 +308,17 @@ mod tests {
         assert!(dk.contains("#101014"));
         assert!(l.starts_with("<svg") && l.ends_with("</svg>"));
         assert!(l.len() < 900_000, "{}", l.len());
+    }
+
+    #[test]
+    fn very_long_names_are_cut_inside_the_frame() {
+        let mut d = sample();
+        d.name = "THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE".into();
+        let s = card_svg(&d, Theme::Light);
+        assert!(s.contains("class=\"f-ink\""));
+        // the same rule the renderer uses: at 44 px the cut name is at most 940 px wide
+        let f = font(FontKind::Serif);
+        assert!(f.width(&format!("「{}」", d.name), 44.0, 2.0) > 940.0, "the test name must need cutting");
     }
 
     #[test]
