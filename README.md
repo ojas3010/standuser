@@ -25,7 +25,7 @@ The pipeline, one module per stage:
 | `types` | Close-Range Power, Long-Distance Operation, Automatic or Unclassified. About 60% leave-one-group-out agreement with canon, so the card labels it "archetype by stats" and says so under the type name (Automatic, the weakest rule, is flagged low confidence). |
 | `matching` | Nearest canon Stand (157 rows, 128 fully lettered) by L2 distance, with unknown canon cells costed at their expected error. Ties at equal distance follow the spec's chain (salience-weighted error, largest gap, exact matches, known cells), then the Stand whose canon percentile band is closest to your actual percentiles, then a hash of the username (which also splits identical-chart twins). The top 3 distinct charts are shown. |
 | `ability` | 17 deterministic text templates keyed by your most extreme stat, a weakness from your lowest, and a signature film (largest gap to the Letterboxd crowd). Every number in the text comes from a slot, and a "why" line cites it. |
-| `name` | Offline naming route: your top film composer (shrunk mean of your ratings, at least two films), else Part 3 style colour plus Tarot card. |
+| `name` | Offline naming route: the composer of your rated films with the highest shrunk mean rating (at least two rated films); if none qualifies, your most frequent composer among watched films; only when no composer has a usable name (drawable as ASCII, not a canon Stand name), a Part 3 style colour plus Tarot card. |
 | `svg` | The card as one self-contained SVG. All text is drawn as outlines, so it renders the same in browsers, GitHub READMEs and PNG renderers. |
 
 The six stats:
