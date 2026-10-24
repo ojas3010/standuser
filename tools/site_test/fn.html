@@ -1,0 +1,60 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body><pre id="out">running</pre>
+<script>
+var module = { exports: {} };
+var process = { env: { TMDB_API_KEY: 'a'.repeat(32) } };
+var calls = [];
+window.fetch = async function (url, opts) {
+  calls.push(String(url).replace(/api_key=[^&]+/, 'api_key=***'));
+  const u = new URL(url);
+  const json = (o, status = 200) => ({ ok: status < 400, status, json: async () => o });
+  if (u.pathname.endsWith('/search/movie')) {
+    const q = u.searchParams.get('query');
+    if (q === 'Nothing Here') return json({ results: [] });
+    if (u.searchParams.get('primary_release_year') && q === 'Second Chance') return json({ results: [] });
+    return json({ results: [{ id: q === 'Seven Pounds' ? 7 : 8, title: q, original_title: q, popularity: 5 }, { id: 99, title: 'Other ' + q, popularity: 50 }] });
+  }
+  if (u.pathname.startsWith('/3/movie/')) {
+    const id = Number(u.pathname.split('/').pop());
+    return json({ id, runtime: 123, original_language: 'en', production_countries: [{ iso_3166_1: 'US', name: 'United States of America' }, { iso_3166_1: 'FR', name: 'France' }],
+      credits: { crew: [{ id: 1, job: 'Director', name: 'Dir One' }, { id: 1, job: 'Director', name: 'Dir One' }, { id: 2, job: 'Music', name: 'Music Guy' }, { id: 3, job: 'Original Music Composer', name: 'OMC Guy' }, { id: 4, job: 'Editor', name: 'No' }] } });
+  }
+  return json({}, 404);
+};
+</script>
+<script src="tmdb_fn.js"></script>
+<script>
+(async () => {
+  const log = [];
+  const call = async (method, body, env) => {
+    if (env !== undefined) process.env.TMDB_API_KEY = env;
+    const res = { headers: {}, statusCode: 200, body: '', setHeader(k, v) { this.headers[k] = v; }, end(b) { this.body = b; } };
+    await module.exports({ method, body }, res);
+    return { status: res.statusCode, body: res.body ? JSON.parse(res.body) : null, headers: res.headers };
+  };
+  try {
+    let r = await call('GET', null);
+    log.push('GET -> ' + r.status);
+    r = await call('POST', { films: [{ name: 'Seven Pounds', year: 2008 }, { name: 'Second Chance', year: 2011 }, { name: 'Nothing Here', year: 1999 }, { name: 'Bad', year: 'x' }] });
+    log.push('POST -> ' + r.status + ' films=' + r.body.films.length + ' missing=' + JSON.stringify(r.body.missing));
+    log.push('row0 = ' + JSON.stringify(r.body.films.find((f) => f[0].startsWith('sevenpounds'))));
+    log.push('people = ' + JSON.stringify(r.body.people) + ' countries = ' + JSON.stringify(r.body.countries));
+    log.push('cache = ' + r.headers['Cache-Control']);
+    r = await call('POST', { films: [] });
+    log.push('empty -> ' + r.status);
+    r = await call('POST', { films: Array.from({ length: 21 }, (_, i) => ({ name: 'F' + i, year: 2000 })) });
+    log.push('21 films -> ' + r.status);
+    r = await call('POST', '{"films":[{"name":"Seven Pounds","year":2008}]}');
+    log.push('string body -> ' + r.status + ' ' + r.body.films.length);
+    r = await call('POST', { films: [{ name: 'Seven Pounds', year: 2008 }] }, '');
+    log.push('no key -> ' + r.status + ' ' + r.body.error);
+    process.env.TMDB_API_KEY = 'x'.repeat(60);
+    calls.length = 0;
+    await call('POST', { films: [{ name: 'Seven Pounds', year: 2008 }] });
+    log.push('v4 token uses header (no api_key in url): ' + calls.every((c) => !c.includes('api_key')));
+    const k = module.exports.filmKey;
+    log.push('keys: ' + [k('Amélie', 2001), k('Borat: Cultural Learnings', 2006), k('Se7en', 1995), k('Ça', 2017)].join(' ; '));
+    log.push('calls sample: ' + calls.slice(0, 2).join(' || '));
+  } catch (e) { log.push('ERROR ' + (e.stack || e)); }
+  document.getElementById('out').textContent = log.join('\n');
+})();
+</script></body></html>

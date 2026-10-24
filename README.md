@@ -77,7 +77,7 @@ The golden test compares the Rust port with a Python reference that runs the res
 STANDUSER_OJAS_EXPORT=/path/to/export.zip STANDUSER_OJAS_TABLE=/path/to/films.json cargo test -p standuser-core --test golden
 ```
 
-Regenerate fixtures with `tools/golden/regenerate.sh`.
+Regenerate fixtures with `tools/golden/regenerate.sh`. Browser tests: `tools/site_test/run.sh` (headless Chrome or Edge).
 
 ### Build and serve the site
 
@@ -128,7 +128,7 @@ Nearest canon: All Along Watchtower · Marilyn Manson · Clash
 - **Film coverage.** Crowd averages come from a built-in table of films. A film missing from it counts for Range and Potential (through the TMDB proxy) but not for Power or Precision. If more than half of your rated films are missing, Power and Precision show `?`.
 - **Names.** The music-title naming route needs soundtrack track lists from MusicBrainz or Discogs, which cannot ship in a static site and are not fetched. Names therefore come from the composer or Part 3 routes.
 - **Text.** Characters outside Latin, kana and the card's own kanji (for example Korean or Cyrillic titles) are drawn as □.
-- Not verified in a browser in the build environment: the page's script was written and reviewed, and the WebAssembly module is tested natively through the same entry point.
+- Browser and proxy testing: `tools/site_test/run.sh` drives the real page in headless Chrome (file input, card, stats table, PNG/SVG/JSON downloads, theme change, lookup merge) and runs `api/tmdb.js` against a mocked TMDB. The live TMDB call and the Vercel deployment itself have not been exercised from this repository.
 
 ## Layout
 
@@ -140,6 +140,7 @@ site/                   static page (index.html, app.js, style.css, pkg/, films.
 api/tmdb.js             Vercel function: TMDB proxy
 tools/collect           data collector (Letterboxd pages + TMDB) and its tests
 tools/golden            Python reference, prototypes and fixture generators
+tools/site_test         headless-browser tests for the page and the function
 tools/*.py              table, font and calibration-table builders
 ```
 
