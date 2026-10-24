@@ -84,21 +84,46 @@ pub struct StatCoverage {
     pub meets_minimum: bool,
     /// What is being counted: "films", or "dated watches" for Speed and Stamina (bulk-import days excluded).
     pub unit: String,
+    /// What is missing when the minimum is not met (None when it is met or only the count is short).
+    pub shortfall: Option<String>,
 }
 
 impl StatCoverage {
     fn new(stat: &str, used: usize, of: usize, minimum: usize) -> Self {
         let unit = if matches!(stat, "SPD" | "STA") { "dated watches" } else { "films" };
-        StatCoverage { stat: stat.into(), used, of, minimum, meets_minimum: used >= minimum, unit: unit.into() }
+        StatCoverage { stat: stat.into(), used, of, minimum, meets_minimum: used >= minimum, unit: unit.into(), shortfall: None }
     }
 
-    /// "graded on 450 of 512 films", "241 of 533 dated watches" for the timeline stats, or what is missing when the
+    /// Speed and Stamina: the same window and the same minimums as the grade itself (events inside the complete months).
+    fn timeline(stat: &str, m: Option<&crate::timeline::DateMetrics>, of: usize) -> Self {
+        let mut c = StatCoverage::new(stat, m.map_or(0, |m| m.events_in_window), of, 12);
+        let Some(m) = m else {
+            c.shortfall = Some("no complete month after your first clean watch".into());
+            return c;
+        };
+        let (meets, shortfall) = if m.events_in_window < 12 {
+            (false, Some("in complete months, needs 12".to_string()))
+        } else if m.active < 6 {
+            (false, Some(format!("in only {} active months, needs 6", m.active)))
+        } else if stat == "STA" && m.months < 12 {
+            (false, Some(format!("over only {} complete months, needs 12", m.months)))
+        } else {
+            (true, None)
+        };
+        c.meets_minimum = meets;
+        c.shortfall = shortfall;
+        c
+    }
+
+    /// "graded on 450 of 512 films", "224 of 533 dated watches" for the timeline stats, or what is missing when the
     /// minimum is not met.
     pub fn text(&self) -> String {
-        match (self.meets_minimum, self.unit.as_str()) {
-            (true, "dated watches") => format!("{} of {} dated watches", self.used, self.of),
-            (true, _) => format!("graded on {} of {} films", self.used, self.of),
-            (false, u) => format!("only {} of {} {u}, needs {}", self.used, self.of, self.minimum),
+        if self.meets_minimum {
+            return if self.unit == "dated watches" { format!("{} of {} dated watches", self.used, self.of) } else { format!("graded on {} of {} films", self.used, self.of) };
+        }
+        match &self.shortfall {
+            Some(s) => format!("only {} of {} {} {s}", self.used, self.of, self.unit).replace("  ", " "),
+            None => format!("only {} of {} {}, needs {}", self.used, self.of, self.unit, self.minimum),
         }
     }
 }
@@ -397,9 +422,9 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
     // viewing timeline, so they count every watched film that gave a clean event.
     let coverage = vec![
         StatCoverage::new("PWR", rated.len(), ex.ratings.len(), 20),
-        StatCoverage::new("SPD", tl.events.len(), ex.watched.len(), 12),
+        StatCoverage::timeline("SPD", tl.metrics.as_ref(), ex.watched.len()),
         StatCoverage::new("RNG", f.n_films_cty, ex.watched.len(), 50),
-        StatCoverage::new("STA", tl.events.len(), ex.watched.len(), 12),
+        StatCoverage::timeline("STA", tl.metrics.as_ref(), ex.watched.len()),
         StatCoverage::new("PRC", rated.len(), ex.ratings.len(), 50),
         StatCoverage::new("DEV", f.films_with_credits, ex.watched.len(), 40),
     ];

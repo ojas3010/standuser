@@ -99,10 +99,11 @@ fn coverage_is_reported_and_below_minimum_is_a_question_mark() {
     let by = |s: &str| a.coverage.per_stat.iter().find(|c| c.stat == s).unwrap().clone();
     assert_eq!((by("RNG").used, by("RNG").of, by("RNG").minimum, by("RNG").meets_minimum), (5, 5, 50, false));
     assert_eq!(by("DEV").text(), "only 5 of 5 films, needs 40");
-    // Speed and Stamina count dated watches, not table films (the first date is the join day, so 4 of 5 count)
+    // Speed and Stamina count dated watches inside the complete months, not table films (the first date is the join day and
+    // the next one is in T0's month, so 3 of 5 count)
     assert_eq!(by("SPD").unit, "dated watches");
     assert!(a.card.coverage[1].contains("dated watches") && !a.card.coverage[1].contains("films"), "{}", a.card.coverage[1]);
-    assert_eq!(a.card.coverage[3], "only 4 of 5 dated watches, needs 12");
+    assert_eq!(a.card.coverage[3], "only 3 of 5 dated watches in complete months, needs 12");
     assert_eq!(a.card.grades[2], "?");
     assert_eq!(a.card.grades[5], "?");
     assert_eq!(a.card.coverage.len(), 6);
@@ -126,4 +127,33 @@ fn unreadable_rating_cells_are_ignored_with_a_note() {
     let r = "Date,Name,Year,Letterboxd URI,Rating\n2024-01-05,A,2000,https://boxd.it/a,NaN\n2024-01-05,B,2000,https://boxd.it/b,inf\n";
     let (a, _) = card(&files(w, Some(r), None));
     assert!(a.notes.iter().any(|n| n.contains("2 rating cell(s)") && n.contains("ignored")), "{:?}", a.notes);
+}
+
+/// Speed and Stamina coverage must agree with the grade: the minimum is "met" exactly when the stat is not "?".
+#[test]
+fn timeline_coverage_agrees_with_the_grade() {
+    // (events per month, number of months) after one early event that opens T0's month
+    for (per_month, months) in [(1usize, 11usize), (1, 12), (1, 13), (3, 4), (3, 5), (3, 6), (4, 3), (1, 5), (1, 6), (12, 1), (2, 12)] {
+        let mut w = String::from("Date,Name,Year,Letterboxd URI\n2023-01-20,T0,2000,u\n");
+        for m in 0..months {
+            let (y, mo) = (2023 + (1 + m) / 12, 1 + (1 + m) % 12);
+            for k in 0..per_month {
+                w.push_str(&format!("{y}-{mo:02}-{:02},F{m}x{k},2000,u\n", 3 + 2 * k));
+            }
+        }
+        let ex = parse::parse_files(&files(&w, None, None), Some("letterboxd-cov-2026-10-19-13-22-utc.zip")).unwrap();
+        let mut ex = ex;
+        ex.joined = standuser_core::dates::parse_date("2022-12-01");
+        let a = analyze(&ex, &Lookup::default());
+        for (i, name) in [(1usize, "Speed"), (3, "Stamina")] {
+            let c = &a.coverage.per_stat[i];
+            let unknown = a.card.grades[i] == "?";
+            assert_eq!(c.meets_minimum, !unknown, "{name} with {per_month}/month over {months} months: coverage {:?}, grade {}", a.card.coverage[i], a.card.grades[i]);
+            if unknown {
+                assert!(a.card.coverage[i].starts_with("only "), "{}", a.card.coverage[i]);
+            } else {
+                assert!(a.card.coverage[i].contains("dated watches") && !a.card.coverage[i].starts_with("only"), "{}", a.card.coverage[i]);
+            }
+        }
+    }
 }
