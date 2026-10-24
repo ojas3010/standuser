@@ -80,19 +80,23 @@ pub struct StatCoverage {
     pub of: usize,
     pub minimum: usize,
     pub meets_minimum: bool,
+    /// What is being counted: "films", or "dated watches" for Speed and Stamina (bulk-import days excluded).
+    pub unit: String,
 }
 
 impl StatCoverage {
     fn new(stat: &str, used: usize, of: usize, minimum: usize) -> Self {
-        StatCoverage { stat: stat.into(), used, of, minimum, meets_minimum: used >= minimum }
+        let unit = if matches!(stat, "SPD" | "STA") { "dated watches" } else { "films" };
+        StatCoverage { stat: stat.into(), used, of, minimum, meets_minimum: used >= minimum, unit: unit.into() }
     }
 
-    /// "graded on 450 of 512 films", or what is missing when the minimum is not met.
+    /// "graded on 450 of 512 films", "241 of 533 dated watches" for the timeline stats, or what is missing when the
+    /// minimum is not met.
     pub fn text(&self) -> String {
-        if self.meets_minimum {
-            format!("graded on {} of {} films", self.used, self.of)
-        } else {
-            format!("only {} of {} films, needs {}", self.used, self.of, self.minimum)
+        match (self.meets_minimum, self.unit.as_str()) {
+            (true, "dated watches") => format!("{} of {} dated watches", self.used, self.of),
+            (true, _) => format!("graded on {} of {} films", self.used, self.of),
+            (false, u) => format!("only {} of {} {u}, needs {}", self.used, self.of, self.minimum),
         }
     }
 }

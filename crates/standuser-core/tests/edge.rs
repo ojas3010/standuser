@@ -99,6 +99,10 @@ fn coverage_is_reported_and_below_minimum_is_a_question_mark() {
     let by = |s: &str| a.coverage.per_stat.iter().find(|c| c.stat == s).unwrap().clone();
     assert_eq!((by("RNG").used, by("RNG").of, by("RNG").minimum, by("RNG").meets_minimum), (5, 5, 50, false));
     assert_eq!(by("DEV").text(), "only 5 of 5 films, needs 40");
+    // Speed and Stamina count dated watches, not table films (the first date is the join day, so 4 of 5 count)
+    assert_eq!(by("SPD").unit, "dated watches");
+    assert!(a.card.coverage[1].contains("dated watches") && !a.card.coverage[1].contains("films"), "{}", a.card.coverage[1]);
+    assert_eq!(a.card.coverage[3], "only 4 of 5 dated watches, needs 12");
     assert_eq!(a.card.grades[2], "?");
     assert_eq!(a.card.grades[5], "?");
     assert_eq!(a.card.coverage.len(), 6);

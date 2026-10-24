@@ -65,7 +65,7 @@ function show(a, svg) {
     const tr = tb.insertRow();
     const val = s.value == null ? '' : Number(s.value).toFixed(3);
     const cov = a.coverage.per_stat[i];
-    [names[i], s.letter, val, `${cov.used} of ${cov.of} films${cov.meets_minimum ? '' : ` (needs ${cov.minimum})`}`, s.status + (s.note ? `: ${s.note}` : '')].forEach((t) => (tr.insertCell().textContent = t));
+    [names[i], s.letter, val, `${cov.used} of ${cov.of} ${cov.unit}${cov.meets_minimum ? '' : ` (needs ${cov.minimum})`}`, s.status + (s.note ? `: ${s.note}` : '')].forEach((t) => (tr.insertCell().textContent = t));
   });
   const notes = $('notes');
   notes.replaceChildren();
