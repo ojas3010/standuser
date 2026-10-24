@@ -46,8 +46,8 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 - **Now:** every Power and Precision grade uses the displayed average (`lb_avg`), and the cut-points are calibrated on it.
 - **Reason:** the collector reads a histogram for every one of the user's own films but, as the run was specified (`--hist-n 1000`), for only the first 1,000 sample films. Most table films therefore have a displayed average and no plain mean, and a cut-point is only valid for the crowd it was calibrated on. Mixing sources inside one grade is what the spec forbids; using the plain mean alone would leave most other users with no eligible films.
 - **Evidence:**
-  - Coverage: 1,414 of 9,787 table films (14%) have a histogram plain mean (the first 1,000 sample films and the sample films among the author's own); 9,782 (100%) have a displayed average.
-  - Agreement on the 1,414 films that have both: displayed minus plain mean averages −0.014 stars, RMSE 0.082, largest difference 0.51 (the spec measured RMSE 0.056 on 15 films).
+  - Coverage: 997 of 9,787 table films (10%) have a histogram plain mean: only the first 1,000 sample films, chosen before anyone's list was read. The collector also read histograms for the author's own films, but the table drops those, because a plain mean on a film outside that first 1,000 would mark it as one of the author's; 9,782 (100%) have a displayed average.
+  - Agreement on the 997 films that have both: displayed minus plain mean averages −0.008 stars, RMSE 0.086, largest difference 0.51 (the spec measured RMSE 0.056 on 15 films).
   - The cut-points moved with the baseline, as the spec expected: pooled users' mean offset to the displayed average is −0.045 stars, so the Power cuts sit higher than the spec's pool-scale ones (grade B starts at +0.20 instead of +0.14).
 - **Cost:** the displayed average is Letterboxd's weighted score, which discounts unusual rating patterns, so it is slightly less exact than the plain mean. The histograms stay in the film table so the baseline can be switched back once they cover most of it (`crowd` in `stats.rs`, then recalibrate with `tools/calibrate.py --source hist`).
 

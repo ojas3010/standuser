@@ -50,7 +50,9 @@ def load(dirs, include_own=False):
             if not name or not year:
                 log["no_year"] += 1
                 continue
-            h = hist.get(slug)
+            # a histogram mean is shipped only for the films the collector chose for it before looking at anyone's list
+            # (hist_wanted); otherwise its presence would mark the author's own films
+            h = hist.get(slug) if r.get("hist_wanted") else None
             rec = dict(
                 slug=slug, key=film_key(name, int(year)), name=name, year=int(year), lid=r.get("lid") or "", group=r.get("group"),
                 tmdb=int(r["tmdb_id"]), runtime=int(r.get("runtime") or 0), lang=r.get("original_language") or "",
