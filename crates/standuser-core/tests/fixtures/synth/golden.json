@@ -1,0 +1,168 @@
+{
+ "inputs": {
+  "username": "synthuser",
+  "joined": "2023-01-05",
+  "as_of": "2026-06-30",
+  "watched": 273,
+  "ratings": 250,
+  "diary": 182,
+  "table_films": 300
+ },
+ "timeline": {
+  "events": 233,
+  "dropped_bulk_mark": 40,
+  "dropped_no_clean_view": 0,
+  "rows_on_bulk_mark_days": 40,
+  "bulk_mark_days": [
+   "2023-01-05"
+  ],
+  "metrics": {
+   "months": 40,
+   "events_in_window": 226,
+   "active": 37,
+   "share": 0.925,
+   "pace": 6.108108108108108,
+   "streak": 15,
+   "peak_n": 13,
+   "peak_month": "Jul 2024",
+   "silent": 3,
+   "silent_run": 2,
+   "start": "Feb 2023"
+  }
+ },
+ "facts": {
+  "n_watched": 273,
+  "events": 233,
+  "n_watched_in_table": 270,
+  "crowd_source": "displayed average",
+  "n_rated": 250,
+  "n_rated_missing": 3,
+  "n_elig": 210,
+  "b": 0.05190476190476189,
+  "pa25": 0.8940056197315017,
+  "pairs": 16015,
+  "dpa": 0.9017514984077428,
+  "pace": 6.108108108108108,
+  "peak_n": 13,
+  "peak_month": "Jul 2024",
+  "months": 40,
+  "active": 37,
+  "streak": 15,
+  "start": "Feb 2023",
+  "silent": 3,
+  "silent_run": 2,
+  "n_films_cty": 270,
+  "d_range": 7.4829406527550315,
+  "top_country": "the United States",
+  "top_share": 0.4111111111111111,
+  "films_with_credits": 270,
+  "credits": 270,
+  "n1": 92,
+  "gt": 0.34074074074074073,
+  "top_dir": "Director 06",
+  "top_dir_n": 15
+ },
+ "grades": {
+  "PWR": {
+   "stat": "PWR",
+   "value": -0.050849074074074053,
+   "p": 0.45284199701764866,
+   "letter": "C",
+   "status": "measured",
+   "canon": 3.0,
+   "plot": 3.0
+  },
+  "SPD": {
+   "stat": "SPD",
+   "value": 6.108108108108108,
+   "p": 0.8793199383413168,
+   "letter": "B",
+   "status": "provisional",
+   "canon": 5.0,
+   "plot": 4.0
+  },
+  "RNG": {
+   "stat": "RNG",
+   "value": 7.4829406527550315,
+   "p": 0.999,
+   "letter": "∞",
+   "status": "provisional",
+   "canon": 6.0,
+   "plot": 6.0,
+   "symbol": "inf"
+  },
+  "STA": {
+   "stat": "STA",
+   "value": 0.925,
+   "p": 0.9430313876655158,
+   "letter": "A",
+   "status": "provisional",
+   "canon": 5.0,
+   "plot": 5.0
+  },
+  "PRC": {
+   "stat": "PRC",
+   "value": 0.9017514984077428,
+   "p": 0.9919759338078191,
+   "letter": "A",
+   "status": "measured",
+   "canon": 5.0,
+   "plot": 5.0
+  },
+  "DEV": {
+   "stat": "DEV",
+   "value": 0.34074074074074073,
+   "p": null,
+   "letter": "?",
+   "status": "ungraded",
+   "canon": null,
+   "plot": 3.0
+  }
+ },
+ "type": "long_distance",
+ "nearest": [
+  {
+   "name": "All Along Watchtower",
+   "dist": 1.5491933384829668,
+   "grades": [
+    "C",
+    "B",
+    "A",
+    "A",
+    "A",
+    "E"
+   ]
+  },
+  {
+   "name": "Marilyn Manson",
+   "dist": 2.449489742783178,
+   "grades": [
+    "E",
+    "A",
+    "A",
+    "A",
+    "A",
+    "C"
+   ]
+  },
+  {
+   "name": "Clash",
+   "dist": 2.449489742783178,
+   "grades": [
+    "D",
+    "A",
+    "B",
+    "A",
+    "A",
+    "C"
+   ]
+  }
+ ],
+ "ability": {
+  "template": 7,
+  "ability": "Fictional Manifestation. Fiction from every nation walks into the world: 7.5 effective production countries per 50 films, across 270 films. [provisional]",
+  "film": "Signature film: Signal Orchestra 115 (1999), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.",
+  "weakness": "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.05★ above the crowd on average, about what a human would.",
+  "why": "Why: Range ∞ (99.9th percentile, z +3.00; runner-up Precision z +2.41) is your most extreme graded stat, which selects Fictional Manifestation after Bohemian Rhapsody, whose canon Range is ∞. Canon: “a Stand ability that breaks the barrier between fiction and reality”. Power C is your lowest graded stat, so the limitation comes from it."
+ }
+}

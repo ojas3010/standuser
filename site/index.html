@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>standuser: your Letterboxd Stand card</title>
+<meta name="description" content="Drop your Letterboxd export ZIP and get a JoJo Stand card. It runs in your browser.">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<main>
+  <header>
+    <p class="kicker">【STAND USER】</p>
+    <h1>standuser</h1>
+    <p class="lede">Drop your Letterboxd export ZIP. Get a JoJo-style Stand card: six stats, a type, an ability, the nearest canon Stand.</p>
+  </header>
+
+  <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
+    <input id="file" type="file" accept=".zip,application/zip" hidden>
+    <p><strong>Drop letterboxd-…-utc.zip here</strong><br>or <button id="pick" type="button">choose the file</button></p>
+    <p class="small">Letterboxd → Settings → Data → Export your data. The ZIP is read in this tab. Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and two columns of <code>profile.csv</code> (Date Joined, Username) are used.</p>
+  </section>
+
+  <section class="opts">
+    <label><input id="lookup" type="checkbox" checked> Look up films missing from the built-in table</label>
+    <p class="small">Sends only the title and year of those films to this site's server, which asks TMDB for countries, directors and composers. Your ratings and dates never leave the page. Untick to stay fully offline; Range and Potential then use fewer films.</p>
+    <label>Card theme
+      <select id="theme"><option value="auto">follow my system</option><option value="light">light</option><option value="dark">dark</option></select>
+    </label>
+    <details>
+      <summary>Advanced</summary>
+      <label>Username <input id="username" type="text" placeholder="from the file name or profile.csv" autocomplete="off"></label>
+      <label>Join date <input id="joined" type="date"></label>
+      <p class="small">Only needed when the ZIP has no <code>profile.csv</code>. Without it the join day is the earliest date in <code>watched.csv</code>.</p>
+    </details>
+  </section>
+
+  <p id="status" role="status" aria-live="polite"></p>
+
+  <section id="result" hidden>
+    <div class="actions">
+      <button id="dl-png" type="button">Download PNG</button>
+      <button id="dl-svg" type="button">Download SVG</button>
+      <button id="dl-json" type="button">Download stats (JSON)</button>
+    </div>
+    <img id="card" alt="Your Stand card" width="1080" height="1350">
+    <h2>How the card was built</h2>
+    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Status</th></tr></thead><tbody></tbody></table>
+    <ul id="notes"></ul>
+  </section>
+
+  <footer>
+    <p class="small">Fan project, not affiliated with Letterboxd, TMDB or the JoJo's Bizarre Adventure rights holders. Ratings data: Letterboxd. Film data: TMDB (this product uses the TMDB API but is not endorsed or certified by TMDB). Grades marked * are provisional.</p>
+  </footer>
+</main>
+<script type="module" src="app.js"></script>
+</body>
+</html>

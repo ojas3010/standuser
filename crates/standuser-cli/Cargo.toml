@@ -1,0 +1,15 @@
+[package]
+name = "standuser"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "standuser export.zip -> card.svg and card.png"
+
+[[bin]]
+name = "standuser"
+path = "src/main.rs"
+
+[dependencies]
+standuser-core = { path = "../standuser-core" }
+resvg = { version = "0.45", default-features = false }
+serde_json = "1"

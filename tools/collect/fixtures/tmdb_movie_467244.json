@@ -1,0 +1,183 @@
+{
+ "adult": false,
+ "backdrop_path": "/x.jpg",
+ "budget": 15000000,
+ "genres": [
+  {
+   "id": 18,
+   "name": "Drama"
+  },
+  {
+   "id": 36,
+   "name": "History"
+  },
+  {
+   "id": 10752,
+   "name": "War"
+  }
+ ],
+ "homepage": "",
+ "id": 467244,
+ "imdb_id": "tt7160372",
+ "origin_country": [
+  "US",
+  "GB",
+  "PL"
+ ],
+ "original_language": "de",
+ "original_title": "The Zone of Interest",
+ "overview": "...",
+ "popularity": 40.1,
+ "poster_path": "/p.jpg",
+ "production_companies": [
+  {
+   "id": 41077,
+   "logo_path": null,
+   "name": "A24",
+   "origin_country": "US"
+  }
+ ],
+ "production_countries": [
+  {
+   "iso_3166_1": "US",
+   "name": "United States of America"
+  },
+  {
+   "iso_3166_1": "GB",
+   "name": "United Kingdom"
+  },
+  {
+   "iso_3166_1": "PL",
+   "name": "Poland"
+  }
+ ],
+ "release_date": "2023-12-15",
+ "revenue": 53000000,
+ "runtime": 105,
+ "spoken_languages": [
+  {
+   "english_name": "German",
+   "iso_639_1": "de",
+   "name": "Deutsch"
+  },
+  {
+   "english_name": "Polish",
+   "iso_639_1": "pl",
+   "name": "Polski"
+  }
+ ],
+ "status": "Released",
+ "tagline": "",
+ "title": "The Zone of Interest",
+ "video": false,
+ "vote_average": 7.3,
+ "vote_count": 3100,
+ "credits": {
+  "cast": [
+   {
+    "id": 1,
+    "name": "Christian Friedel",
+    "character": "Rudolf Höss",
+    "order": 0
+   }
+  ],
+  "crew": [
+   {
+    "id": 59310,
+    "name": "Jonathan Glazer",
+    "department": "Directing",
+    "job": "Director",
+    "credit_id": "a"
+   },
+   {
+    "id": 59310,
+    "name": "Jonathan Glazer",
+    "department": "Writing",
+    "job": "Screenplay",
+    "credit_id": "b"
+   },
+   {
+    "id": 59310,
+    "name": "Jonathan Glazer",
+    "department": "Directing",
+    "job": "Director",
+    "credit_id": "dup"
+   },
+   {
+    "id": 1227011,
+    "name": "Mica Levi",
+    "department": "Sound",
+    "job": "Original Music Composer",
+    "credit_id": "c"
+   },
+   {
+    "id": 1227011,
+    "name": "Mica Levi",
+    "department": "Sound",
+    "job": "Music",
+    "credit_id": "d"
+   },
+   {
+    "id": 555,
+    "name": "Johnnie Burn",
+    "department": "Sound",
+    "job": "Sound Designer",
+    "credit_id": "e"
+   },
+   {
+    "id": 777,
+    "name": "Assistant Person",
+    "department": "Directing",
+    "job": "Assistant Director",
+    "credit_id": "f"
+   }
+  ]
+ },
+ "release_dates": {
+  "results": [
+   {
+    "iso_3166_1": "US",
+    "release_dates": [
+     {
+      "certification": "PG-13",
+      "type": 3,
+      "release_date": "2023-12-15T00:00:00.000Z",
+      "iso_639_1": "",
+      "note": "",
+      "descriptors": []
+     },
+     {
+      "type": 2,
+      "release_date": "2023-12-08T00:00:00.000Z"
+     },
+     {
+      "type": 4,
+      "release_date": "2024-03-29T00:00:00.000Z"
+     }
+    ]
+   },
+   {
+    "iso_3166_1": "FR",
+    "release_dates": [
+     {
+      "type": 1,
+      "release_date": "2023-05-19T00:00:00.000Z"
+     },
+     {
+      "type": 3,
+      "release_date": "2024-01-31T00:00:00.000Z"
+     }
+    ]
+   },
+   {
+    "iso_3166_1": "XX",
+    "release_dates": [
+     {
+      "type": 3,
+      "release_date": ""
+     }
+    ]
+   }
+  ]
+ }
+}

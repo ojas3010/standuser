@@ -1,0 +1,7 @@
+{
+  "name": "standuser",
+  "private": true,
+  "description": "Letterboxd export to JoJo Stand card. The site is static; api/tmdb.js is the only server code.",
+  "engines": { "node": ">=18" },
+  "license": "MIT"
+}

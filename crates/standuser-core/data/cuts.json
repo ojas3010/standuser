@@ -1,0 +1,293 @@
+{
+ "stats": {
+  "PWR": {
+   "knots": [
+    [
+     -0.4105,
+     0.1
+    ],
+    [
+     -0.1651,
+     0.3
+    ],
+    [
+     -0.0175,
+     0.5
+    ],
+    [
+     0.136,
+     0.7
+    ],
+    [
+     0.3824,
+     0.9
+    ]
+   ],
+   "letter_cuts": [
+    -0.4105,
+    -0.1651,
+    0.136,
+    0.3824
+   ],
+   "canon_cuts": [
+    -0.2017,
+    -0.1031,
+    0.0396,
+    0.201
+   ],
+   "canon_cum": [
+    26.3,
+    38.7,
+    58.4,
+    77.4
+   ],
+   "status": "measured",
+   "source": "LB pool, 24,929 users, pool-scale crowd (spec table; recalibrate on Letterboxd plain means)"
+  },
+  "SPD": {
+   "knots": [
+    [
+     1.615385,
+     0.05
+    ],
+    [
+     1.818182,
+     0.1
+    ],
+    [
+     2.252016,
+     0.25
+    ],
+    [
+     2.4,
+     0.3
+    ],
+    [
+     3.055556,
+     0.5
+    ],
+    [
+     4.04238,
+     0.7
+    ],
+    [
+     4.411765,
+     0.75
+    ],
+    [
+     6.483333,
+     0.9
+    ],
+    [
+     8.333333,
+     0.95
+    ]
+   ],
+   "letter_cuts": [
+    1.818,
+    2.4,
+    4.042,
+    6.483
+   ],
+   "canon_cuts": [
+    2.077,
+    2.333,
+    3.167,
+    4.948
+   ],
+   "canon_cum": [
+    18.5,
+    28.1,
+    52.8,
+    80.2
+   ],
+   "status": "provisional",
+   "source": "MovieTweetings proxy, 6,518 users"
+  },
+  "RNG": {
+   "knots": [
+    [
+     1.795,
+     0.05
+    ],
+    [
+     1.925,
+     0.1
+    ],
+    [
+     2.164,
+     0.25
+    ],
+    [
+     2.23,
+     0.3
+    ],
+    [
+     2.472,
+     0.5
+    ],
+    [
+     2.755,
+     0.7
+    ],
+    [
+     2.848,
+     0.75
+    ],
+    [
+     3.284,
+     0.9
+    ],
+    [
+     3.597,
+     0.95
+    ]
+   ],
+   "letter_cuts": [
+    1.925,
+    2.23,
+    2.755,
+    3.284
+   ],
+   "canon_cuts": null,
+   "canon_cum": [
+    15.6,
+    31.2,
+    59.6,
+    75.2
+   ],
+   "status": "provisional",
+   "source": "TMDB-5000 subset of the LB pool, 19,824 users (US-heavy proxy; spec: no valid cut-points yet)"
+  },
+  "STA": {
+   "knots": [
+    [
+     0.225806,
+     0.05
+    ],
+    [
+     0.285714,
+     0.1
+    ],
+    [
+     0.4,
+     0.25
+    ],
+    [
+     0.435897,
+     0.3
+    ],
+    [
+     0.5625,
+     0.5
+    ],
+    [
+     0.698339,
+     0.7
+    ],
+    [
+     0.73913,
+     0.75
+    ],
+    [
+     0.866667,
+     0.9
+    ],
+    [
+     0.9375,
+     0.95
+    ]
+   ],
+   "letter_cuts": [
+    0.286,
+    0.436,
+    0.698,
+    0.867
+   ],
+   "canon_cuts": [
+    0.21,
+    0.25,
+    0.375,
+    0.527
+   ],
+   "canon_cum": [
+    4.0,
+    7.3,
+    21.2,
+    44.4
+   ],
+   "status": "provisional",
+   "source": "MovieTweetings proxy, 6,518 users"
+  },
+  "PRC": {
+   "knots": [
+    [
+     0.614,
+     0.05
+    ],
+    [
+     0.6527,
+     0.1
+    ],
+    [
+     0.7234,
+     0.3
+    ],
+    [
+     0.7656,
+     0.5
+    ],
+    [
+     0.8023,
+     0.7
+    ],
+    [
+     0.8475,
+     0.9
+    ],
+    [
+     0.865,
+     0.95
+    ]
+   ],
+   "letter_cuts": [
+    0.6527,
+    0.7234,
+    0.8023,
+    0.8475
+   ],
+   "canon_cuts": [
+    0.7442,
+    0.7783,
+    0.8313,
+    0.8538
+   ],
+   "canon_cum": [
+    38.7,
+    56.3,
+    83.8,
+    91.5
+   ],
+   "status": "measured",
+   "source": "LB pool, 24,929 users (spec table)"
+  },
+  "DEV": {
+   "knots": null,
+   "letter_cuts": null,
+   "canon_cuts": null,
+   "canon_cum": [
+    27.9,
+    42.2,
+    70.1,
+    81.5
+   ],
+   "status": "ungraded",
+   "source": "no valid cut-points (spec: MT and ML medians disagree)"
+  }
+ },
+ "mu_b": 0.0139,
+ "lambda_": 6.0,
+ "pa_pop": 0.7562,
+ "crowd_min_ratings": 30000,
+ "speed_stamina_filter": "MT users with >=20 clean events and >=12 months"
+}
