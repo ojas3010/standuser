@@ -36,6 +36,9 @@ pub struct CardData {
     pub user: String,
     pub type_jp: String,
     pub type_en: String,
+    /// Small line under the type: "archetype by stats · about 60% agreement with canon", plus "low confidence" for Automatic.
+    #[serde(default)]
+    pub type_note: String,
     /// Letters clockwise from the top: Power, Speed, Range, Stamina, Precision, Potential.
     pub grades: Vec<String>,
     /// Polygon radius step per axis (E=1 .. A=5, ∞=6, ∅=0, "?"=3).
@@ -148,6 +151,10 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     let user = c.sans.fit(&d.user, 34.0, 470.0);
     c.text(&format!("本体 ― {user}"), 350.0, 240.0, 34.0, Sans, "ink", "start", 0.0, 0.0, None);
     c.text(&format!("{} · {}", d.type_jp, d.type_en), 70.0, 288.0, 28.0, Sans, "mute", "start", 0.0, 0.0, None);
+    if !d.type_note.is_empty() {
+        let note = c.sans.fit(&d.type_note, 15.0, 400.0);
+        c.text(&note, 70.0, 309.0, 15.0, Sans, "mute", "start", 0.0, 0.0, None);
+    }
 
     // medallion
     let (ro, ri) = (268.0 * k, 250.0 * k);
@@ -290,6 +297,7 @@ mod tests {
             user: "jas3344".into(),
             type_jp: "近距離パワー型".into(),
             type_en: "Close-Range Power".into(),
+            type_note: format!("{TYPE_NOTE_LOW} · {TYPE_NOTE}"),
             grades: ["C", "B", "C", "A", "A", "?"].iter().map(|s| s.to_string()).collect(),
             plot: vec![3.0, 4.0, 3.0, 5.0, 5.0, 3.0],
             prov: vec![false, true, true, true, false, true],

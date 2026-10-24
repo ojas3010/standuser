@@ -49,7 +49,25 @@ fn signed(v: f64) -> String {
     format!("{}{:.2}", if v < 0.0 { "−" } else { "+" }, v.abs())
 }
 
-fn metric(i: usize, g: &Grade, f: &stats::Facts) -> String {
+/// What the metric line of a cell says about where the number came from.
+struct Source {
+    /// no diary.csv: Speed and Stamina come from watched.csv marking dates
+    from_marks: bool,
+    /// every rating has this one value
+    one_value: Option<f64>,
+}
+
+fn metric(i: usize, g: &Grade, f: &stats::Facts, src: &Source) -> String {
+    let base = metric_base(i, g, f);
+    let tail = match i {
+        1 | 3 if src.from_marks && g.is_graded() => " · from marking dates".to_string(),
+        0 | 4 if src.one_value.is_some() && g.status != Status::None && g.status != Status::Unknown => " · same rating on every film".to_string(),
+        _ => String::new(),
+    };
+    format!("{base}{tail}")
+}
+
+fn metric_base(i: usize, g: &Grade, f: &stats::Facts) -> String {
     if g.status == Status::None {
         return format!("∅ {}", g.note);
     }
@@ -109,15 +127,28 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
             notes.push(format!("the film table is {a} days old; TMDB data may be kept for at most six months, so it should be rebuilt (tools/refresh_table.sh)"));
         }
     }
+    let from_marks = ex.diary.is_empty() && !ex.watched.is_empty();
+    if from_marks {
+        notes.push("no diary entries in the export: Speed and Stamina are computed from the dates films were marked as watched (watched.csv), shown on the card as \"from marking dates\"".to_string());
+    }
+    let one_value = match ex.ratings.first() {
+        Some(r0) if ex.ratings.len() >= 2 && ex.ratings.iter().all(|r| r.rating == r0.rating) => Some(r0.rating),
+        _ => None,
+    };
+    if let Some(v) = one_value {
+        notes.push(format!("every rated film has the same rating ({v}★): Power and Precision are computed from it, and Precision comes out as E (not ∅) because no film is ranked above another"));
+    }
+    let src = Source { from_marks, one_value };
     let any_prov = grades.iter().any(|g| matches!(g.status, Status::Provisional | Status::Ungraded | Status::Unknown));
     let evidence: Vec<(String, String)> = (0..6)
-        .map(|i| (metric(i, &grades[i], &st.facts), st.examples[i].clone().unwrap_or_default()))
+        .map(|i| (metric(i, &grades[i], &st.facts, &src), st.examples[i].clone().unwrap_or_default()))
         .collect();
     let card = CardData {
         name: nm.name.clone(),
         user: username.clone(),
         type_jp: kind.jp().into(),
         type_en: kind.en().into(),
+        type_note: if kind.low_confidence() { format!("{} · {}", crate::svg::TYPE_NOTE_LOW, crate::svg::TYPE_NOTE) } else { crate::svg::TYPE_NOTE.to_string() },
         grades: grades.iter().map(|g| g.letter.clone()).collect(),
         plot: grades.iter().map(|g| g.plot).collect(),
         prov: grades.iter().map(|g| g.status == Status::Provisional).collect(),

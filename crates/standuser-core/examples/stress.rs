@@ -7,6 +7,7 @@ fn main() {
         user: "a_very_long_letterboxd_username_for_testing_layout_limits".into(),
         type_jp: "遠隔自動操縦型".into(),
         type_en: "Automatic, Far-Distance Autopilot".into(),
+        type_note: "low confidence · archetype by stats · about 60% agreement with canon".into(),
         grades: ["∞", "∅", "完成", "E", "A", "?"].iter().map(|s| s.to_string()).collect(),
         plot: vec![6.0, 0.0, 1.0, 1.0, 5.0, 3.0],
         prov: vec![true, false, true, true, false, false],
