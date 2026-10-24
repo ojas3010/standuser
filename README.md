@@ -37,7 +37,7 @@ The six stats:
 | Range | Rarefied effective number of production countries (20 seeded draws of 50 films) |
 | Stamina | Share of complete months with at least one film |
 | Precision | Difficulty-adjusted pairwise agreement with the crowd |
-| Potential | Share of director credits seen only once (Good-Turing) |
+| Potential | Share of director credits seen only once (Good-Turing), on 60 random films, against users with a similar number of films |
 
 Grades marked `*` on the card are provisional. See [Limits](#limits) for what is and is not calibrated.
 
@@ -123,8 +123,8 @@ From the website, for each export: `card.png` (1080×1350), `card.svg` (light, w
 
 ```
 「COMPOSER 09」  Long-Distance Operation  (synthuser)
-Power Speed Range Stamina Precision Potential: C B* ∞* A* A ?
-Fictional Manifestation. Fiction from every nation walks into the world: 7.5 effective production countries per 50 films, across 270 films. [provisional]
+Power Speed Range Stamina Precision Potential: C B* A* A* A E
+Divination. It divines through familiar vines: only 34% of your 270 director credits are one-offs, and it keeps returning to Director 06 (15 films).
 Nearest canon: All Along Watchtower · Marilyn Manson · Clash
 ```
 
