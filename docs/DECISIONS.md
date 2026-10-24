@@ -4,10 +4,10 @@ The Python prototypes and reports under `swarm/`, `reports/` and `research_notes
 
 ## Stack
 
-- **TMDB proxy runs on Vercel, not Cloudflare.** HANDOFF.md named a Cloudflare Worker; the v1 request named a Vercel function. `api/tmdb.js`.
+- **Static site on Cloudflare Pages, no server.** HANDOFF.md planned a Cloudflare Worker proxying TMDB, and an intermediate plan a Vercel function; both were dropped. The site is the committed `site/` folder (no build step in the dashboard, `_headers` for the content security policy), and nothing in the page or the CLI makes a network request while an export is processed. The export never leaves the browser.
 - **Text is outlined, not embedded.** The card draws every glyph as a path from Noto Sans/Serif JP Bold subsets, so there is no `<text>` and no font-loading problem. The cost is a larger SVG (about 650 KB) and no support for scripts outside the subset (Latin, Greek, Cyrillic basics, kana and the card's own kanji); other characters become □. `crates/standuser-core/src/font.rs`, `tools/make_fonts.py`.
 - **`gen_card.py` line 121 bug.** In embed mode the text lost the `f-` prefix on its class and rendered black. The Rust renderer has only the outlined mode and always emits `class="f-{cls}"`; a unit test fails if any bare class appears.
-- **The site table ships with the page** (`site/films.json`) and the CLI embeds the same file. Films outside it can be filled in through the proxy, which returns the same JSON format.
+- **The film table ships with the page** (`site/films.json`) and the CLI embeds the same file. Films outside it are skipped by every stat that needs film data (Power, Precision, Range, Potential); Speed and Stamina read only the viewing timeline, so they count every watched film that gave a clean event. Each stat reports "graded on N of M films" on the card and in `stand.json` (`coverage.per_stat`), and shows `?` when N is below the spec's minimum for that stat. The table carries its build date, and the CLI and page warn once it is older than six months, the longest TMDB's terms allow data to be cached.
 
 ## Deviations from the spec
 
@@ -41,7 +41,7 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 ## Calibration (what the card letters rest on)
 
 - **Power, Precision, Range, Potential** are cut on the pooled Letterboxd users restricted to the films in our table (`tools/calibrate.py`, joined by film slug, output `tools/calibration.json`, merged by `tools/build_tables.py`). Power: shrunk offset against the displayed average, users with at least 50 eligible films. Precision: the difficulty curve h(gap) and the population accuracy are refitted on the same users. Range: 20 draws of 50 films with fractional countries (the spec's procedure; users with at least 50 films). Potential: see deviation 1.
-- **Coverage caveat.** Pool users contribute only the films that are in our table, which are popular films. The product computes Range and Potential on every film it knows, including ones the TMDB proxy adds, so a user with many obscure films can score a little higher than the pool would have predicted.
+- **Coverage caveat.** Pool users contribute only the films that are in our table, which are popular films, and the product likewise uses only table films for Range and Potential, so the two are on the same footing. A user whose taste is mostly outside the table is graded on fewer films, and that is shown on the card.
 - **Percentiles** (used by the ability engine to pick the most extreme stat) interpolate the probit of 13 population quantiles (1st to 99th) against the value and extend the end segments linearly.
 - **Speed and Stamina** cuts are recomputed from `mt_user_metrics_N8.csv` (users with at least 20 clean events and 12 months); the four spec cut-points are reproduced exactly. They stay provisional until real dated Letterboxd exports exist.
 - **Symbols:** ∞ for Speed needs pace ≥ 26.2 with 24 months and 40 events; for Stamina, 60 months all active; for Range, the 99.9th percentile of the calibration users with 150 films. 完成: see deviation 1.
@@ -62,4 +62,4 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 
 - `profile.csv` is read through an allowlist (`Date Joined`, `Username`); the other columns, the e-mail address included, are skipped as raw bytes. The committed fixtures use a synthetic `profile.csv` with an invalid address.
 - The real export was run without `profile.csv`; the join day was passed as `--joined 2022-07-06` (from the spec) and the username came from the file name.
-- The web page sends only the title and year of films missing from the table, and only when the checkbox is ticked. Ratings, dates and the ZIP stay in the browser.
+- The export never leaves the browser, and the page makes no request after it has loaded: no proxy, no analytics, no fonts or images from other sites. A browser test asserts zero requests while an export is processed. The only outbound thing on the page is the TMDB logo link, which the visitor has to click.

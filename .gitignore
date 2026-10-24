@@ -2,6 +2,5 @@ target/
 *.zip
 exports/
 node_modules/
-.vercel/
 __pycache__/
 !crates/standuser-core/tests/fixtures/synth/*.zip

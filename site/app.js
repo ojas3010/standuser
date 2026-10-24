@@ -1,11 +1,10 @@
-// standuser site: export.zip in, card out, all in the browser. Only films missing from the built-in table are looked up
-// (title and year only) through /api/tmdb, and only if the box is ticked.
+// standuser site: export.zip in, card out, all in the browser. No network use after the page and film table load.
 import init, { run } from './pkg/standuser.js';
 
 const $ = (id) => document.getElementById(id);
 const statusEl = $('status');
 let table = null;
-let last = null; // { svgs, analysis, name }
+let last = null; // { svgs, analysis }
 
 const setStatus = (msg, error = false) => {
   statusEl.textContent = msg;
@@ -30,38 +29,10 @@ function chosenTheme(kind) {
   return t;
 }
 
-function exec(bytes, name, extra) {
-  const out = JSON.parse(run(bytes, name, table, extra, $('joined').value || '', $('username').value.trim(), new Date().toISOString().slice(0, 10)));
+function exec(bytes, name) {
+  const out = JSON.parse(run(bytes, name, table, $('joined').value || '', $('username').value.trim(), new Date().toISOString().slice(0, 10)));
   if (out.error) throw new Error(out.error);
   return out;
-}
-
-async function lookupMissing(films) {
-  // up to 600 films, 15 per request, 3 requests at a time; rows are merged into one table JSON
-  const todo = films.slice(0, 600);
-  const merged = { v: 1, countries: {}, people: {}, films: [] };
-  const batches = [];
-  for (let i = 0; i < todo.length; i += 15) batches.push(todo.slice(i, i + 15));
-  let done = 0, failed = 0;
-  const work = async () => {
-    while (batches.length) {
-      const b = batches.shift();
-      try {
-        const r = await fetch('/api/tmdb', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ films: b.map(([name, year]) => ({ name, year })) }) });
-        if (!r.ok) throw new Error(String(r.status));
-        const j = await r.json();
-        Object.assign(merged.countries, j.countries);
-        Object.assign(merged.people, j.people);
-        merged.films.push(...j.films);
-      } catch {
-        failed += b.length;
-      }
-      done += b.length;
-      setStatus(`Looking up films missing from the table… ${Math.min(done, todo.length)} of ${todo.length}`);
-    }
-  };
-  await Promise.all([work(), work(), work()]);
-  return { merged, failed };
 }
 
 async function handle(file) {
@@ -71,20 +42,10 @@ async function handle(file) {
   try {
     setStatus('Reading the export…');
     const bytes = new Uint8Array(await file.arrayBuffer());
-    let out = exec(bytes, file.name, '');
-    const unknown = out.analysis.coverage.unknown_films;
-    let looked = '';
-    if ($('lookup').checked && unknown.length) {
-      const { merged, failed } = await lookupMissing(unknown);
-      if (merged.films.length) {
-        setStatus('Building the card…');
-        out = exec(bytes, file.name, JSON.stringify(merged));
-      }
-      looked = `${merged.films.length} of ${unknown.length} missing films found on TMDB${failed ? `, ${failed} lookups failed` : ''}.`;
-    }
+    const out = exec(bytes, file.name);
     last = { svgs: out.svgs, analysis: out.analysis };
     show(out.analysis, out.svgs[$('theme').value]);
-    setStatus(looked);
+    setStatus('');
   } catch (e) {
     setStatus(e.message, true);
   }
@@ -103,13 +64,14 @@ function show(a, svg) {
   [g.power, g.speed, g.range, g.stamina, g.precision, g.potential].forEach((s, i) => {
     const tr = tb.insertRow();
     const val = s.value == null ? '' : Number(s.value).toFixed(3);
-    [names[i], s.letter, val, s.status + (s.note ? `: ${s.note}` : '')].forEach((t) => (tr.insertCell().textContent = t));
+    const cov = a.coverage.per_stat[i];
+    [names[i], s.letter, val, `${cov.used} of ${cov.of} films${cov.meets_minimum ? '' : ` (needs ${cov.minimum})`}`, s.status + (s.note ? `: ${s.note}` : '')].forEach((t) => (tr.insertCell().textContent = t));
   });
   const notes = $('notes');
   notes.replaceChildren();
   const c = a.coverage;
   const items = [
-    `${c.watched_in_table} of ${c.watched} watched films are in the lookup (${c.unknown_films.length} are not).`,
+    `${c.watched_in_table} of ${c.watched} watched films are in the built-in film table; the other ${c.not_in_table} are skipped by every stat that needs film data.`,
     `${c.eligible} of ${c.rated} rated films have a Letterboxd crowd average with enough ratings.`,
     ...(c.table_built ? [`Film table built ${c.table_built}.`] : []),
     ...a.notes,

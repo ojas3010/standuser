@@ -39,6 +39,9 @@ pub struct CardData {
     pub unknown: Vec<bool>,
     /// (metric line, example film) per axis.
     pub evidence: Vec<(String, String)>,
+    /// "graded on N of M films" per axis (what the stat was computed from).
+    #[serde(default)]
+    pub coverage: Vec<String>,
     pub ability: String,
     pub weakness: String,
     pub nearest: Vec<String>,
@@ -213,6 +216,10 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         let (x, y) = (70.0 + col as f64 * 470.0, y0 + row as f64 * pitch);
         let head = format!("{}―{}{}", JP[i], d.grades[i], if d.prov[i] { "*" } else { "" });
         c.text(&head, x, y + 20.0, 27.0, Sans, "ink", "start", 0.0, 0.0, None);
+        if let Some(cv) = d.coverage.get(i) {
+            let cv = c.sans.fit(cv, 15.0, 270.0);
+            c.text(&cv, x + 440.0, y + 19.0, 15.0, Sans, "mute", "end", 0.0, 0.0, None);
+        }
         let m = c.sans.fit(&d.evidence[i].0, 18.0, 440.0);
         c.text(&m, x, y + 42.0, 18.0, Sans, "mute", "start", 0.0, 0.0, None);
         let f = c.serif.fit(&d.evidence[i].1, 18.0, 440.0);
@@ -279,6 +286,7 @@ mod tests {
             prov: vec![false, true, true, true, false, true],
             unknown: vec![false, false, false, false, false, true],
             evidence: (0..6).map(|i| (format!("metric {i}"), format!("Film {i}"))).collect(),
+            coverage: (0..6).map(|i| format!("graded on {} of 300 films", 200 + i)).collect(),
             ability: "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 74,164 film pairs it can compare (difficulty-adjusted score 0.88).".into(),
             weakness: "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.05★ below the crowd on average, about what a human would.".into(),
             nearest: vec!["D4C Love Train".into(), "Dolly Dagger".into(), "The World".into()],

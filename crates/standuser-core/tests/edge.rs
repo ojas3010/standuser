@@ -41,7 +41,7 @@ fn watched_only_with_an_empty_table() {
     assert_eq!(a.card.grades[0], "∅");
     assert_eq!(a.card.grades[4], "∅");
     assert_eq!(a.card.grades[1], "?");
-    assert_eq!(a.coverage.unknown_films.len(), 2);
+    assert_eq!(a.coverage.not_in_table, 2);
     assert!(a.ability.template.is_none());
     assert!(a.card.nearest[0].contains("needs 4"));
 }
@@ -61,7 +61,7 @@ fn unicode_titles_and_quotes_render() {
     let w = "Date,Name,Year,Letterboxd URI\n2024-01-05,\"Amélie \"\"Fabuleux\"\" <&> 한국어\",2001,https://boxd.it/a\n";
     let (a, s) = card(&files(w, None, None));
     assert!(!s.contains("<&>"), "text is outlined and escaped");
-    assert_eq!(a.coverage.unknown_films[0].0, "Amélie \"Fabuleux\" <&> 한국어");
+    assert_eq!(a.coverage.not_in_table, 1);
 }
 
 #[test]
@@ -82,4 +82,36 @@ fn very_long_username_and_ability_fit() {
     let a = analyze(&ex, &Lookup::default());
     let s = svg::card_svg(&a.card, svg::Theme::Light);
     assert!(s.len() < 1_500_000);
+}
+
+#[test]
+fn coverage_is_reported_and_below_minimum_is_a_question_mark() {
+    // 5 films, all in the table with countries and directors: far below the minimums of Range (50) and Potential (40)
+    let mut rows = String::new();
+    let mut w = String::from("Date,Name,Year,Letterboxd URI\n");
+    for i in 0..5 {
+        rows.push_str(&format!("[\"film{i}|2000\",\"f{i}\",{i},2000,100,\"en\",\"US|FR\",\"1\",\"2\",3.5,null,100000],"));
+        w.push_str(&format!("2024-0{}-05,Film{i},2000,https://boxd.it/f{i}\n", i + 1));
+    }
+    let table = format!("{{\"v\":1,\"films\":[{}]}}", rows.trim_end_matches(','));
+    let ex = parse::parse_files(&files(&w, None, None), Some("letterboxd-cov-2026-10-19-13-22-utc.zip")).unwrap();
+    let a = analyze(&ex, &Lookup::from_json(&table).unwrap());
+    let by = |s: &str| a.coverage.per_stat.iter().find(|c| c.stat == s).unwrap().clone();
+    assert_eq!((by("RNG").used, by("RNG").of, by("RNG").minimum, by("RNG").meets_minimum), (5, 5, 50, false));
+    assert_eq!(by("DEV").text(), "only 5 of 5 films, needs 40");
+    assert_eq!(a.card.grades[2], "?");
+    assert_eq!(a.card.grades[5], "?");
+    assert_eq!(a.card.coverage.len(), 6);
+    assert_eq!(a.coverage.not_in_table, 0);
+}
+
+#[test]
+fn films_outside_the_table_are_skipped_and_counted() {
+    let w = "Date,Name,Year,Letterboxd URI\n2024-01-05,A,2000,https://boxd.it/a\n2024-02-05,B,2001,https://boxd.it/b\n";
+    let r = "Date,Name,Year,Letterboxd URI,Rating\n2024-01-05,A,2000,https://boxd.it/a,4\n2024-02-05,B,2001,https://boxd.it/b,3\n";
+    let (a, s) = card(&files(w, Some(r), None));
+    let pw = a.coverage.per_stat.iter().find(|c| c.stat == "PWR").unwrap();
+    assert_eq!((pw.used, pw.of, pw.meets_minimum), (0, 2, false));
+    assert_eq!(a.card.coverage[0], "only 0 of 2 films, needs 20");
+    assert!(s.contains("class=\"f-mute\""));
 }

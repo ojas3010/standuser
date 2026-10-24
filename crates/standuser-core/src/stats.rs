@@ -72,6 +72,31 @@ pub struct Facts {
     pub events: usize,
 }
 
+/// How much of the export a stat was graded on: `used` of `of` films, against the spec's minimum for the stat.
+#[derive(Debug, Clone, Serialize)]
+pub struct StatCoverage {
+    pub stat: String,
+    pub used: usize,
+    pub of: usize,
+    pub minimum: usize,
+    pub meets_minimum: bool,
+}
+
+impl StatCoverage {
+    fn new(stat: &str, used: usize, of: usize, minimum: usize) -> Self {
+        StatCoverage { stat: stat.into(), used, of, minimum, meets_minimum: used >= minimum }
+    }
+
+    /// "graded on 450 of 512 films", or what is missing when the minimum is not met.
+    pub fn text(&self) -> String {
+        if self.meets_minimum {
+            format!("graded on {} of {} films", self.used, self.of)
+        } else {
+            format!("only {} of {} films, needs {}", self.used, self.of, self.minimum)
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Stats {
     pub power: Grade,
@@ -84,6 +109,8 @@ pub struct Stats {
     pub rated: Vec<RatedFilm>,
     /// One example film per stat (Power, Speed, Range, Stamina, Precision, Potential) for the card's evidence lines.
     pub examples: [Option<String>; 6],
+    /// Power, Speed, Range, Stamina, Precision, Potential.
+    pub coverage: Vec<StatCoverage>,
 }
 
 impl Stats {
@@ -356,7 +383,17 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
     };
 
     let examples = examples(ex, lk, tl, &rated, &dir_count, f.b);
-    Stats { power, speed, range, stamina, precision, potential, facts: f, rated, examples }
+    // Films missing from the table are skipped by every stat that needs film data. Speed and Stamina read only the
+    // viewing timeline, so they count every watched film that gave a clean event.
+    let coverage = vec![
+        StatCoverage::new("PWR", rated.len(), ex.ratings.len(), 20),
+        StatCoverage::new("SPD", tl.events.len(), ex.watched.len(), 12),
+        StatCoverage::new("RNG", f.n_films_cty, ex.watched.len(), 50),
+        StatCoverage::new("STA", tl.events.len(), ex.watched.len(), 12),
+        StatCoverage::new("PRC", rated.len(), ex.ratings.len(), 50),
+        StatCoverage::new("DEV", f.films_with_credits, ex.watched.len(), 40),
+    ];
+    Stats { power, speed, range, stamina, precision, potential, facts: f, rated, examples, coverage }
 }
 
 /// The film that best shows each stat. Ties always fall to the earlier day, then the title.

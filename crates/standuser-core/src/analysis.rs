@@ -20,8 +20,10 @@ pub struct Coverage {
     pub rated: usize,
     pub rated_missing: usize,
     pub eligible: usize,
-    /// Films of the export the lookup table does not know (the page can ask the TMDB proxy about them).
-    pub unknown_films: Vec<(String, i32)>,
+    /// Watched films the film table does not know; every stat that needs film data skips them.
+    pub not_in_table: usize,
+    /// Per stat: graded on N of M films, against the spec's minimum.
+    pub per_stat: Vec<crate::stats::StatCoverage>,
     /// Build date of the film table, and its age when the caller gave today's date.
     pub table_built: Option<String>,
     pub table_age_days: Option<i64>,
@@ -116,6 +118,7 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         plot: grades.iter().map(|g| g.plot).collect(),
         prov: grades.iter().map(|g| g.status == Status::Provisional).collect(),
         unknown: grades.iter().map(|g| g.letter == "?").collect(),
+        coverage: st.coverage.iter().map(|c| c.text()).collect(),
         evidence,
         ability: ab.ability.clone(),
         weakness: ab.weakness.clone(),
@@ -123,19 +126,14 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         signature: ab.film.clone().unwrap_or_else(|| "Signature film: not enough crowd data".into()),
         badge: any_prov,
     };
-    let unknown_films: Vec<(String, i32)> = ex
-        .watched
-        .iter()
-        .filter(|w| lk.find(crate::parse::boxd_code(&w.uri), &w.name, w.year).is_none())
-        .map(|w| (w.name.clone(), w.year))
-        .collect();
     let coverage = Coverage {
         watched: st.facts.n_watched,
         watched_in_table: st.facts.n_watched_in_table,
         rated: st.facts.n_rated,
         rated_missing: st.facts.n_rated_missing,
         eligible: st.facts.n_elig,
-        unknown_films,
+        not_in_table: st.facts.n_watched - st.facts.n_watched_in_table,
+        per_stat: st.coverage.clone(),
         table_built: lk.built.map(iso),
         table_age_days: age,
     };

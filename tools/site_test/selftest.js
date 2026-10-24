@@ -1,10 +1,15 @@
 // Drives the real page: feeds the synthetic export to the file input, checks the card, the stats table and the three
-// downloads (PNG made by canvas, SVG, JSON), and a theme change. Output is written into <pre id="selftest">.
+// downloads (PNG made by canvas, SVG, JSON), a theme change, and that the page makes no network request while it
+// processes an export (only the files the page itself loads). Output is written into <pre id="selftest">.
 const log = [];
 const out = (k, v) => log.push(`${k}: ${v}`);
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 try {
   const bytes = new Uint8Array(await (await fetch('synth.zip')).arrayBuffer());
+  const seen = () => performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname).filter((n) => n !== '/synth.zip' && n !== '/favicon.ico');
+  for (let i = 0; i < 100 && !(seen().includes('/films.json') && seen().includes('/pkg/standuser_bg.wasm')); i++) await sleep(100);
+  await sleep(500);
+  const before = seen();
   const dt = new DataTransfer();
   dt.items.add(new File([bytes], 'letterboxd-synthuser-2026-06-30-12-00-utc.zip', { type: 'application/zip' }));
   const input = document.getElementById('file');
@@ -12,10 +17,15 @@ try {
   input.dispatchEvent(new Event('change'));
   for (let i = 0; i < 100 && document.getElementById('result').hidden; i++) await sleep(100);
   out('result visible', !document.getElementById('result').hidden);
+  const after = seen();
+  const added = after.filter((n) => !before.includes(n));
+  out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''));
+  out('page resources', [...new Set(after)].sort().join(' '));
   out('status', document.getElementById('status').textContent);
   out('rows', document.getElementById('stats').tBodies[0].rows.length);
   out('row0', [...document.getElementById('stats').tBodies[0].rows[0].cells].map((c) => c.textContent).join(' | '));
   out('notes', document.getElementById('notes').children.length);
+  out('coverage cell', document.getElementById('stats').tBodies[0].rows[0].cells[3].textContent);
   const img = document.getElementById('card');
   await img.decode();
   out('img', `${img.naturalWidth}x${img.naturalHeight} ${img.src.slice(0, 5)}`);

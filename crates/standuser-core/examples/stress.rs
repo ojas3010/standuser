@@ -19,6 +19,7 @@ fn main() {
             ("DPA 0.90, top 1%".into(), "Interstellar".into()),
             ("47% directors seen once".into(), "A Silent Voice: The Movie".into()),
         ],
+        coverage: vec!["graded on 450 of 512 films".into(), "only 3 of 533 films, needs 12".into(), "graded on 505 of 533 films".into(), "graded on 241 of 533 films".into(), "graded on 450 of 512 films".into(), "only 12 of 533 films, needs 40 and a long tail".into()],
         ability: "Time Acceleration. Time speeds up around it: 12.3 films per active month, peaking at 31 in September 2022, a pace almost no other user reaches, and then some more words to force a third line of text in the box. [provisional]".into(),
         weakness: "Weakness: loose aim (Precision D). It agrees with the crowd on 61% of film pairs, so it can hit what it did not mean to, and this sentence keeps going so that it wraps onto a second and even a third line. [provisional]".into(),
         nearest: vec!["Star Platinum: The World".into(), "Dirty Deeds Done Dirt Cheap".into(), "Killer Queen (JoJolion)".into()],

@@ -22,8 +22,7 @@
   </section>
 
   <section class="opts">
-    <label><input id="lookup" type="checkbox" checked> Look up films missing from the built-in table</label>
-    <p class="small">Sends only the title and year of those films to this site's server, which asks TMDB for countries, directors and composers. Your ratings and dates never leave the page. Untick to stay fully offline; Range and Potential then use fewer films.</p>
+    <p class="small">Everything runs in this tab: your export is never uploaded, and the page makes no requests after it loads. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
     <label>Card theme
       <select id="theme"><option value="auto">follow my system</option><option value="light">light</option><option value="dark">dark</option></select>
     </label>
@@ -45,7 +44,7 @@
     </div>
     <img id="card" alt="Your Stand card" width="1080" height="1350">
     <h2>How the card was built</h2>
-    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Status</th></tr></thead><tbody></tbody></table>
+    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Graded on</th><th>Status</th></tr></thead><tbody></tbody></table>
     <ul id="notes"></ul>
   </section>
 

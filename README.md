@@ -12,7 +12,7 @@ Turn the viewing history in a Letterboxd export ZIP into a canon-faithful JoJo's
 
 ## Description
 
-One Rust crate, `standuser-core`, does all the work. A command-line tool and a static web page (the same crate compiled to WebAssembly) are thin front ends. There is no database and no account. On the web page the ZIP never leaves the browser.
+One Rust crate, `standuser-core`, does all the work. A command-line tool and a static web page (the same crate compiled to WebAssembly) are thin front ends. There is no database, no account and no server: the web page is a static site, your export is read in the browser and never leaves it, and neither the page nor the CLI makes any network request while it works. Film data (countries, directors, composers, Letterboxd averages) comes from a table built ahead of time and shipped with the program.
 
 The pipeline, one module per stage:
 
@@ -46,8 +46,8 @@ Grades marked `*` on the card are provisional. See [Limits](#limits) for what is
 - **Rust** (stable, 2021 edition): `standuser-core` (library), `standuser` (CLI), `standuser-wasm`. Crates: `zip`, `csv`, `serde`, `serde_json`, `unicode-normalization`, `ttf-parser`, `resvg` (PNG, CLI only), `wasm-bindgen`.
 - **WebAssembly**: `wasm32-unknown-unknown` target, built with `wasm-pack`.
 - **Static site**: plain HTML, CSS and JavaScript (ES modules). No bundler, no Node.
-- **Vercel**: static hosting plus one serverless function, `api/tmdb.js`, a TMDB proxy for films missing from the built-in table. It reads `TMDB_API_KEY` from the environment.
-- **Python 3** (tooling only): the data collector (`tools/collect`, with `curl_cffi`, `beautifulsoup4`, `lxml`), the table builder, the font subsetter (`fonttools`) and the golden-test reference (`numpy`).
+- **Cloudflare Pages**: static hosting of the `site/` folder. No functions, no build step in the dashboard.
+- **Python 3** (build-time tooling only, never at run time): the data collector (`tools/collect`, with `curl_cffi`, `beautifulsoup4`, `lxml`), the table builder, the font subsetter (`fonttools`) and the golden-test reference (`numpy`).
 - **Data**: your Letterboxd export; Letterboxd public film pages (rating histograms); TMDB API (countries, directors, composers, runtimes); the JoJo Wiki Stand Stats table (canon charts); Noto Sans JP and Noto Serif JP (SIL OFL) for the outlined text.
 
 ## Execution steps
@@ -87,17 +87,19 @@ tools/build_site.sh                  # writes site/pkg/*.wasm|js and site/films.
 python3 -m http.server -d site 8000  # then open http://localhost:8000
 ```
 
-`site/pkg` and `site/films.json` are committed, so Vercel needs no build step. Without the proxy (plain `http.server`), untick "Look up films missing from the built-in table".
+`site/` is the whole site and is committed (`pkg/`, `films.json`, `_headers`, the page), so hosting needs no build.
 
-### Deploy to Vercel
+### Deploy to Cloudflare Pages
 
 1. Push this repository to GitHub.
-2. In the Vercel dashboard choose **Add New → Project** and import the repository. Leave the build settings alone: `vercel.json` sets `site/` as the output directory and there is no build command.
-3. In **Settings → Environment Variables** add `TMDB_API_KEY` (a TMDB v3 API key or v4 read access token) for Production and Preview, then redeploy.
+2. In the Cloudflare dashboard choose **Workers & Pages → Create → Pages → Connect to Git** and pick the repository.
+3. Framework preset **None**; build command **empty**; build output directory **`site`**. Nothing else to set: there are no environment variables and no functions. `site/_headers` supplies the security headers (a strict content security policy that only allows the page's own files).
+
+To update the site, run `tools/build_site.sh`, commit `site/` and push.
 
 ### Refresh the film table
 
-The table in `crates/standuser-core/data/films.json` comes from the collector. See `tools/collect/RUN.md`.
+The table in `crates/standuser-core/data/films.json` comes from the collector. See `tools/collect/RUN.md`. It is stamped with its build date. TMDB's terms allow caching its data for at most six months, so the CLI and the page add a note to `stand.json` once the table is older than that, and `tools/refresh_table.sh` rebuilds it (collector output in, table, site and CLI out). The collector and `tools/calibrate.py` are the only parts that touch the network, and only when you run them.
 
 ```bash
 cd tools/collect
@@ -120,17 +122,17 @@ Fictional Manifestation. Fiction from every nation walks into the world: 7.5 eff
 Nearest canon: All Along Watchtower · Marilyn Manson · Clash
 ```
 
-`stand.json` holds the timeline, every stat value, grade, percentile and status, the type, the three nearest Stands with distances, the ability text and its "why", and how many of your films the film table covered. It also lists the films behind the numbers with your own ratings, so do not publish it if you want those private; the card itself shows only a few titles.
+`stand.json` holds the timeline, every stat value, grade, percentile and status, the type, the three nearest Stands with distances, the ability text and its "why", and, for each stat, how many of your films it was graded on (`coverage.per_stat`). It also lists the films behind the numbers with your own ratings, so do not publish it if you want those private; the card itself shows only a few titles.
 
 ## Limits
 
 The choices behind these are written down in [docs/DECISIONS.md](docs/DECISIONS.md).
 
-- **Cut-points.** Power and Precision use measured percentile cuts from a pool of 24,929 Letterboxd users, on a pool-scale crowd; they should be recalibrated on Letterboxd plain means. Speed and Stamina use MovieTweetings cuts and stay provisional until real dated Letterboxd exports exist. Range uses a US-heavy TMDB-5000 proxy and is provisional. **Potential has no valid cut-points, so it is shown as `?` with its raw value.**
-- **Film coverage.** Crowd averages come from a built-in table of films. A film missing from it counts for Range and Potential (through the TMDB proxy) but not for Power or Precision. If more than half of your rated films are missing, Power and Precision show `?`.
+- **Cut-points.** Power, Precision, Range and Potential are cut on pooled Letterboxd users restricted to the films in the table (`tools/calibrate.py`); Speed and Stamina use MovieTweetings cuts and stay provisional until real dated Letterboxd exports exist. Potential is graded on a volume-matched measure. See [docs/DECISIONS.md](docs/DECISIONS.md) for the evidence.
+- **Film coverage.** Every stat needs film data from the built-in table except Speed and Stamina, which read only your viewing dates. A film missing from the table is skipped by every stat that needs film data. Each card cell says "graded on N of M films", and a stat shows `?` when N is below the spec's minimum (Power 20 rated films, Precision 50, Range 50 with countries, Potential 40 with directors, Speed and Stamina 12 events). If more than half of your rated films are missing, Power and Precision show `?`.
 - **Names.** The music-title naming route needs soundtrack track lists from MusicBrainz or Discogs, which cannot ship in a static site and are not fetched. Names therefore come from the composer or Part 3 routes.
 - **Text.** Characters outside Latin, kana and the card's own kanji (for example Korean or Cyrillic titles) are drawn as □.
-- Browser and proxy testing: `tools/site_test/run.sh` drives the real page in headless Chrome (file input, card, stats table, PNG/SVG/JSON downloads, theme change, lookup merge) and runs `api/tmdb.js` against a mocked TMDB. The live TMDB call and the Vercel deployment itself have not been exercised from this repository.
+- Browser testing: `tools/site_test/run.sh` drives the real page in headless Chrome (file input, card, stats table with coverage, PNG/SVG/JSON downloads, theme change) and checks that no network request is made while an export is processed. The Cloudflare Pages deployment itself has not been exercised from this repository.
 
 ## Layout
 
@@ -138,11 +140,10 @@ The choices behind these are written down in [docs/DECISIONS.md](docs/DECISIONS.
 crates/standuser-core   the library (parse … svg) and the golden test
 crates/standuser-cli    standuser export.zip -> card.svg, card.png
 crates/standuser-wasm   wasm-bindgen entry point
-site/                   static page (index.html, app.js, style.css, pkg/, films.json)
-api/tmdb.js             Vercel function: TMDB proxy
+site/                   the static site, deployed as is (index.html, app.js, style.css, pkg/, films.json, _headers)
 tools/collect           data collector (Letterboxd pages + TMDB) and its tests
 tools/golden            Python reference, prototypes and fixture generators
-tools/site_test         headless-browser tests for the page and the function
+tools/site_test         headless-browser test of the page
 tools/*.py              table, font and calibration-table builders
 ```
 
