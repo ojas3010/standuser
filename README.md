@@ -144,8 +144,8 @@ The choices behind these are written down in [docs/DECISIONS.md](docs/DECISIONS.
 
 ```
 crates/standuser-core   the library (parse … svg) and the golden test
-crates/standuser-cli    standuser export.zip -> card.svg, card.png
-crates/standuser-wasm   wasm-bindgen entry point
+crates/standuser-cli    development CLI: standuser export.zip -> card.svg, card.png
+crates/standuser-wasm   the website's engine (wasm-bindgen entry point)
 site/                   the static site, deployed as is (index.html, app.js, style.css, pkg/, films.json, _headers)
 tools/collect           data collector (Letterboxd pages + TMDB) and its tests
 tools/golden            Python reference, prototypes and fixture generators
