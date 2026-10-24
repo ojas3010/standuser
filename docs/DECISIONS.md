@@ -11,21 +11,22 @@ The Python prototypes and reports under `swarm/`, `reports/` and `research_notes
 
 ## Deviations from the spec
 
-Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figures below come from `tools/evidence.py` run on the pooled Letterboxd users (sdl60660/letterboxd_recommendations) restricted to the films in our table; they are from the partial table of 920 films and are refreshed when the table is rebuilt (the final-table figures replace them).
+Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figures below come from `tools/evidence.py` run on the pooled Letterboxd users (sdl60660/letterboxd_recommendations) restricted to the films in the final table (9,847 movies with a Letterboxd slug, built 2026-10-24).
 
 ### 1. Potential is graded on volume-matched Good-Turing (60 random films), not on the raw share
 
 - **Spec:** Potential = N1 / director credits over all of a user's films, with no cut-points; the volume-matched value was only an evidence line.
 - **Now:** the card letter comes from the mean of 20 seeded draws of 60 director-credited films (N1 / credits per draw). The raw share stays in the card text ("47% directors seen once"). The 完成 symbol needs 1,000 credited films and the lowest band, as in the spec.
-- **Reason:** the raw share falls with the number of films, so a population cut from users with 60 to 300 films would grade a 500-film export as low only because it is long, and a user's letter would drift as they log more films. The spec itself says Potential "is meant to fall with volume" for mastery, but then the lowest band would be reached by volume alone, which the 完成 volume gate was meant to separate from narrowness.
-- **Evidence** (21,268 pooled users with at least 60 director-credited table films, median 89 films):
+- **Reason:** the raw share has a mechanical dependence on how many films were seen (more films, more repeat directors), so one set of cut-points cannot be applied fairly to a 60-film and a 500-film history. Drawing the same number of films per user removes that mechanical part and gives every user the same sampling effort.
+- **Evidence** (33,643 pooled users with at least 60 director-credited table films, median 272 films):
 
 | | Spearman with film count | median, 60-100 films | median, 100-200 films | median, 200+ films |
 |---|---|---|---|---|
-| raw Good-Turing | −0.59 | 0.709 | 0.586 | 0.486 |
-| volume-matched, 60 films | −0.05 | 0.762 | 0.747 | 0.810 |
+| raw Good-Turing | −0.39 | 0.774 | 0.660 | 0.615 |
+| volume-matched, 60 films | +0.34 | 0.812 | 0.812 | 0.884 |
 
-- **Cost:** the letter no longer reflects "how much is left to explore" at the user's real volume; the evidence line does. Users with 40 to 59 credited films are drawn on all their films and marked provisional.
+- **What the evidence does and does not show.** On the earlier partial table (920 films) the volume-matched value was nearly flat against film count (Spearman −0.05); on the final table it is not. Matching removes the mechanical dependence but not the real one: users with long histories watch more varied directors, so their 60-film draws contain more directors seen once (+0.34), while their full-history share is lower (−0.39). Neither number is free of volume, and the choice between them is a judgement about what "room to grow" should mean, not something the data settles. The volume-matched letter was kept because it compares like with like (the same 60-film effort), and because it was the measure the spec already proposed for the evidence line.
+- **Cost:** a user with a very long history is graded against a population whose median is 272 films, and the letter tends to rise with volume (median 0.884 for 200+ films against 0.812 for under 200). The card is marked provisional, and the raw share is in the text. Users with 40 to 59 credited films are drawn on all their films.
 
 ### 2. The crowd baseline is Letterboxd's displayed average, not the histogram plain mean
 
@@ -33,14 +34,16 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 - **Now:** every Power and Precision grade uses the displayed average (`lb_avg`), and the cut-points are calibrated on it.
 - **Reason:** the collector reads a histogram for every one of the user's own films but, as the run was specified (`--hist-n 1000`), for only the first 1,000 sample films. Most table films therefore have a displayed average and no plain mean, and a cut-point is only valid for the crowd it was calibrated on. Mixing sources inside one grade is what the spec forbids; using the plain mean alone would leave most other users with no eligible films.
 - **Evidence:**
-  - Coverage by construction: histograms for the author's own films and the first 1,000 sample films (about 15% of a 9,814-film table); displayed average for every film.
-  - Agreement on the 917 films that have both: displayed minus plain mean averages −0.020 stars, RMSE 0.084, largest difference 0.51 (the spec measured RMSE 0.056 on 15 films).
-  - The cut-points moved with the baseline, as the spec expected: pooled users' mean offset to the displayed average is about −0.05 stars, so the Power cuts sit higher than the spec's pool-scale ones.
+  - Coverage: 1,465 of 9,847 table films (15%) have a histogram plain mean (the author's own films and the first 1,000 sample films); 9,839 (100%) have a displayed average.
+  - Agreement on the 1,465 films that have both: displayed minus plain mean averages −0.015 stars, RMSE 0.085, largest difference 0.51 (the spec measured RMSE 0.056 on 15 films).
+  - The cut-points moved with the baseline, as the spec expected: pooled users' mean offset to the displayed average is −0.045 stars, so the Power cuts sit higher than the spec's pool-scale ones (grade B starts at +0.20 instead of +0.14).
 - **Cost:** the displayed average is Letterboxd's weighted score, which discounts unusual rating patterns, so it is slightly less exact than the plain mean. The histograms stay in the film table so the baseline can be switched back once they cover most of it (`crowd` in `stats.rs`, then recalibrate with `tools/calibrate.py --source hist`).
 
 ## Calibration (what the card letters rest on)
 
 - **Power, Precision, Range, Potential** are cut on the pooled Letterboxd users restricted to the films in our table (`tools/calibrate.py`, joined by film slug, output `tools/calibration.json`, merged by `tools/build_tables.py`). Power: shrunk offset against the displayed average, users with at least 50 eligible films. Precision: the difficulty curve h(gap) and the population accuracy are refitted on the same users. Range: 20 draws of 50 films with fractional countries (the spec's procedure; users with at least 50 films). Potential: see deviation 1.
+- **Final cut-points** (10th, 30th, 70th and 90th percentile of the pooled users): Power −0.367, −0.115, +0.200, +0.458 (34,525 users); Precision 0.654, 0.722, 0.796, 0.840; Range 2.14, 2.63, 3.74, 5.02 (34,721 users, median 3.10); Potential 0.749, 0.834, 0.903, 0.933 (33,643 users, median 0.874). The Range cuts moved up sharply from the US-heavy proxy the spec used (median 2.47, cuts 1.9 to 3.3) once every pooled user's films have country data.
+- **Table coverage** (`tools/coverage.py`, pooled users, TV removed). Share of a user's rated films found in the table: median 95.9%, 10th percentile 80.9% (users with at least 50 ratings; 35,718 users). Share also usable for Power and Precision (at least 30,000 Letterboxd ratings): median 93.2%, 10th percentile 72.7%. 1.2% of users would see `?` for Power and Precision because more than half of their rated films are missing. These figures are favourable by construction, since the table is the pool's own most-rated films; an independent check is the author's export, where 89.9% of watched films are in the sample part of the table alone (the author's own films were added regardless). A user with obscure taste will see lower coverage, and the card says how much.
 - **Coverage caveat.** Pool users contribute only the films that are in our table, which are popular films, and the product likewise uses only table films for Range and Potential, so the two are on the same footing. A user whose taste is mostly outside the table is graded on fewer films, and that is shown on the card.
 - **Percentiles** (used by the ability engine to pick the most extreme stat) interpolate the probit of 13 population quantiles (1st to 99th) against the value and extend the end segments linearly.
 - **Speed and Stamina** cuts are recomputed from `mt_user_metrics_N8.csv` (users with at least 20 clean events and 12 months); the four spec cut-points are reproduced exactly. They stay provisional until real dated Letterboxd exports exist.

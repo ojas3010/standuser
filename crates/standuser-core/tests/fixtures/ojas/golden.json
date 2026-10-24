@@ -6,7 +6,7 @@
   "watched": 533,
   "ratings": 512,
   "diary": 324,
-  "table_films": 920
+  "table_films": 514
  },
  "timeline": {
   "events": 241,
@@ -49,7 +49,7 @@
   "b": -0.12993333333333332,
   "pa25": 0.8908363085578276,
   "pairs": 73944,
-  "dpa": 0.8741952349751162,
+  "dpa": 0.882471961132749,
   "pace": 4.977777777777778,
   "peak_n": 16,
   "peak_month": "Nov 2022",
@@ -74,8 +74,8 @@
  "grades": {
   "PWR": {
    "stat": "PWR",
-   "value": 0.12890505263157895,
-   "p": 0.6232875413535476,
+   "value": 0.12881402631578948,
+   "p": 0.6141624258500894,
    "letter": "C",
    "status": "measured",
    "canon": 4.0,
@@ -93,11 +93,11 @@
   "RNG": {
    "stat": "RNG",
    "value": 3.332848113946345,
-   "p": 0.9093591928695449,
-   "letter": "A",
+   "p": 0.5762395624731951,
+   "letter": "C",
    "status": "provisional",
-   "canon": 5.0,
-   "plot": 5.0
+   "canon": 3.0,
+   "plot": 3.0
   },
   "STA": {
    "stat": "STA",
@@ -110,8 +110,8 @@
   },
   "PRC": {
    "stat": "PRC",
-   "value": 0.8741952349751162,
-   "p": 0.9668863925007973,
+   "value": 0.882471961132749,
+   "p": 0.9855271135341106,
    "letter": "A",
    "status": "measured",
    "canon": 5.0,
@@ -120,42 +120,42 @@
   "DEV": {
    "stat": "DEV",
    "value": 0.8701676826674365,
-   "p": 0.9430677867306262,
-   "letter": "A",
+   "p": 0.48117697945492893,
+   "letter": "C",
    "status": "provisional",
-   "canon": 5.0,
-   "plot": 5.0
+   "canon": 3.0,
+   "plot": 3.0
   }
  },
- "type": "unclassified",
+ "type": "close_range",
  "nearest": [
   {
-   "name": "Dirty Deeds Done Dirt Cheap",
-   "dist": 2.23606797749979,
+   "name": "D4C Love Train",
+   "dist": 1.0,
    "grades": [
     "A",
     "A",
     "C",
     "A",
     "A",
-    "A"
+    "C"
    ]
   },
   {
-   "name": "Kiss",
-   "dist": 2.23606797749979,
+   "name": "Dolly Dagger",
+   "dist": 1.4142135623730951,
    "grades": [
     "A",
     "A",
-    "A",
-    "A",
     "C",
-    "A"
+    "A",
+    "B",
+    "C"
    ]
   },
   {
    "name": "The World",
-   "dist": 2.6457513110645907,
+   "dist": 1.7320508075688772,
    "grades": [
     "A",
     "A",
@@ -168,9 +168,9 @@
  ],
  "ability": {
   "template": 12,
-  "ability": "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 73,944 film pairs it can compare (difficulty-adjusted score 0.87).",
+  "ability": "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 73,944 film pairs it can compare (difficulty-adjusted score 0.88).",
   "film": "Signature film: Seven Pounds (2008), 1.0★ against the crowd's 3.54★ (-2.54), 167,511 ratings.",
-  "weakness": "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.13★ below the crowd on average, about what a human would.",
-  "why": "Why: Precision A (96.7th percentile, z +1.84; runner-up Potential z +1.58) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Power C is your lowest graded stat, so the limitation comes from it."
+  "weakness": "Soft spot: ordinary growth (Potential C, “same as a human”). 47% of your director credits are one-offs. [provisional]",
+  "why": "Why: Precision A (98.6th percentile, z +2.18; runner-up Stamina z +1.45) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Potential C is your lowest graded stat, so the limitation comes from it."
  }
 }

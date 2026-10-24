@@ -41,7 +41,7 @@
   "b": 0.05190476190476189,
   "pa25": 0.8940056197315017,
   "pairs": 16015,
-  "dpa": 0.8878069441773335,
+  "dpa": 0.896277872182329,
   "pace": 6.108108108108108,
   "peak_n": 13,
   "peak_month": "Jul 2024",
@@ -66,11 +66,11 @@
  "grades": {
   "PWR": {
    "stat": "PWR",
-   "value": -0.04902451851851851,
-   "p": 0.39683941959671637,
+   "value": -0.049216685185185176,
+   "p": 0.3808279738780835,
    "letter": "C",
    "status": "measured",
-   "canon": 3.0,
+   "canon": 2.0,
    "plot": 3.0
   },
   "SPD": {
@@ -85,12 +85,11 @@
   "RNG": {
    "stat": "RNG",
    "value": 7.4829406527550315,
-   "p": 0.999,
-   "letter": "∞",
+   "p": 0.9875574234615441,
+   "letter": "A",
    "status": "provisional",
-   "canon": 6.0,
-   "plot": 6.0,
-   "symbol": "inf"
+   "canon": 5.0,
+   "plot": 5.0
   },
   "STA": {
    "stat": "STA",
@@ -103,8 +102,8 @@
   },
   "PRC": {
    "stat": "PRC",
-   "value": 0.8878069441773335,
-   "p": 0.9825931200544541,
+   "value": 0.896277872182329,
+   "p": 0.9934472240130875,
    "letter": "A",
    "status": "measured",
    "canon": 5.0,
@@ -113,7 +112,7 @@
   "DEV": {
    "stat": "DEV",
    "value": 0.6341666666666668,
-   "p": 0.08419713457529084,
+   "p": 0.020403857517909928,
    "letter": "E",
    "status": "provisional",
    "canon": 1.0,
@@ -135,20 +134,8 @@
    ]
   },
   {
-   "name": "Hierophant Green",
-   "dist": 2.8284271247461903,
-   "grades": [
-    "C",
-    "B",
-    "A",
-    "B",
-    "C",
-    "D"
-   ]
-  },
-  {
    "name": "Marilyn Manson",
-   "dist": 3.0,
+   "dist": 2.23606797749979,
    "grades": [
     "E",
     "A",
@@ -157,13 +144,25 @@
     "A",
     "C"
    ]
+  },
+  {
+   "name": "Clash",
+   "dist": 2.23606797749979,
+   "grades": [
+    "D",
+    "A",
+    "B",
+    "A",
+    "A",
+    "C"
+   ]
   }
  ],
  "ability": {
-  "template": 7,
-  "ability": "Fictional Manifestation. Fiction from every nation walks into the world: 7.5 effective production countries per 50 films, across 270 films. [provisional]",
+  "template": 12,
+  "ability": "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 16,015 film pairs it can compare (difficulty-adjusted score 0.90).",
   "film": "Signature film: Signal Orchestra 115 (1999), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.",
   "weakness": "Weakness: nothing left to learn (Potential E). Only 34% of your director credits are one-offs, so there is little room to grow. [provisional]",
-  "why": "Why: Range ∞ (99.9th percentile, z +3.00; runner-up Precision z +2.11) is your most extreme graded stat, which selects Fictional Manifestation after Bohemian Rhapsody, whose canon Range is ∞. Canon: “a Stand ability that breaks the barrier between fiction and reality”. Potential E is your lowest graded stat, so the limitation comes from it."
+  "why": "Why: Precision A (99.3rd percentile, z +2.48; runner-up Range z +2.24) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Potential E is your lowest graded stat, so the limitation comes from it."
  }
 }
