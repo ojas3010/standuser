@@ -10,9 +10,15 @@ use std::fmt::Write;
 pub const W: f64 = 1080.0;
 pub const H: f64 = 1350.0;
 
-const JP: [&str; 6] = ["破壊力", "スピード", "射程距離", "持続力", "精密動作性", "成長性"];
-const EN: [&str; 6] = ["Destructive Power", "Speed", "Range", "Stamina", "Precision", "Potential"];
-const LEGEND: [(&str, &str); 5] = [("A", "超スゴイ"), ("B", "スゴイ"), ("C", "人間並"), ("D", "ニガテ"), ("E", "超ニガテ")];
+pub const JP: [&str; 6] = ["破壊力", "スピード", "射程距離", "持続力", "精密動作性", "成長性"];
+pub const EN: [&str; 6] = ["Destructive Power", "Speed", "Range", "Stamina", "Precision", "Potential"];
+/// The small print at the bottom of the card.
+pub const FOOTER: &str = "* provisional  ·  Fan work, not affiliated. Ratings: Letterboxd. Film data: TMDB (not endorsed or certified by TMDB).";
+/// Under the type name: it is a reading of the stats, not a canon fact.
+pub const TYPE_NOTE: &str = "archetype by stats · about 60% agreement with canon";
+/// Added for the weakest type rule (Far-Distance Autopilot, AUC 0.59).
+pub const TYPE_NOTE_LOW: &str = "low confidence";
+pub const LEGEND: [(&str, &str); 5] = [("A", "超スゴイ"), ("B", "スゴイ"), ("C", "人間並"), ("D", "ニガテ"), ("E", "超ニガテ")];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -250,7 +256,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     c.text(&near, 70.0, 1272.0, 22.0, Sans, "ink", "start", 0.0, 0.0, None);
     let sig = c.serif.fit(&d.signature, 20.0, 940.0);
     c.text(&sig, 70.0, 1294.0, 20.0, Serif, "mute", "start", 0.0, 0.0, None);
-    c.text("* provisional  ·  Fan work, not affiliated. Ratings: Letterboxd. Film data: TMDB (not endorsed or certified by TMDB).", 70.0, 1312.0, 13.0, Sans, "mute", "start", 0.0, 0.0, None);
+    c.text(FOOTER, 70.0, 1312.0, 13.0, Sans, "mute", "start", 0.0, 0.0, None);
 
     // assemble
     let (base, extra) = match theme {

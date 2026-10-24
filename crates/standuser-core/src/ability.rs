@@ -180,6 +180,33 @@ fn status_tag(s: Status) -> &'static str {
     if s == Status::Provisional { " [provisional]" } else { "" }
 }
 
+/// Every sentence the engine can put on the card, written with sample numbers (for the glyph-coverage test).
+pub fn all_sample_sentences() -> Vec<String> {
+    let f = Facts {
+        b: -0.12, n_elig: 1234, pace: 6.5, peak_n: 14, peak_month: "Mar 2023".into(), months: 48, active: 40, streak: 17, start: "Jan 2023".into(),
+        silent: 8, silent_run: 3, d_range: 3.4, top_country: "the United States".into(), top_share: 0.62, n_films_cty: 500, pa25: 0.81, pairs: 70211,
+        dpa: 0.88, n1: 120, credits: 240, gt: 0.5, top_dir: "Director Seven".into(), top_dir_n: 6, ..Default::default()
+    };
+    let mut v = Vec::new();
+    for (stat, dir) in [("PWR", "hi"), ("PWR", "lo"), ("SPD", "hi"), ("SPD", "inf"), ("SPD", "lo"), ("RNG", "hi"), ("RNG", "inf"), ("RNG", "lo"), ("STA", "hi"), ("STA", "inf"), ("STA", "lo"),
+        ("PRC", "hi"), ("PRC", "lo"), ("DEV", "hi"), ("DEV", "lo"), ("DEV", "complete"), ("BAL", "bal")] {
+        let t = template(stat, dir);
+        v.push(format!("{}. {} [provisional]", t.name, ability_text(t.id, &f, "Precision", "A", "97.8th")));
+    }
+    for stat in STATS {
+        for tier in ["weak", "weak_lo", "weak_hi", "mid"] {
+            v.push(format!("Weakness: {} [provisional]", weak_phrase(stat, tier, "D", &f)));
+            v.push(format!("Soft spot: {}", weak_phrase(stat, tier, "C", &f)));
+        }
+    }
+    v.push("No weakness found: your lowest graded stat, Power, is still B. [provisional]".into());
+    v.push("Signature film: Synthetic Film One (2008), 1.0★ against the crowd's 3.54★ (-2.54), 166,934 ratings.".into());
+    v.push("Signature film: not enough crowd data".into());
+    v.push("Ability: not yet revealed (?).".into());
+    v.push("Weakness: not yet revealed (?).".into());
+    v
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct Weakness {
     pub text: String,
