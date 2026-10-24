@@ -29,5 +29,9 @@ for page in test; do
   timeout 90 "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$PROFILE$page" --virtual-time-budget=20000 \
     --dump-dom "http://localhost:8765/$page.html" > "$W/$page.dom" 2>/dev/null || true
   echo "== $page"
-  sed -n '/<pre id="\(selftest\|out\)">/,/<\/pre>/p' "$W/$page.dom" | sed 's/<[^>]*>//g'
+  sed -n '/<pre id="\(selftest\|out\)">/,/<\/pre>/p' "$W/$page.dom" | sed 's/<[^>]*>//g' | tee "$W/$page.out"
+  # every line is asserted by selftest.js; a missing report, a FAIL or an ERROR fails the run
+  grep -q '\[ok\]' "$W/$page.out" || { echo "no test report"; exit 1; }
+  if grep -q 'FAIL\|^ERROR' "$W/$page.out"; then echo "site test FAILED"; exit 1; fi
 done
+echo "site test passed"
