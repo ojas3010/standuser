@@ -408,7 +408,20 @@ def type_rule(canon):
     return "unclassified"
 
 
-def nearest(u, username, top=3):
+def band_mid(cum, v):
+    if v <= 0:
+        return 0.0
+    if v >= 6:
+        return 0.9995
+    g = min(max(int(round(v)), 1), 5)
+    lo = 0.0 if g == 1 else cum[g - 2]
+    hi = 100.0 if g == 5 else cum[g - 1]
+    return (lo + hi) / 2 / 100
+
+
+def nearest(u, pct, username, top=3):
+    """Letter distance (Method H), then the continuous distance between percentiles and canon band midpoints, then a
+    hash of username|name, which also splits identical-chart twins."""
     known = [i for i in range(6) if u[i] is not None]
     if len(known) < 4:
         return []
@@ -418,36 +431,27 @@ def nearest(u, username, top=3):
     bands = ME.canon_bands()
     uj = [3.0 if x is None else x for x in u]
     em = [sum(bands[j][g] * (uj[j] - (g + 1)) ** 2 for g in range(5)) for j in range(6)]
+    cum = [CUTS["stats"][s]["canon_cum"] for s in STATS]
+    r9 = lambda x: int(round(x * 1e9))
     ranked = []
     for t in range(len(names)):
         v = V[t]
-        kc = int(np.isfinite(v).sum())
-        cost = sal = mx = 0.0
-        ex = kb = 0
+        if int(np.isfinite(v).sum()) < 4:
+            continue
+        cost = 0.0
         for i in known:
-            if np.isfinite(v[i]):
-                dd = u[i] - v[i]
-                cost += dd * dd
-                sal += abs(u[i] - 3) * dd * dd
-                mx = max(mx, abs(dd))
-                ex += dd == 0
-                kb += 1
-            else:
-                cost += em[i]
+            cost += (u[i] - v[i]) ** 2 if np.isfinite(v[i]) else em[i]
         dist = math.sqrt(6.0 / len(known) * cost)
-        sal = 6.0 / kb * sal if kb else 0.0
-        r9 = lambda x: int(round(x * 1e9))
-        ranked.append(((r9(dist), r9(sal), r9(mx), -ex, -kc, int(rowid[t])), dist, names[t], tuple(None if not np.isfinite(x) else int(x * 10) for x in v)))
+        cont = math.sqrt(sum((pct[i] - band_mid(cum[i], v[i])) ** 2 for i in range(6) if pct[i] is not None and np.isfinite(v[i])))
+        tie = fnv1a(f"{username}|{names[t]}")
+        ranked.append(((r9(dist), r9(cont), tie), dist, names[t], tuple(None if not np.isfinite(x) else int(x * 10) for x in v)))
     ranked.sort(key=lambda r: r[0])
-    h = fnv1a(username)
     out, taken = [], []
-    for i, r in enumerate(ranked):
+    for r in ranked:
         if r[3] in taken:
             continue
-        group = [x for x in ranked[i:] if x[3] == r[3]]
-        pick = group[h % len(group)]
         taken.append(r[3])
-        out.append(dict(name=pick[2], dist=pick[1], grades=grades_by_name[pick[2]]))
+        out.append(dict(name=r[2], dist=r[1], grades=grades_by_name[r[2]]))
         if len(out) == top:
             break
     return out
@@ -490,7 +494,7 @@ def main():
         inputs=dict(username=a.username, joined=a.joined, as_of=a.as_of, watched=len(W), ratings=len(R), diary=len(D), table_films=len(T.films)),
         timeline=tl_out, facts=f,
         grades={s: {k: v for k, v in grades[s].items()} for s in STATS},
-        type=type_rule(canon), nearest=nearest(u, a.username), ability=ab,
+        type=type_rule(canon), nearest=nearest(u, [grades[s]["p"] for s in STATS], a.username), ability=ab,
     )
     Path(a.out).write_text(json.dumps(out, indent=1, ensure_ascii=False, default=float), encoding="utf-8")
     g = " ".join(grades[s]["letter"] for s in STATS)

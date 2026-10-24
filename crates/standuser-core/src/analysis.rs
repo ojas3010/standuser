@@ -85,7 +85,8 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
     let grades = [st.power.clone(), st.speed.clone(), st.range.clone(), st.stamina.clone(), st.precision.clone(), st.potential.clone()];
     let canon: [Option<f64>; 6] = std::array::from_fn(|i| grades[i].canon);
     let kind = classify(&canon);
-    let nearest = matching::nearest(&canon, &username, 3);
+    let pct: [Option<f64>; 6] = std::array::from_fn(|i| grades[i].p);
+    let nearest = matching::nearest(&canon, &pct, &username, 3);
     let ab = ability::render(&grades, &st.facts, &st.rated);
     let nm = name::name_stand(ex, lk, ab.signature.as_ref(), ab.template);
 

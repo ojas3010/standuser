@@ -131,18 +131,6 @@
  "type": "close_range",
  "nearest": [
   {
-   "name": "Star Platinum (Part 6)",
-   "dist": 1.4142135623730951,
-   "grades": [
-    "A",
-    "A",
-    "C",
-    "A",
-    "A",
-    "Complete"
-   ]
-  },
-  {
    "name": "D4C Love Train",
    "dist": 1.4142135623730951,
    "grades": [
@@ -152,6 +140,18 @@
     "A",
     "A",
     "C"
+   ]
+  },
+  {
+   "name": "Star Platinum (Part 6)",
+   "dist": 1.4142135623730951,
+   "grades": [
+    "A",
+    "A",
+    "C",
+    "A",
+    "A",
+    "Complete"
    ]
   },
   {

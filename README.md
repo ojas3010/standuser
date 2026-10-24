@@ -23,7 +23,7 @@ The pipeline, one module per stage:
 | `stats` | Power, Speed, Range, Stamina, Precision, Potential from the timeline, your ratings and film data (see below). |
 | `grading` | Card letters E to A from population percentiles (cuts at 10, 30, 70 and 90), plus a canon-equivalent grade used only for the type and the match. Rare symbols: ∞, ∅, and `?` below a stat's minimum data. |
 | `types` | Close-Range Power, Long-Distance Operation, Automatic or Unclassified. About 60% leave-one-group-out agreement with canon, so the card calls it an archetype by stats. |
-| `matching` | Nearest canon Stand (157 rows, 128 fully lettered) by L2 distance, with unknown canon cells costed at their expected error. Identical-chart twins are split by a hash of the username. The top 3 distinct charts are shown. |
+| `matching` | Nearest canon Stand (157 rows, 128 fully lettered) by L2 distance, with unknown canon cells costed at their expected error. Ties at equal distance go to the Stand whose canon percentile band is closest to your actual percentiles, then to a hash of the username (which also splits identical-chart twins). The top 3 distinct charts are shown. |
 | `ability` | 17 deterministic text templates keyed by your most extreme stat, a weakness from your lowest, and a signature film (largest gap to the Letterboxd crowd). Every number in the text comes from a slot, and a "why" line cites it. |
 | `name` | Offline naming route: your top film composer (shrunk mean of your ratings, at least two films), else Part 3 style colour plus Tarot card. |
 | `svg` | The card as one self-contained SVG. All text is drawn as outlines, so it renders the same in browsers, GitHub READMEs and PNG renderers. |
