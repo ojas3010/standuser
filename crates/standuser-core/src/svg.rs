@@ -290,7 +290,7 @@ mod tests {
             ability: "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 74,164 film pairs it can compare (difficulty-adjusted score 0.88).".into(),
             weakness: "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.05★ below the crowd on average, about what a human would.".into(),
             nearest: vec!["D4C Love Train".into(), "Dolly Dagger".into(), "The World".into()],
-            signature: "Signature film: Seven Pounds (2008), 1.0★ against the crowd's 3.54★".into(),
+            signature: "Signature film: Synthetic Film One (2008), 1.0★ against the crowd's 3.54★".into(),
             badge: true,
         }
     }

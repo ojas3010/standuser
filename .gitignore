@@ -4,3 +4,6 @@ exports/
 node_modules/
 __pycache__/
 !crates/standuser-core/tests/fixtures/synth/*.zip
+
+# real-export fixtures and local tables stay out of the repository
+local/

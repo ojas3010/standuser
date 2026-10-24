@@ -74,7 +74,7 @@ pub fn pick_signature(grades: &[Grade; 6]) -> Option<Signature> {
         return None;
     }
     let mut zs: Vec<(usize, f64)> = g.iter().map(|(i, gr)| (*i, z_of(gr))).collect();
-    zs.sort_by(|a, b| b.1.abs().partial_cmp(&a.1.abs()).unwrap().then(a.0.cmp(&b.0)));
+    zs.sort_by(|a, b| b.1.abs().total_cmp(&a.1.abs()).then(a.0.cmp(&b.0)));
     let (top, runner) = (zs[0], zs.get(1).copied());
     let out = |stat: &str, top_stat: Option<&str>| Signature {
         stat: stat.into(),
@@ -195,7 +195,7 @@ pub fn weakness(grades: &[Grade; 6], sig: &Signature, f: &Facts) -> Weakness {
     if cands.is_empty() {
         return Weakness { text: "Weakness: not yet revealed (?).".into(), stat: None, letter: None };
     }
-    cands.sort_by(|a, b| a.1.p.unwrap_or(0.5).partial_cmp(&b.1.p.unwrap_or(0.5)).unwrap().then(a.0.cmp(&b.0)));
+    cands.sort_by(|a, b| a.1.p.unwrap_or(0.5).total_cmp(&b.1.p.unwrap_or(0.5)).then(a.0.cmp(&b.0)));
     let (i, g) = cands[0];
     let k = STATS[i];
     let l = g.letter.as_str();
@@ -312,8 +312,8 @@ mod tests {
         Grade { stat: stat.into(), value: Some(0.5), p: None, letter: "?".into(), status: Status::Ungraded, symbol: None, canon: None, plot: 3.0, note: String::new() }
     }
 
-    /// The engine's own Ojas fixture (ability_engine.py OJAS), reproduced verbatim.
-    fn ojas() -> ([Grade; 6], Facts, Vec<RatedFilm>) {
+    /// The prototype engine's sample profile (tools/golden/proto/ability_engine.py OJAS), with invented films and numbers.
+    fn sample() -> ([Grade; 6], Facts, Vec<RatedFilm>) {
         let grades = [
             g("PWR", 0.597, "C", Status::Measured),
             g("SPD", 0.803, "B", Status::Provisional),
@@ -323,35 +323,35 @@ mod tests {
             Grade { letter: "C".into(), ..ungraded("DEV") },
         ];
         let f = Facts {
-            b: -0.0531, n_elig: 447, pace: 4.978, peak_n: 16, peak_month: "Nov 2022".into(), months: 50, active: 45, streak: 20, start: "Aug 2022".into(),
-            silent: 5, silent_run: 3, d_range: 2.56, top_country: "the United States".into(), top_share: 196.0 / 209.0, n_films_cty: 208, pa25: 0.894, pairs: 74164,
-            dpa: 0.883, n1: 129, credits: 237, gt: 0.544, top_dir: "Christopher Nolan".into(), top_dir_n: 5, ..Default::default()
+            b: -0.0612, n_elig: 410, pace: 4.2, peak_n: 12, peak_month: "Mar 2023".into(), months: 44, active: 40, streak: 18, start: "Feb 2023".into(),
+            silent: 4, silent_run: 2, d_range: 2.9, top_country: "the United States".into(), top_share: 0.8, n_films_cty: 200, pa25: 0.894, pairs: 70211,
+            dpa: 0.883, n1: 120, credits: 240, gt: 0.5, top_dir: "Director Seven".into(), top_dir_n: 6, ..Default::default()
         };
         let film = |n: &str, y, own, crowd, cnt: u64, uri: &str| RatedFilm { name: n.into(), year: y, own, crowd, n: cnt, uri: uri.into() };
         let films = vec![
-            film("Seven Pounds", 2008, 1.0, 3.544, 166934, "seven-pounds"),
-            film("Borat: Cultural Learnings of America for Make Benefit Glorious Nation of Kazakhstan", 2006, 5.0, 3.67, 2879 * 300, "borat"),
-            film("Iron Man 2", 2010, 1.5, 2.82, 4020 * 300, "iron-man-2"),
-            film("The Family Man", 2000, 2.0, 3.24, 347 * 300, "the-family-man"),
-            film("Call Me by Your Name", 2017, 5.0, 3.84, 5287 * 300, "cmbyn"),
+            film("Synthetic Film One", 2008, 1.0, 3.544, 166934, "synthetic-one"),
+            film("Synthetic Film Two: The Long Subtitle of a Film", 2006, 5.0, 3.67, 2879 * 300, "synthetic-two"),
+            film("Synthetic Film Three", 2010, 1.5, 2.82, 4020 * 300, "synthetic-three"),
+            film("Synthetic Film Four", 2000, 2.0, 3.24, 347 * 300, "synthetic-four"),
+            film("Synthetic Film Five", 2017, 5.0, 3.84, 5287 * 300, "synthetic-five"),
         ];
         (grades, f, films)
     }
 
     #[test]
-    fn ojas_matches_python_engine_output() {
-        let (grades, f, films) = ojas();
+    fn sample_matches_python_engine_output() {
+        let (grades, f, films) = sample();
         let r = render(&grades, &f, &films);
         assert_eq!(r.template, Some(12));
-        assert_eq!(r.ability, "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 74,164 film pairs it can compare (difficulty-adjusted score 0.88).");
-        assert_eq!(r.film.as_deref(), Some("Signature film: Seven Pounds (2008), 1.0★ against the crowd's 3.54★ (-2.54), 166,934 ratings."));
-        assert_eq!(r.weakness, "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.05★ below the crowd on average, about what a human would.");
+        assert_eq!(r.ability, "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 70,211 film pairs it can compare (difficulty-adjusted score 0.88).");
+        assert_eq!(r.film.as_deref(), Some("Signature film: Synthetic Film One (2008), 1.0★ against the crowd's 3.54★ (-2.54), 166,934 ratings."));
+        assert_eq!(r.weakness, "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.06★ below the crowd on average, about what a human would.");
         assert_eq!(r.why, "Why: Precision A (97.8th percentile, z +2.01; runner-up Stamina z +1.43) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Power C is your lowest graded stat, so the limitation comes from it.");
     }
 
     #[test]
     fn signature_rules() {
-        let (mut grades, _, films) = ojas();
+        let (mut grades, _, films) = sample();
         assert_eq!(pick_signature(&grades).unwrap().stat, "PRC");
         // tie in |z| -> canon order (STA before PRC)
         grades[3].p = Some(0.978);
@@ -366,7 +366,7 @@ mod tests {
 
     #[test]
     fn unrated_user_and_nothing_gradable() {
-        let (mut grades, f, _) = ojas();
+        let (mut grades, f, _) = sample();
         grades[0] = Grade::none("PWR", "");
         grades[4] = Grade::none("PRC", "");
         let r = render(&grades, &f, &[]);

@@ -225,25 +225,27 @@ def guard(text, rendered_reference):
     return numbers_in(text) <= numbers_in(rendered_reference)
 
 
-# ------------------------------------------------------------------ Ojas (PROVISIONAL)
+# ------------------------------------------------------------------ SAMPLE PROFILE (synthetic)
+# The research prototype's own fixture described a real user; this copy keeps its shape with invented values and films.
 OJAS = dict(
-    user="jas3344", name="「DIRTY WEATHER」",
+    user="synthuser", name="「SAMPLE NAME」",
     stats=dict(
         PWR=dict(p=0.597, letter="C", status="measured", value=0.052),
-        SPD=dict(p=0.803, letter="B", status="provisional", value=4.98),
-        RNG=dict(p=None, letter="C", status="ungraded", value=2.56),
-        STA=dict(p=0.923, letter="A", status="provisional", value=0.900),
+        SPD=dict(p=0.803, letter="B", status="provisional", value=4.2),
+        RNG=dict(p=None, letter="C", status="ungraded", value=2.9),
+        STA=dict(p=0.923, letter="A", status="provisional", value=0.91),
         PRC=dict(p=0.978, letter="A", status="measured", value=0.883),
-        DEV=dict(p=None, letter="C", status="ungraded", value=0.544)),
-    facts=dict(b=-0.0531, n_elig=447, pace=4.978, peak_n=16, peak_month="Nov 2022", M=50, active=45, streak=20,
-               start="Aug 2022", silent=5, silent_run=3, D=2.56, top_country="the United States", top_share=196/209, n_films_cty=208,
-               pa25=0.894, pairs=74164, dpa=0.883, n1=129, credits=237, gt=0.544, top_dir="Christopher Nolan", top_dir_n=5),
-    films=[  # pool-scale crowd except Seven Pounds (Letterboxd histogram plain mean 3.544, 166,934 ratings)
-        dict(name="Seven Pounds", year=2008, own=1.0, crowd=3.544, n=166934, uri="seven-pounds"),
-        dict(name="Borat: Cultural Learnings of America for Make Benefit Glorious Nation of Kazakhstan", year=2006, own=5.0, crowd=3.67, n=2879*300, uri="borat"),
-        dict(name="Iron Man 2", year=2010, own=1.5, crowd=2.82, n=4020*300, uri="iron-man-2"),
-        dict(name="The Family Man", year=2000, own=2.0, crowd=3.24, n=347*300, uri="the-family-man"),
-        dict(name="Call Me by Your Name", year=2017, own=5.0, crowd=3.84, n=5287*300, uri="cmbyn"),
+        DEV=dict(p=None, letter="C", status="ungraded", value=0.5)),
+    facts=dict(b=-0.0612, n_elig=410, pace=4.2, peak_n=12, peak_month="Mar 2023", M=44, active=40, streak=18,
+               start="Feb 2023", silent=4, silent_run=2, D=2.9, top_country="the United States", top_share=0.8,
+               n1=120, credits=240, gt=0.5, top_dir="Director Seven", top_dir_n=6,
+               pa25=0.894, pairs=70211, dpa=0.883, n_films_cty=200),
+    films=[
+        dict(name="Synthetic Film One", year=2008, own=1.0, crowd=3.544, n=166934, uri="synthetic-one"),
+        dict(name="Synthetic Film Two: The Long Subtitle of a Film", year=2006, own=5.0, crowd=3.67, n=2879 * 300, uri="synthetic-two"),
+        dict(name="Synthetic Film Three", year=2010, own=1.5, crowd=2.82, n=4020 * 300, uri="synthetic-three"),
+        dict(name="Synthetic Film Four", year=2000, own=2.0, crowd=3.24, n=347 * 300, uri="synthetic-four"),
+        dict(name="Synthetic Film Five", year=2017, own=5.0, crowd=3.84, n=5287 * 300, uri="synthetic-five"),
     ])
 
 

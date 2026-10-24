@@ -87,7 +87,7 @@ mod tests {
 
     #[test]
     fn spec_example() {
-        // Ojas, canon-equivalent B A C A A C -> Close-Range Power
+        // a user with canon-equivalent B A C A A C -> Close-Range Power
         let u = [Some(4.0), Some(5.0), Some(3.0), Some(5.0), Some(5.0), Some(3.0)];
         assert_eq!(classify(&u), StandType::CloseRange);
     }

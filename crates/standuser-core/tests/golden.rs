@@ -1,7 +1,9 @@
 //! Golden tests: the Rust port must reproduce the Python reference (tools/golden/ref.py, which runs the research
 //! prototypes) on the same export. Two fixtures:
 //!   synth  - committed, synthetic export + table (always runs)
-//!   ojas   - the author's real export; runs only when STANDUSER_OJAS_EXPORT (zip) and STANDUSER_OJAS_TABLE are set
+//!   real   - the author's real export, kept outside the repository (local/, gitignored). It is an #[ignore]d test, so a
+//!            normal run reports it as ignored, never as passed. Run it with
+//!            STANDUSER_OJAS_EXPORT=<zip> STANDUSER_OJAS_TABLE=<films.json> STANDUSER_OJAS_GOLDEN=<golden.json> cargo test --test golden -- --ignored
 
 use serde_json::Value;
 use standuser_core::{analysis, dates, lookup::Lookup, parse, svg};
@@ -111,16 +113,9 @@ fn synthetic_export_matches_python_reference() {
 }
 
 #[test]
+#[ignore = "needs the author's real export: set STANDUSER_OJAS_EXPORT, STANDUSER_OJAS_TABLE and STANDUSER_OJAS_GOLDEN, then run with --ignored"]
 fn author_export_matches_python_reference() {
-    let (Ok(zip), Ok(table)) = (std::env::var("STANDUSER_OJAS_EXPORT"), std::env::var("STANDUSER_OJAS_TABLE")) else {
-        eprintln!("skipped: set STANDUSER_OJAS_EXPORT and STANDUSER_OJAS_TABLE");
-        return;
-    };
-    let golden = dir().join("ojas/golden.json");
-    if !golden.exists() {
-        eprintln!("skipped: no tests/fixtures/ojas/golden.json");
-        return;
-    }
+    let var = |n: &str| std::env::var(n).unwrap_or_else(|_| panic!("{n} is not set; this test only means something with the real export"));
     // the author's zip carries no profile.csv in this setup, so the join day is passed in (2022-07-06 per the spec)
-    run(Path::new(&zip), Path::new(&table), "2022-07-06", &golden);
+    run(Path::new(&var("STANDUSER_OJAS_EXPORT")), Path::new(&var("STANDUSER_OJAS_TABLE")), "2022-07-06", Path::new(&var("STANDUSER_OJAS_GOLDEN")));
 }
