@@ -211,18 +211,39 @@ def percentile(stat, v):
     return ND.cdf(z[i] + (z[i + 1] - z[i]) * (v - x[i]) / (x[i + 1] - x[i]))
 
 
-def grade(stat, v, provisional, note=""):
-    sc = CUTS["stats"][stat]
+def band_cuts(stat, n):
+    """Film-count band for stats graded within bands (Potential); the first band for fewer films than it starts at."""
+    sc = dict(CUTS["stats"][stat])
+    bands = sc.get("bands")
+    if not bands:
+        return sc, None
+    b = [x for x in bands if n >= x["lo"]]
+    b = b[-1] if b else bands[0]
+    sc.update(knots=b["knots"], letter_cuts=b["letter_cuts"], canon_cuts=b["canon_cuts"])
+    return sc, (f"{b['lo']}-{b['hi']}" if b["hi"] else f"{b['lo']}+")
+
+
+def percentile_of(sc, v):
+    k = sc["knots"]
+    z = [ND.inv_cdf(p) for _, p in k]
+    x = [a for a, _ in k]
+    n = len(x)
+    i = 0 if v <= x[0] else (n - 2 if v >= x[-1] else min(max(j for j in range(n) if x[j] <= v), n - 2))
+    return ND.cdf(z[i] + (z[i + 1] - z[i]) * (v - x[i]) / (x[i + 1] - x[i]))
+
+
+def grade(stat, v, provisional, note="", sc=None):
+    sc = sc or CUTS["stats"][stat]
     if not sc["letter_cuts"]:
         return dict(stat=stat, value=v, p=None, letter="?", status="ungraded", canon=None, plot=3.0)
     g = 1 + sum(v >= c for c in sc["letter_cuts"])
     if sc["canon_cuts"]:
         cg = 1 + sum(v >= c for c in sc["canon_cuts"])
     else:
-        p = percentile(stat, v) * 100
+        p = percentile_of(sc, v) * 100
         cg = 1 + sum(p >= c for c in sc["canon_cum"])
     status = "provisional" if (provisional or sc["status"] == "provisional") else "measured"
-    return dict(stat=stat, value=v, p=percentile(stat, v), letter="EDCBA"[g - 1], status=status, canon=float(cg), plot=float(g))
+    return dict(stat=stat, value=v, p=percentile_of(sc, v), letter="EDCBA"[g - 1], status=status, canon=float(cg), plot=float(g))
 
 
 def unknown(stat, v=None):
@@ -365,7 +386,9 @@ def compute(W, R, D, T, tl_out, ev, J, as_of):
                     cnt[d] += 1
             tot += sum(1 for v in cnt.values() if v == 1) / sum(cnt.values())
         f["gt60"] = tot / 20
-        pot = grade("DEV", f["gt60"], credit_films < 60)
+        sc, band = band_cuts("DEV", credit_films)
+        f["potential_band"] = band or ""
+        pot = grade("DEV", f["gt60"], credit_films < 60, sc=sc)
         if credit_films >= 1000 and pot["letter"] == "E":
             pot = dict(pot, letter="完成", symbol="complete", canon=1.0, plot=1.0, p=0.001)
     return dict(PWR=power, SPD=speed, RNG=rng, STA=stamina, PRC=prec, DEV=pot), f, rated

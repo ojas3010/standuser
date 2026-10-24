@@ -69,7 +69,8 @@
   "gt": 0.4748201438848921,
   "top_dir": "Christopher Nolan",
   "top_dir_n": 8,
-  "gt60": 0.8701676826674365
+  "gt60": 0.8701676826674365,
+  "potential_band": "200+"
  },
  "grades": {
   "PWR": {
@@ -120,18 +121,30 @@
   "DEV": {
    "stat": "DEV",
    "value": 0.8701676826674365,
-   "p": 0.48117697945492893,
+   "p": 0.40295245544225194,
    "letter": "C",
-   "status": "provisional",
-   "canon": 3.0,
+   "status": "measured",
+   "canon": 2.0,
    "plot": 3.0
   }
  },
  "type": "close_range",
  "nearest": [
   {
+   "name": "Star Platinum (Part 6)",
+   "dist": 1.4142135623730951,
+   "grades": [
+    "A",
+    "A",
+    "C",
+    "A",
+    "A",
+    "Complete"
+   ]
+  },
+  {
    "name": "D4C Love Train",
-   "dist": 1.0,
+   "dist": 1.4142135623730951,
    "grades": [
     "A",
     "A",
@@ -143,7 +156,7 @@
   },
   {
    "name": "Dolly Dagger",
-   "dist": 1.4142135623730951,
+   "dist": 1.7320508075688772,
    "grades": [
     "A",
     "A",
@@ -152,25 +165,13 @@
     "B",
     "C"
    ]
-  },
-  {
-   "name": "The World",
-   "dist": 1.7320508075688772,
-   "grades": [
-    "A",
-    "A",
-    "C",
-    "A",
-    "B",
-    "B"
-   ]
   }
  ],
  "ability": {
   "template": 12,
   "ability": "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 73,944 film pairs it can compare (difficulty-adjusted score 0.88).",
   "film": "Signature film: Seven Pounds (2008), 1.0★ against the crowd's 3.54★ (-2.54), 167,511 ratings.",
-  "weakness": "Soft spot: ordinary growth (Potential C, “same as a human”). 47% of your director credits are one-offs. [provisional]",
+  "weakness": "Soft spot: ordinary growth (Potential C, “same as a human”). 47% of your director credits are one-offs.",
   "why": "Why: Precision A (98.6th percentile, z +2.18; runner-up Stamina z +1.45) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Potential C is your lowest graded stat, so the limitation comes from it."
  }
 }

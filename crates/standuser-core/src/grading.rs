@@ -8,8 +8,24 @@ use serde::{Deserialize, Serialize};
 pub const STATS: [&str; 6] = ["PWR", "SPD", "RNG", "STA", "PRC", "DEV"];
 pub const LABEL: [&str; 6] = ["Power", "Speed", "Range", "Stamina", "Precision", "Potential"];
 
+/// Cut-points for one film-count band (Potential is graded against users with a similar number of films).
+#[derive(Debug, Clone, Deserialize)]
+pub struct Band {
+    pub lo: usize,
+    pub hi: Option<usize>,
+    pub users: usize,
+    pub knots: Vec<[f64; 2]>,
+    pub letter_cuts: Vec<f64>,
+    pub canon_cuts: Vec<f64>,
+    pub spearman_with_film_count: f64,
+}
+
 #[derive(Debug, Clone, Deserialize)]
 pub struct StatCuts {
+    /// Film-count bands, when the stat is graded within bands (Potential). The top-level cuts are then the pooled
+    /// fallback and the source of the sanity checks; `for_count` picks the band.
+    #[serde(default)]
+    pub bands: Option<Vec<Band>>,
     pub knots: Option<Vec<[f64; 2]>>,
     pub letter_cuts: Option<Vec<f64>>,
     pub canon_cuts: Option<Vec<f64>>,
@@ -77,6 +93,22 @@ pub fn probit(p: f64) -> f64 {
 }
 
 impl StatCuts {
+    /// The cuts to grade a user with `n` films against: their film-count band (the first band for fewer films than it
+    /// starts at), with a label like "100-200" or "200+". Stats without bands return themselves.
+    pub fn for_count(&self, n: usize) -> (StatCuts, Option<String>) {
+        let Some(bands) = &self.bands else { return (self.clone(), None) };
+        let b = bands.iter().rev().find(|b| n >= b.lo).unwrap_or(&bands[0]);
+        let mut sc = self.clone();
+        sc.knots = Some(b.knots.clone());
+        sc.letter_cuts = Some(b.letter_cuts.clone());
+        sc.canon_cuts = Some(b.canon_cuts.clone());
+        let label = match b.hi {
+            Some(hi) => format!("{}-{}", b.lo, hi),
+            None => format!("{}+", b.lo),
+        };
+        (sc, Some(label))
+    }
+
     /// Population percentile (0..1) of `v`, or None when the stat has no knots.
     pub fn percentile(&self, v: f64) -> Option<f64> {
         let k = self.knots.as_ref()?;
@@ -176,7 +208,11 @@ impl Grade {
 
 /// Grade a computed value. `provisional` marks sample-size or calibration caveats.
 pub fn grade_value(cuts: &Cuts, stat: &str, v: f64, provisional: bool, note: &str) -> Grade {
-    let sc = cuts.stat(stat);
+    grade_with(cuts.stat(stat), stat, v, provisional, note)
+}
+
+/// Same as `grade_value` against an explicit set of cuts (a film-count band).
+pub fn grade_with(sc: &StatCuts, stat: &str, v: f64, provisional: bool, note: &str) -> Grade {
     let calibrated = sc.letter_cuts.is_some();
     let g = sc.letter(v);
     let status = if !calibrated {
@@ -272,5 +308,42 @@ mod tests {
         assert_eq!(c.stat("SPD").letter(4.978), Some(4));
         assert_eq!(c.stat("STA").letter(0.900), Some(5));
         assert_eq!(c.stat("SPD").canon_grade(4.978), Some(5));
+    }
+
+    #[test]
+    fn potential_is_graded_within_film_count_bands() {
+        let c = Cuts::embedded();
+        let dev = c.stat("DEV");
+        let bands = dev.bands.as_ref().expect("Potential has bands");
+        assert!(bands.len() >= 2 && bands[0].lo >= 40);
+        assert!(bands.iter().all(|b| b.users >= 1000), "a band under 1,000 users must have been merged");
+        for w in bands.windows(2) {
+            assert_eq!(w[0].hi, Some(w[1].lo), "bands are contiguous");
+        }
+        assert_eq!(bands.last().unwrap().hi, None);
+        // the band is chosen by film count, and fewer films than the first band starts at use the first band
+        let (_, first) = dev.for_count(bands[0].lo - 20);
+        let (_, at_start) = dev.for_count(bands[0].lo);
+        assert_eq!(first, at_start);
+        let (_, last) = dev.for_count(100_000);
+        assert!(last.unwrap().ends_with('+'));
+        for b in bands {
+            let (sc, label) = dev.for_count(b.lo);
+            assert!(label.is_some());
+            // each band's letter cuts sit at its own 10/30/70/90th percentiles
+            for (x, p) in b.letter_cuts.iter().zip([0.10, 0.30, 0.70, 0.90]) {
+                assert!((sc.percentile(*x).unwrap() - p).abs() < 0.02, "band {} {x} {p}", b.lo);
+            }
+            assert_eq!(sc.letter(b.letter_cuts[0] - 1e-3), Some(1));
+            assert_eq!(sc.letter(b.letter_cuts[3] + 1.0), Some(5));
+        }
+        // the same value can earn a different letter in different bands
+        let (lo_sc, _) = dev.for_count(bands[0].lo);
+        let (hi_sc, _) = dev.for_count(bands.last().unwrap().lo);
+        let v = (bands[0].letter_cuts[2] + bands.last().unwrap().letter_cuts[2]) / 2.0;
+        assert!(hi_sc.letter(v).unwrap() <= lo_sc.letter(v).unwrap());
+        // stats without bands return themselves
+        let (sc, label) = c.stat("PRC").for_count(500);
+        assert!(label.is_none() && sc.letter_cuts == c.stat("PRC").letter_cuts);
     }
 }

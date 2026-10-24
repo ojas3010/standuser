@@ -7,7 +7,7 @@
 //! Precision = difficulty-adjusted pairwise agreement (DPA)
 //! Potential = Good-Turing share of director credits seen once
 
-use crate::grading::{grade_value, make_complete, make_inf, Cuts, Grade, Status};
+use crate::grading::{grade_value, grade_with, make_complete, make_inf, Cuts, Grade, Status};
 use crate::lookup::{FilmMeta, Lookup};
 use crate::parse::{boxd_code, Export};
 use crate::rng::SplitMix64;
@@ -65,6 +65,8 @@ pub struct Facts {
     pub gt: f64,
     /// Good-Turing share on 20 seeded draws of 60 director-credited films (volume-matched; the Potential letter uses it).
     pub gt60: f64,
+    /// Film-count band Potential was graded in ("60-100", "100-200", "200+").
+    pub potential_band: String,
     pub top_dir: String,
     pub top_dir_n: usize,
     pub n_watched: usize,
@@ -382,7 +384,11 @@ pub fn compute(ex: &Export, lk: &Lookup, tl: &Timeline, cuts: &Cuts) -> Stats {
     } else {
         let size = POTENTIAL_SAMPLE.min(dir_films.len());
         f.gt60 = rarefied_gt(&dir_films, size, POTENTIAL_DRAWS, POTENTIAL_SEED);
-        let g = grade_value(cuts, "DEV", f.gt60, credit_films < 60, &format!("{} director credits", f.credits));
+        // graded against pooled users with a similar number of director-credited films
+        let (sc, band) = cuts.stat("DEV").for_count(credit_films);
+        f.potential_band = band.clone().unwrap_or_default();
+        let note = format!("{} director credits, against users with {} films", f.credits, f.potential_band);
+        let g = grade_with(&sc, "DEV", f.gt60, credit_films < 60, &note);
         if credit_films >= 1000 && g.letter == "E" { make_complete(g) } else { g }
     };
 

@@ -13,20 +13,32 @@ The Python prototypes and reports under `swarm/`, `reports/` and `research_notes
 
 Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figures below come from `tools/evidence.py` run on the pooled Letterboxd users (sdl60660/letterboxd_recommendations) restricted to the films in the final table (9,847 movies with a Letterboxd slug, built 2026-10-24).
 
-### 1. Potential is graded on volume-matched Good-Turing (60 random films), not on the raw share
+### 1. Potential is graded on volume-matched Good-Turing (60 random films), against users with a similar number of films
 
 - **Spec:** Potential = N1 / director credits over all of a user's films, with no cut-points; the volume-matched value was only an evidence line.
-- **Now:** the card letter comes from the mean of 20 seeded draws of 60 director-credited films (N1 / credits per draw). The raw share stays in the card text ("47% directors seen once"). The 完成 symbol needs 1,000 credited films and the lowest band, as in the spec.
-- **Reason:** the raw share has a mechanical dependence on how many films were seen (more films, more repeat directors), so one set of cut-points cannot be applied fairly to a 60-film and a 500-film history. Drawing the same number of films per user removes that mechanical part and gives every user the same sampling effort.
-- **Evidence** (33,643 pooled users with at least 60 director-credited table films, median 272 films):
+- **Now:** the card letter comes from the mean of 20 seeded draws of 60 director-credited films (N1 / credits per draw), graded within film-count bands (director-credited films: 60-100, 100-200, 200+). Each band has its own cut-points, cut on the pooled users in that band; a band with under 1,000 pooled users merges into its neighbour (none did). A user with 40 to 59 credited films is drawn on all their films, graded against the first band and marked provisional. The raw share stays in the card text ("47% directors seen once"), and the note names the band ("against users with 200+ films"). The 完成 symbol needs 1,000 credited films and the lowest band of the user's band, as in the spec.
+- **Reason:** the raw share has a mechanical dependence on how many films were seen, so one set of cut-points cannot be applied fairly to a 60-film and a 500-film history. Drawing the same number of films per user removes the mechanical part, and banding by film count removes most of the remaining real dependence (users with long histories watch more varied directors).
+- **Evidence.** Spearman correlation of the graded value with film count, over the pooled users restricted to the final table (33,643 users with at least 60 director-credited films):
 
-| | Spearman with film count | median, 60-100 films | median, 100-200 films | median, 200+ films |
-|---|---|---|---|---|
-| raw Good-Turing | −0.39 | 0.774 | 0.660 | 0.615 |
-| volume-matched, 60 films | +0.34 | 0.812 | 0.812 | 0.884 |
+| | Spearman with film count |
+|---|---|
+| raw Good-Turing, one population | −0.39 |
+| volume-matched (60 films), one population | +0.34 |
+| volume-matched, within the 60-100 band | −0.054 |
+| volume-matched, within the 100-200 band | +0.103 |
+| volume-matched, within the 200+ band | +0.184 |
 
-- **What the evidence does and does not show.** On the earlier partial table (920 films) the volume-matched value was nearly flat against film count (Spearman −0.05); on the final table it is not. Matching removes the mechanical dependence but not the real one: users with long histories watch more varied directors, so their 60-film draws contain more directors seen once (+0.34), while their full-history share is lower (−0.39). Neither number is free of volume, and the choice between them is a judgement about what "room to grow" should mean, not something the data settles. The volume-matched letter was kept because it compares like with like (the same 60-film effort), and because it was the measure the spec already proposed for the evidence line.
-- **Cost:** a user with a very long history is graded against a population whose median is 272 films, and the letter tends to rise with volume (median 0.884 for 200+ films against 0.812 for under 200). The card is marked provisional, and the raw share is in the text. Users with 40 to 59 credited films are drawn on all their films.
+  Per-band cut-points (10th, 30th, 70th, 90th percentile):
+
+| Films | Pooled users | Spearman with film count | Cut-points |
+|---|---|---|---|
+| 60-100 | 3,035 | -0.053 | 0.609, 0.731, 0.885, 0.945 |
+| 100-200 | 5,515 | +0.103 | 0.675, 0.757, 0.858, 0.915 |
+| 200+ | 25,093 | +0.184 | 0.798, 0.854, 0.908, 0.934 |
+
+- **Provisional rule.** Potential stays provisional while any band shows |Spearman| above 0.2. None does (largest 0.184, the 200+ band), so users with 60 or more credited films get an unmarked Potential grade. The 200+ band runs from 200 to a few thousand films and is the closest to the line, so a longer history could still drift upward within it; `tools/calibrate.py` prints the figures again whenever the table is rebuilt, and the rule is applied from them (`any_band_over_0_2` in `cuts.json`).
+- **Earlier result.** On the partial 920-film table the single-population volume-matched value looked flat against film count (−0.05); on the final table it is not (+0.34), which is why bands were added.
+- **Cost:** a user is compared with others of a similar history length, not with everyone, so "C in the 200+ band" means middling among long histories. The canon-equivalent grade (used for the type and the nearest Stand) is cut within the band too, which can move a Stand match near a band's boundary: the author's Potential is 40.3rd percentile in the 200+ band, just under the canon boundary of 42.2, and the nearest Stand changed from D4C Love Train to Star Platinum (Part 6) at the same distance.
 
 ### 2. The crowd baseline is Letterboxd's displayed average, not the histogram plain mean
 
@@ -42,7 +54,7 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 ## Calibration (what the card letters rest on)
 
 - **Power, Precision, Range, Potential** are cut on the pooled Letterboxd users restricted to the films in our table (`tools/calibrate.py`, joined by film slug, output `tools/calibration.json`, merged by `tools/build_tables.py`). Power: shrunk offset against the displayed average, users with at least 50 eligible films. Precision: the difficulty curve h(gap) and the population accuracy are refitted on the same users. Range: 20 draws of 50 films with fractional countries (the spec's procedure; users with at least 50 films). Potential: see deviation 1.
-- **Final cut-points** (10th, 30th, 70th and 90th percentile of the pooled users): Power −0.367, −0.115, +0.200, +0.458 (34,525 users); Precision 0.654, 0.722, 0.796, 0.840; Range 2.14, 2.63, 3.74, 5.02 (34,721 users, median 3.10); Potential 0.749, 0.834, 0.903, 0.933 (33,643 users, median 0.874). The Range cuts moved up sharply from the US-heavy proxy the spec used (median 2.47, cuts 1.9 to 3.3) once every pooled user's films have country data.
+- **Final cut-points** (10th, 30th, 70th and 90th percentile of the pooled users): Power −0.367, −0.115, +0.200, +0.458 (34,525 users); Precision 0.654, 0.722, 0.796, 0.840; Range 2.14, 2.63, 3.74, 5.02 (34,721 users, median 3.10); Potential per film-count band, see deviation 1 (33,643 users; pooled fallback 0.749, 0.834, 0.903, 0.933). The Range cuts moved up sharply from the US-heavy proxy the spec used (median 2.47, cuts 1.9 to 3.3) once every pooled user's films have country data.
 - **Table coverage** (`tools/coverage.py`, pooled users, TV removed). Share of a user's rated films found in the table: median 95.9%, 10th percentile 80.9% (users with at least 50 ratings; 35,718 users). Share also usable for Power and Precision (at least 30,000 Letterboxd ratings): median 93.2%, 10th percentile 72.7%. 1.2% of users would see `?` for Power and Precision because more than half of their rated films are missing. These figures are favourable by construction, since the table is the pool's own most-rated films; an independent check is the author's export, where 89.9% of watched films are in the sample part of the table alone (the author's own films were added regardless). A user with obscure taste will see lower coverage, and the card says how much.
 - **Coverage caveat.** Pool users contribute only the films that are in our table, which are popular films, and the product likewise uses only table films for Range and Potential, so the two are on the same footing. A user whose taste is mostly outside the table is graded on fewer films, and that is shown on the card.
 - **Percentiles** (used by the ability engine to pick the most extreme stat) interpolate the probit of 13 population quantiles (1st to 99th) against the value and extend the end segments linearly.

@@ -61,7 +61,8 @@
   "gt": 0.34074074074074073,
   "top_dir": "Director 06",
   "top_dir_n": 15,
-  "gt60": 0.6341666666666668
+  "gt60": 0.6341666666666668,
+  "potential_band": "200+"
  },
  "grades": {
   "PWR": {
@@ -112,9 +113,9 @@
   "DEV": {
    "stat": "DEV",
    "value": 0.6341666666666668,
-   "p": 0.020403857517909928,
+   "p": 0.0007884933907752634,
    "letter": "E",
-   "status": "provisional",
+   "status": "measured",
    "canon": 1.0,
    "plot": 1.0
   }
@@ -159,10 +160,10 @@
   }
  ],
  "ability": {
-  "template": 12,
-  "ability": "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 16,015 film pairs it can compare (difficulty-adjusted score 0.90).",
+  "template": 15,
+  "ability": "Divination. It divines through familiar vines: only 34% of your 270 director credits are one-offs, and it keeps returning to Director 06 (15 films).",
   "film": "Signature film: Signal Orchestra 115 (1999), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.",
-  "weakness": "Weakness: nothing left to learn (Potential E). Only 34% of your director credits are one-offs, so there is little room to grow. [provisional]",
-  "why": "Why: Precision A (99.3rd percentile, z +2.48; runner-up Range z +2.24) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Potential E is your lowest graded stat, so the limitation comes from it."
+  "weakness": "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.05★ above the crowd on average, about what a human would.",
+  "why": "Why: Potential E (0.1st percentile, z -2.58; runner-up Precision z +2.48) is your most extreme graded stat, which selects Divination after Hermit Purple, whose canon Potential is E. Canon: “It allows its user to divine information and messages from other locations”. Power C is your lowest graded stat, so the limitation comes from it."
  }
 }

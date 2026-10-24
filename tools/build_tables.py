@@ -67,9 +67,14 @@ meta = dict(calibrated=False)
 if calib.exists():   # recalibration against the films in our table (tools/calibrate.py)
     c = json.loads(calib.read_text())
     for k, v in c["stats"].items():
+        # Potential stays provisional while any film-count band still correlates with film count (|Spearman| > 0.2)
+        prov = k == "RNG" or (k == "DEV" and v.get("any_band_over_0_2", True))
         cuts[k].update(knots=v["knots"], letter_cuts=v["letter_cuts"], canon_cuts=v["canon_cuts"],
-                       status="provisional" if k in ("RNG", "DEV") else "measured",
+                       status="provisional" if prov else "measured",
                        source=f"pooled Letterboxd users on our film table (built {c['built']}, {c['table_films']} films, {c['users']})")
+    if "bands" in c["stats"].get("DEV", {}):
+        cuts["DEV"]["bands"] = c["stats"]["DEV"]["bands"]
+        cuts["DEV"]["any_band_over_0_2"] = c["stats"]["DEV"]["any_band_over_0_2"]
     if "RNG" in c["stats"]:
         cuts["RNG"]["inf_cut"] = c["inf_cut_RNG"]
     mu_b, pa_pop, gap_h = c["mu_b"], c["pa_pop"], c["h"]

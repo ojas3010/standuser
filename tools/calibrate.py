@@ -12,8 +12,9 @@ tools/build_tables.py. Procedure follows the prototypes in swarm/stats2/rating (
              shrunk with lambda 6 toward the population mean offset
   Precision  DPA from 0.05-star gap bins; h(gap) = user-equal pooled hit rate, monotone (pool-adjacent-violators)
   Range      rarefied effective countries: 20 draws of 50 films with fractional countries; users with >= 50 films
-  Potential  Good-Turing share of director credits seen once on 20 draws of 60 films (volume-matched, so a user with
-             many films is not penalised for volume); users with >= 60 director-credited films
+  Potential  Good-Turing share of director credits seen once on 20 draws of 60 films; users with >= 60 director-credited
+             films, graded within film-count bands (60-100, 100-200, 200+; a band under 1,000 users merges into its
+             neighbour), with the Spearman correlation with film count reported per band
 """
 import argparse, json, sys, time
 from pathlib import Path
@@ -28,6 +29,7 @@ import rating_fns as RF  # noqa: E402
 QS = (0.01, 0.02, 0.05, 0.10, 0.25, 0.30, 0.50, 0.70, 0.75, 0.90, 0.95, 0.98, 0.99)
 CANON_CUM = dict(PWR=[26.3, 38.7, 58.4, 77.4], PRC=[38.7, 56.3, 83.8, 91.5], RNG=[15.6, 31.2, 59.6, 75.2], DEV=[27.9, 42.2, 70.1, 81.5])
 LAM, MIN_RATINGS = 6.0, 30000
+MIN_BAND_USERS = 1000
 
 
 def read_jsonl(p):
@@ -78,6 +80,19 @@ def isotonic(y, w, lo=0.5, hi=1.0):
     for s, wt, n in blocks:
         out += [min(max(s / wt, lo), hi)] * n
     return np.array(out)
+
+
+def merge_edges(cnt, edges=(60, 100, 200)):
+    """Band lower edges; a band with fewer than MIN_BAND_USERS users merges into its upper neighbour (the top one downward)."""
+    edges = list(edges)
+    while len(edges) > 1:
+        sizes = [int(((cnt >= lo) & ((cnt < edges[i + 1]) if i + 1 < len(edges) else True)).sum()) for i, lo in enumerate(edges)]
+        small = [i for i, n in enumerate(sizes) if n < MIN_BAND_USERS]
+        if not small:
+            break
+        i = small[0]
+        edges.pop(i + 1) if i + 1 < len(edges) else edges.pop()
+    return edges
 
 
 def knots(x, qs=QS):
@@ -193,9 +208,23 @@ def main():
         print(f"Range: users {len(x)}, cuts {out['stats']['RNG']['letter_cuts']}, median {np.median(x):.3f}")
     if len(U["gt60"]) >= 200:
         x = np.array(U["gt60"])
+        cnt = np.array(U["pot_n"])
+        # film-count bands (director-credited films): 60-100, 100-200, 200+; a band under 1,000 users merges upward
+        edges = merge_edges(cnt)
+        bands = []
+        for i, lo in enumerate(edges):
+            hi = edges[i + 1] if i + 1 < len(edges) else None
+            m = (cnt >= lo) & ((cnt < hi) if hi else True)
+            xb = x[m]
+            rho = float(pd.Series(cnt[m]).rank().corr(pd.Series(xb).rank()))
+            bands.append(dict(lo=lo, hi=hi, users=int(m.sum()), knots=knots(xb), letter_cuts=cuts_at(xb, (.1, .3, .7, .9)),
+                              canon_cuts=cuts_at(xb, [v / 100 for v in CANON_CUM["DEV"]]), spearman_with_film_count=round(rho, 4),
+                              median=round(float(np.median(xb)), 4)))
+            print(f"Potential band {lo}-{hi or 'max'}: users {m.sum()}, median {np.median(xb):.3f}, cuts {bands[-1]['letter_cuts']}, Spearman with film count {rho:+.3f}")
         out["stats"]["DEV"] = dict(knots=knots(x), letter_cuts=cuts_at(x, (.1, .3, .7, .9)), canon_cuts=cuts_at(x, [v / 100 for v in CANON_CUM["DEV"]]),
-                                   median_credit_films=float(np.median(U["pot_n"])), median_raw_gt=float(np.median(U["gt_raw"])))
-        print(f"Potential (GT on 60 films): users {len(x)}, cuts {out['stats']['DEV']['letter_cuts']}, median {np.median(x):.3f}, raw-GT median {np.median(U['gt_raw']):.3f}")
+                                   bands=bands, band_edges=edges, any_band_over_0_2=any(abs(b["spearman_with_film_count"]) > 0.2 for b in bands),
+                                   median_credit_films=float(np.median(cnt)), median_raw_gt=float(np.median(U["gt_raw"])))
+        print(f"Potential (GT on 60 films), all users pooled (fallback): users {len(x)}, cuts {out['stats']['DEV']['letter_cuts']}")
     Path(a.out).write_text(json.dumps(out, indent=1))
     print("wrote", a.out)
 
