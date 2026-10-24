@@ -22,7 +22,7 @@ The pipeline, one module per stage:
 | `timeline` | Builds a clean activity timeline: drops the join day and bulk-marking days (14 or more films, or 8 or more with fewer than half corroborated by the diary), one event per film, rewatches ignored. |
 | `stats` | Power, Speed, Range, Stamina, Precision, Potential from the timeline, your ratings and film data (see below). |
 | `grading` | Card letters E to A from population percentiles (cuts at 10, 30, 70 and 90), plus a canon-equivalent grade used only for the type and the match. Rare symbols: ∞, ∅, and `?` below a stat's minimum data. |
-| `types` | Close-Range Power, Long-Distance Operation, Automatic or Unclassified. About 60% leave-one-group-out agreement with canon, so the card calls it an archetype by stats. |
+| `types` | Close-Range Power, Long-Distance Operation, Automatic or Unclassified. About 60% leave-one-group-out agreement with canon, so the card labels it "archetype by stats" and says so under the type name (Automatic, the weakest rule, is flagged low confidence). |
 | `matching` | Nearest canon Stand (157 rows, 128 fully lettered) by L2 distance, with unknown canon cells costed at their expected error. Ties at equal distance follow the spec's chain (salience-weighted error, largest gap, exact matches, known cells), then the Stand whose canon percentile band is closest to your actual percentiles, then a hash of the username (which also splits identical-chart twins). The top 3 distinct charts are shown. |
 | `ability` | 17 deterministic text templates keyed by your most extreme stat, a weakness from your lowest, and a signature film (largest gap to the Letterboxd crowd). Every number in the text comes from a slot, and a "why" line cites it. |
 | `name` | Offline naming route: your top film composer (shrunk mean of your ratings, at least two films), else Part 3 style colour plus Tarot card. |
@@ -95,13 +95,17 @@ Writes `out/card.svg` (light, with a dark-mode override), `out/card.png` (1080×
 cargo test --workspace
 ```
 
-The golden test compares the Rust port with a Python reference that runs the research prototypes (`tools/golden/proto`) on the same export. The committed fixture is a synthetic export. To also check a real export:
+The golden test compares the Rust port with a Python reference that runs the research prototypes (`tools/golden/proto`) on the same export. The committed fixture is a synthetic export, and CI regenerates its golden file and diffs it against the committed one. The golden tests catch the Rust drifting from the Python; they do not catch a misreading of the spec that both share, so the spec points the independent review found each have their own test in `crates/standuser-core/tests/review_*.rs`.
+
+To also check a real export, keep its table and golden file outside the repository (`local/` is gitignored) and run the ignored test, which is reported as *ignored* in a normal run and fails if its variables are missing:
 
 ```bash
-STANDUSER_OJAS_EXPORT=/path/to/export.zip STANDUSER_OJAS_TABLE=/path/to/films.json cargo test -p standuser-core --test golden
+tools/golden/regenerate.sh real /path/to/export.zip local/ojas/table.json <joined YYYY-MM-DD> <as_of YYYY-MM-DD> <username>
+STANDUSER_OJAS_EXPORT=/path/to/export.zip STANDUSER_OJAS_TABLE=local/ojas/table.json STANDUSER_OJAS_GOLDEN=local/ojas/golden.json \
+  cargo test -p standuser-core --test golden -- --ignored
 ```
 
-Regenerate fixtures with `tools/golden/regenerate.sh`. Browser tests: `tools/site_test/run.sh` (headless Chrome or Edge).
+(`local/ojas/table.json` is built with `python3 tools/build_table.py <collector out> --include-own --out local/ojas/table.json`; the committed table never contains anyone's own films.) Regenerate fixtures with `tools/golden/regenerate.sh`. Browser tests: `tools/site_test/run.sh` (headless Chrome or Edge).
 
 ### Refresh the film table
 
@@ -123,7 +127,7 @@ From the website, for each export: `card.png` (1080×1350), `card.svg` (light, w
 
 ```
 「COMPOSER 09」  Long-Distance Operation  (synthuser)
-Power Speed Range Stamina Precision Potential: C B* A* A* A E
+Power Speed Range Stamina Precision Potential: C B* A A* A E
 Divination. It divines through familiar vines: only 34% of your 270 director credits are one-offs, and it keeps returning to Director 06 (15 films).
 Nearest canon: All Along Watchtower · Marilyn Manson · Clash
 ```
@@ -137,7 +141,7 @@ The choices behind these are written down in [docs/DECISIONS.md](docs/DECISIONS.
 - **Cut-points.** Power, Precision, Range and Potential are cut on pooled Letterboxd users restricted to the films in the table (`tools/calibrate.py`); Speed and Stamina use MovieTweetings cuts and stay provisional until real dated Letterboxd exports exist. Potential is graded on a volume-matched measure against users with a similar number of films. See [docs/DECISIONS.md](docs/DECISIONS.md) for the evidence.
 - **Film coverage.** Every stat needs film data from the built-in table except Speed and Stamina, which read only your viewing dates. A film missing from the table is skipped by every stat that needs film data. On the pooled Letterboxd users the table holds a median of 96% of a user's rated films (10th percentile 81%); that is favourable by construction, since the table is the pool's most-rated films. Each card cell says "graded on N of M films" (for Speed and Stamina, "N of M dated watches", bulk-import days excluded), and a stat shows `?` when N is below the spec's minimum (Power 20 rated films, Precision 50, Range 50 with countries, Potential 40 with directors, Speed and Stamina 12 events). If more than half of your rated films are missing, Power and Precision show `?`.
 - **Names.** The music-title naming route needs soundtrack track lists from MusicBrainz or Discogs, which cannot ship in a static site and are not fetched. Names therefore come from the composer or Part 3 routes.
-- **Text.** Characters outside Latin, kana and the card's own kanji (for example Korean or Cyrillic titles) are drawn as □.
+- **Text.** The card font covers Basic Latin and Latin-1 completely, 30 of the 128 Latin Extended-A letters, most Greek and Cyrillic basics (48 of 56 and 66 of 96), all hiragana and katakana, and only the kanji on the card itself. A film title or username with a character outside that is drawn with □ in its place. Stand names are folded to plain capitals (Dvořák becomes DVORAK) and a composer whose name has no ASCII form is skipped, so a name never has a hole in it.
 - Browser testing: `tools/site_test/run.sh` drives the real page in headless Chrome (file input, card, stats table with coverage, PNG/SVG/JSON downloads, theme change) and checks that no network request is made while an export is processed. The Cloudflare Pages deployment itself has not been exercised from this repository.
 
 ## Layout

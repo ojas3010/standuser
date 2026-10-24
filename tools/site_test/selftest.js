@@ -40,6 +40,23 @@ try {
     const b = new Uint8Array(await href);
     out('download ' + name, b.length + ' bytes, head=' + [...b.slice(0, 8)].map((x) => x.toString(16)).join(' '));
   }
+  // malformed input: an error message for a corrupt file, a card for a file with a bad date and a NaN rating, and the page keeps working
+  const feed = async (url, name) => {
+    const b = new Uint8Array(await (await fetch(url)).arrayBuffer());
+    const dt2 = new DataTransfer();
+    dt2.items.add(new File([b], name, { type: 'application/zip' }));
+    input.files = dt2.files;
+    input.dispatchEvent(new Event('change'));
+    await sleep(1500);
+  };
+  await feed('bad.zip', 'bad.zip');
+  out('corrupt file: result hidden', document.getElementById('result').hidden);
+  out('corrupt file: status', document.getElementById('status').textContent.slice(0, 60));
+  await feed('weird.zip', 'letterboxd-weird-2026-10-19-13-22-utc.zip');
+  out('bad date + NaN rating: result visible', !document.getElementById('result').hidden);
+  out('bad date + NaN rating: status', JSON.stringify(document.getElementById('status').textContent));
+  await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
+  out('good file afterwards: result visible', !document.getElementById('result').hidden);
   // theme switch
   const sel = document.getElementById('theme');
   sel.value = 'dark';

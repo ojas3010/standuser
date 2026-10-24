@@ -8,6 +8,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with: { targets: wasm32-unknown-unknown }
       - run: cargo test --workspace
+      - run: cargo test -p standuser-core --test golden -- --list --ignored | grep author_export   # the real-export test is ignored, never silently passed
       - run: cargo build --release --target wasm32-unknown-unknown -p standuser-wasm
   python:
     runs-on: ubuntu-latest
@@ -17,4 +18,5 @@ jobs:
         with: { python-version: "3.12" }
       - run: pip install numpy curl_cffi beautifulsoup4 lxml requests pytest
       - run: python -I tools/golden/ref.py crates/standuser-core/tests/fixtures/synth/files --table crates/standuser-core/tests/fixtures/synth/table.json --joined 2023-01-05 --as-of 2026-06-30 --username synthuser --out /tmp/golden.json
+      - run: python tools/golden/compare.py crates/standuser-core/tests/fixtures/synth/golden.json /tmp/golden.json
       - run: python -m pytest -q tools/collect/test_collect.py

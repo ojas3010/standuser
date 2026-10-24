@@ -1,4 +1,5 @@
-//! The film lookup table that ships with the site, and the same format returned by the TMDB proxy function.
+//! The film lookup table that ships with the site (built ahead of time by tools/build_table.py from the collector's
+//! output; nothing is looked up at run time).
 //!
 //! JSON: {"v":1,"countries":{"US":"United States of America"},"people":{"1317730":"Daniel Scheinert"},
 //!        "films":[[key,lid,tmdb,year,runtime,lang,"US|PL","dirIds","composerIds",avg,histMean,count], ...]}
@@ -85,7 +86,7 @@ impl Lookup {
         Ok(l)
     }
 
-    /// Add rows (e.g. from the TMDB proxy). Existing keys are kept.
+    /// Add the rows of another table in the same format. Existing keys are kept, and the older build date wins.
     pub fn merge_json(&mut self, json: &str) -> Result<(), String> {
         let t: Table = serde_json::from_str(json).map_err(|e| format!("bad lookup table: {e}"))?;
         if let Some(b) = t.built.as_deref().and_then(crate::dates::parse_date) {
