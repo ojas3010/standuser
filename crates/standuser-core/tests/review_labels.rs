@@ -13,6 +13,23 @@ fn one_value_rater_gets_no_note() {
     assert!(all.to_lowercase().contains("same rating") || all.to_lowercase().contains("one value") || all.to_lowercase().contains("single rating"), "no note about the one-value rater");
 }
 
+/// The one-value note may say "Precision comes out as E" only when the card's Precision is E.
+#[test]
+fn one_value_note_names_the_precision_the_card_shows() {
+    for n in [8, 200] {
+        let a = run(&export(n, Some(3.0), true));
+        let note = a.notes.iter().find(|x| x.contains("same rating")).unwrap_or_else(|| panic!("no one-value note for {n} films: {:?}", a.notes));
+        let prec = a.card.grades[4].as_str();
+        println!("{n} films: Precision {prec}; note {note}");
+        assert_eq!(note.contains("comes out as E"), prec == "E", "{n} films: Precision is {prec} but the note says: {note}");
+        if prec != "E" {
+            assert!(note.contains(&format!("Precision shows {prec}")), "{note}");
+        }
+    }
+    // the two cases must differ, or the test would not exercise the condition
+    assert_ne!(run(&export(8, Some(3.0), true)).card.grades[4], run(&export(200, Some(3.0), true)).card.grades[4]);
+}
+
 /// Spec, clean timeline: users without a diary get the watched.csv-only detector "and the card says 'from marking dates'".
 #[test]
 fn no_diary_user_is_not_told_dates_are_marking_dates() {

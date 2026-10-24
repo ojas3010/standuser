@@ -136,7 +136,12 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         _ => None,
     };
     if let Some(v) = one_value {
-        notes.push(format!("every rated film has the same rating ({v}★): Power and Precision are computed from it, and Precision comes out as E (not ∅) because no film is ranked above another"));
+        let prec = grades[4].letter.as_str();
+        notes.push(if prec == "E" {
+            format!("every rated film has the same rating ({v}★): Power and Precision are computed from it, and Precision comes out as E (not ∅) because no film is ranked above another")
+        } else {
+            format!("every rated film has the same rating ({v}★): Power and Precision are computed from it where enough films are rated, and Precision shows {prec} here")
+        });
     }
     let src = Source { from_marks, one_value };
     let any_prov = grades.iter().any(|g| matches!(g.status, Status::Provisional | Status::Ungraded | Status::Unknown));
