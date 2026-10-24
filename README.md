@@ -1,6 +1,6 @@
 # standuser
 
-Letterboxd export in, JoJo Stand card out.
+A website where you drop your Letterboxd export and get a JoJo Stand card. It runs entirely in your browser.
 
 ![A sample Stand card](docs/sample-card.png)
 
@@ -12,7 +12,7 @@ Turn the viewing history in a Letterboxd export ZIP into a canon-faithful JoJo's
 
 ## Description
 
-One Rust crate, `standuser-core`, does all the work. A command-line tool and a static web page (the same crate compiled to WebAssembly) are thin front ends. There is no database, no account and no server: the web page is a static site, your export is read in the browser and never leaves it, and neither the page nor the CLI makes any network request while it works. Film data (countries, directors, composers, Letterboxd averages) comes from a table built ahead of time and shipped with the program.
+The product is a static website. One Rust crate, `standuser-core`, does all the work and runs in the browser as WebAssembly; a command-line tool built on the same crate exists for development (see Development). There is no database, no account and no server: your export is read in the browser and never leaves it, and neither the page nor the CLI makes any network request while it works. Film data (countries, directors, composers, Letterboxd averages) comes from a table built ahead of time and shipped with the program.
 
 The pipeline, one module per stage:
 
@@ -43,7 +43,7 @@ Grades marked `*` on the card are provisional. See [Limits](#limits) for what is
 
 ## Tools
 
-- **Rust** (stable, 2021 edition): `standuser-core` (library), `standuser` (CLI), `standuser-wasm`. Crates: `zip`, `csv`, `serde`, `serde_json`, `unicode-normalization`, `ttf-parser`, `resvg` (PNG, CLI only), `wasm-bindgen`.
+- **Rust** (stable, 2021 edition): `standuser-core` (library), `standuser-wasm` (the website's engine), `standuser` (development CLI). Crates: `zip`, `csv`, `serde`, `serde_json`, `unicode-normalization`, `ttf-parser`, `resvg` (PNG, CLI only), `wasm-bindgen`.
 - **WebAssembly**: `wasm32-unknown-unknown` target, built with `wasm-pack`.
 - **Static site**: plain HTML, CSS and JavaScript (ES modules). No bundler, no Node.
 - **Cloudflare Pages**: static hosting of the `site/` folder. No functions, no build step in the dashboard.
@@ -52,11 +52,35 @@ Grades marked `*` on the card are provisional. See [Limits](#limits) for what is
 
 ## Execution steps
 
-### Use the web page
+### Use the website
 
-Open the deployed site, drop `letterboxd-<name>-<date>-utc.zip` on it (Letterboxd → Settings → Data → Export your data), download the PNG or SVG.
+Open the deployed site, drop `letterboxd-<name>-<date>-utc.zip` on it (Letterboxd → Settings → Data → Export your data), and download the card as PNG or SVG, or the numbers behind it as JSON. The export is read in your browser and never leaves it; the page makes no network request while it works.
 
-### Use the command line
+### Deploy to Cloudflare Pages
+
+1. Push this repository to GitHub.
+2. In the Cloudflare dashboard choose **Workers & Pages → Create → Pages → Connect to Git** and pick the repository.
+3. Framework preset **None**; build command **empty**; build output directory **`site`**. Nothing else to set: there are no environment variables and no functions. `site/_headers` supplies the security headers (a strict content security policy that only allows the page's own files).
+
+To update the site, run `tools/build_site.sh`, commit `site/` and push.
+
+## Development
+
+Everything below is for working on the project, not for using it.
+
+### Build and serve the site locally
+
+```bash
+rustup target add wasm32-unknown-unknown && cargo install wasm-pack
+tools/build_site.sh                  # writes site/pkg/*.wasm|js and site/films.json
+python3 -m http.server -d site 8000  # then open http://localhost:8000
+```
+
+`site/` is the whole site and is committed (`pkg/`, `films.json`, `_headers`, the page), so hosting needs no build.
+
+### Command-line tool
+
+A command-line front end to the same crate, handy for scripting and for checking output without a browser.
 
 ```bash
 cargo build --release -p standuser
@@ -79,24 +103,6 @@ STANDUSER_OJAS_EXPORT=/path/to/export.zip STANDUSER_OJAS_TABLE=/path/to/films.js
 
 Regenerate fixtures with `tools/golden/regenerate.sh`. Browser tests: `tools/site_test/run.sh` (headless Chrome or Edge).
 
-### Build and serve the site
-
-```bash
-rustup target add wasm32-unknown-unknown && cargo install wasm-pack
-tools/build_site.sh                  # writes site/pkg/*.wasm|js and site/films.json
-python3 -m http.server -d site 8000  # then open http://localhost:8000
-```
-
-`site/` is the whole site and is committed (`pkg/`, `films.json`, `_headers`, the page), so hosting needs no build.
-
-### Deploy to Cloudflare Pages
-
-1. Push this repository to GitHub.
-2. In the Cloudflare dashboard choose **Workers & Pages → Create → Pages → Connect to Git** and pick the repository.
-3. Framework preset **None**; build command **empty**; build output directory **`site`**. Nothing else to set: there are no environment variables and no functions. `site/_headers` supplies the security headers (a strict content security policy that only allows the page's own files).
-
-To update the site, run `tools/build_site.sh`, commit `site/` and push.
-
 ### Refresh the film table
 
 The table in `crates/standuser-core/data/films.json` comes from the collector. See `tools/collect/RUN.md`. It is stamped with its build date. TMDB's terms allow caching its data for at most six months, so the CLI and the page add a note to `stand.json` once the table is older than that, and `tools/refresh_table.sh` rebuilds it (collector output in, table, site and CLI out). The collector and `tools/calibrate.py` are the only parts that touch the network, and only when you run them.
@@ -113,7 +119,7 @@ tools/build_site.sh
 
 ## Output
 
-For each export: `card.svg`, `card.png` and `stand.json`. The console summary looks like this (synthetic user):
+From the website, for each export: `card.png` (1080×1350), `card.svg` (light, with a dark-mode override) and `stand.json`. The command-line tool writes the same three files and prints a summary like this (synthetic user):
 
 ```
 「COMPOSER 09」  Long-Distance Operation  (synthuser)
