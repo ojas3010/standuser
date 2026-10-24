@@ -420,8 +420,9 @@ def band_mid(cum, v):
 
 
 def nearest(u, pct, username, top=3):
-    """Letter distance (Method H), then the continuous distance between percentiles and canon band midpoints, then a
-    hash of username|name, which also splits identical-chart twins."""
+    """Letter distance (Method H), then salience-weighted error, largest gap, exact matches, known cells, then the
+    continuous distance between percentiles and canon band midpoints, then a hash of username|name (which also splits
+    identical-chart twins)."""
     known = [i for i in range(6) if u[i] is not None]
     if len(known) < 4:
         return []
@@ -436,15 +437,26 @@ def nearest(u, pct, username, top=3):
     ranked = []
     for t in range(len(names)):
         v = V[t]
-        if int(np.isfinite(v).sum()) < 4:
+        kc = int(np.isfinite(v).sum())
+        if kc < 4:
             continue
-        cost = 0.0
+        cost = sal = mx = 0.0
+        ex = kb = 0
         for i in known:
-            cost += (u[i] - v[i]) ** 2 if np.isfinite(v[i]) else em[i]
+            if np.isfinite(v[i]):
+                dd = u[i] - v[i]
+                cost += dd * dd
+                sal += abs(u[i] - 3) * dd * dd
+                mx = max(mx, abs(dd))
+                ex += dd == 0
+                kb += 1
+            else:
+                cost += em[i]
         dist = math.sqrt(6.0 / len(known) * cost)
+        sal = 6.0 / kb * sal if kb else 0.0
         cont = math.sqrt(sum((pct[i] - band_mid(cum[i], v[i])) ** 2 for i in range(6) if pct[i] is not None and np.isfinite(v[i])))
         tie = fnv1a(f"{username}|{names[t]}")
-        ranked.append(((r9(dist), r9(cont), tie), dist, names[t], tuple(None if not np.isfinite(x) else int(x * 10) for x in v)))
+        ranked.append(((r9(dist), r9(sal), r9(mx), -ex, -kc, r9(cont), tie), dist, names[t], tuple(None if not np.isfinite(x) else int(x * 10) for x in v)))
     ranked.sort(key=lambda r: r[0])
     out, taken = [], []
     for r in ranked:

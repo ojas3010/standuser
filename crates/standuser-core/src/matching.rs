@@ -2,10 +2,11 @@
 //! expected squared error under that stat's canon grade shares. A user "?" is left out and the distance rescaled by
 //! 6/k; at least 4 known stats are required.
 //!
-//! Ties between Stands at equal letter distance are broken by the continuous distance between the user's percentiles
-//! and the midpoint of each Stand's canon-equivalent percentile band, then by a hash of the username and the Stand
-//! (which also splits identical-chart twins). The earlier tie-break chain (salience-weighted error, largest gap, exact
-//! matches, known stats, canon order) is no longer used.
+//! Ties between Stands at equal letter distance are broken in this order: smaller salience-weighted error (errors on the
+//! user's most distinctive stats count most), smaller largest single gap, more exact grade matches, more known canon
+//! cells; then, in place of the former canon-order rule, the continuous distance between the user's percentiles and the
+//! midpoint of each Stand's canon-equivalent percentile band, and last a hash of the username and the Stand (which also
+//! splits identical-chart twins).
 
 use crate::grading::{Cuts, STATS};
 use crate::rng::fnv1a;
@@ -127,7 +128,8 @@ pub fn nearest(u: &[Option<f64>; 6], pct: &[Option<f64>; 6], username: &str, top
     let cuts = Cuts::embedded();
     struct Row<'a> {
         c: &'a Canon,
-        key: (i64, i64, u64),
+        // distance, salience, largest gap, -exact matches, -known cells, continuous distance, hash
+        key: (i64, i64, i64, i64, i64, i64, u64),
         dist: f64,
     }
     let mut rows: Vec<Row> = Vec::new();
@@ -137,14 +139,25 @@ pub fn nearest(u: &[Option<f64>; 6], pct: &[Option<f64>; 6], username: &str, top
             continue;
         }
         let mut cost = 0.0;
+        let (mut sal, mut mx, mut ex, mut kb) = (0.0, 0.0f64, 0i64, 0usize);
         for &i in &known {
             let ui = u[i].unwrap();
             match c.vec[i] {
-                Some(ci) => cost += (ui - ci) * (ui - ci),
+                Some(ci) => {
+                    let d = ui - ci;
+                    cost += d * d;
+                    sal += (ui - 3.0).abs() * d * d;
+                    mx = mx.max(d.abs());
+                    if d == 0.0 {
+                        ex += 1;
+                    }
+                    kb += 1;
+                }
                 None => cost += em[i],
             }
         }
         let dist = (6.0 / ku as f64 * cost).sqrt();
+        let sal = if kb > 0 { 6.0 / kb as f64 * sal } else { 0.0 };
         // continuous distance between the user's percentiles and the canon band midpoints, on stats both have
         let mut cont = 0.0;
         for i in 0..6 {
@@ -155,7 +168,7 @@ pub fn nearest(u: &[Option<f64>; 6], pct: &[Option<f64>; 6], username: &str, top
         }
         let cont = f64::sqrt(cont);
         let tie = fnv1a(&format!("{username}|{}", c.name));
-        rows.push(Row { c, key: (r9(dist), r9(cont), tie), dist });
+        rows.push(Row { c, key: (r9(dist), r9(sal), r9(mx), -ex, -(kc as i64), r9(cont), tie), dist });
     }
     rows.sort_by_key(|r| r.key);
     let mut out: Vec<Match> = Vec::new();
@@ -300,5 +313,26 @@ mod tests {
         let a = nearest(&TIE_PROFILE, &NO_PCT, "stable", 3);
         let b = nearest(&TIE_PROFILE, &NO_PCT, "stable", 3);
         assert_eq!(a.iter().map(|m| &m.name).collect::<Vec<_>>(), b.iter().map(|m| &m.name).collect::<Vec<_>>());
+    }
+
+    #[test]
+    fn earlier_tie_breaks_outrank_the_continuous_distance() {
+        // Profile E E E D D D: Survivor and Osiris are at the same letter distance (1.73) but Survivor's error on the user's
+        // distinctive stats is smaller (salience-weighted 3.0 against 5.0). Steer the percentiles to sit exactly on Osiris's
+        // canon band midpoints, so the continuous distance prefers Osiris, and check the salience rule still wins.
+        let u = [Some(1.0), Some(1.0), Some(1.0), Some(2.0), Some(2.0), Some(2.0)];
+        let canon = load_canon();
+        let osiris = canon.iter().find(|c| c.name == "Osiris").unwrap();
+        let cuts = Cuts::embedded();
+        let pct: [Option<f64>; 6] = std::array::from_fn(|i| osiris.vec[i].map(|v| band_mid(&cuts.stat(STATS[i]).canon_cum, v)));
+        let m = nearest(&u, &pct, "any", 5);
+        let (sv, os) = (rank(&m, "Survivor"), rank(&m, "Osiris"));
+        assert!((m[sv].dist - m[os].dist).abs() < 1e-9, "equal letter distance");
+        assert!(sv < os, "salience-weighted error must outrank the continuous distance: {:?}", m.iter().map(|x| (&x.name, x.dist)).collect::<Vec<_>>());
+        // the same holds for every username
+        for name in ["a", "b", "c", "d"] {
+            let m = nearest(&u, &pct, name, 5);
+            assert!(rank(&m, "Survivor") < rank(&m, "Osiris"), "{name}");
+        }
     }
 }
