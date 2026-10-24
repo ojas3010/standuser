@@ -112,6 +112,22 @@ impl Ctx {
     }
 }
 
+/// The type note is 14 px and at most this wide: at 15 px with a 400 px limit its end touched the medallion's rim.
+const NOTE_SIZE: f64 = 14.0;
+const NOTE_WIDTH: f64 = 380.0;
+
+/// Pack the note's " · " parts into lines no wider than NOTE_WIDTH, so no part is ever cut.
+fn note_lines(f: &Font, note: &str) -> Vec<String> {
+    let mut lines: Vec<String> = vec![];
+    for part in note.split(" · ").filter(|p| !p.is_empty()) {
+        match lines.last_mut() {
+            Some(last) if f.width(&format!("{last} · {part}"), NOTE_SIZE, 0.0) <= NOTE_WIDTH => *last = format!("{last} · {part}"),
+            _ => lines.push(part.to_string()),
+        }
+    }
+    lines
+}
+
 pub fn card_svg(d: &CardData, theme: Theme) -> String {
     use FontKind::{Sans, Serif};
     let mut c = Ctx { sans: font(Sans), serif: font(Serif), els: vec![] };
@@ -151,9 +167,8 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     let user = c.sans.fit(&d.user, 34.0, 470.0);
     c.text(&format!("本体 ― {user}"), 350.0, 240.0, 34.0, Sans, "ink", "start", 0.0, 0.0, None);
     c.text(&format!("{} · {}", d.type_jp, d.type_en), 70.0, 288.0, 28.0, Sans, "mute", "start", 0.0, 0.0, None);
-    if !d.type_note.is_empty() {
-        let note = c.sans.fit(&d.type_note, 15.0, 400.0);
-        c.text(&note, 70.0, 309.0, 15.0, Sans, "mute", "start", 0.0, 0.0, None);
+    for (i, ln) in note_lines(&c.sans, &d.type_note).iter().enumerate() {
+        c.text(ln, 70.0, 309.0 + i as f64 * 16.0, NOTE_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
     }
 
     // medallion
@@ -368,5 +383,36 @@ mod tests {
             assert!(f.width(&ln, 21.0, 0.0) <= 800.0 + 0.01);
         }
         assert!(f.fit("a very long film title ".repeat(10).as_str(), 19.0, 440.0).ends_with('…'));
+    }
+
+    #[test]
+    fn no_card_label_is_cut() {
+        let c = Ctx { sans: font(FontKind::Sans), serif: font(FontKind::Serif), els: vec![] };
+        let uncut = |f: &Font, s: &str, size: f64, w: f64| assert_eq!(f.fit(s, size, w), s, "cut: {s}");
+        let d = sample();
+        // both notes, with and without the low-confidence tag
+        for note in [d.type_note.clone(), TYPE_NOTE.to_string()] {
+            let lines = note_lines(&c.sans, &note);
+            assert!(lines.len() <= 2 && lines.join(" · ") == note, "{lines:?}");
+            for ln in &lines {
+                assert!(c.sans.width(ln, NOTE_SIZE, 0.0) <= NOTE_WIDTH, "{ln}");
+            }
+        }
+        // the note stays clear of the medallion rim (centre 540,546, outer radius 268*138/150) on every line
+        let (cx, cy, ro) = (540.0f64, 546.0f64, 268.0 * 138.0 / 150.0);
+        for (i, ln) in note_lines(&c.sans, &d.type_note).iter().enumerate() {
+            let y = 309.0 + i as f64 * 16.0 + 3.0; // lowest point of the glyphs
+            let rim_x = cx - (ro * ro - (cy - y).powi(2)).max(0.0).sqrt();
+            assert!(70.0 + c.sans.width(ln, NOTE_SIZE, 0.0) < rim_x, "line {i} reaches the rim at x={rim_x}");
+        }
+        for i in 0..6 {
+            uncut(&c.sans, &d.coverage[i], 15.0, 270.0);
+            uncut(&c.sans, &d.evidence[i].0, 18.0, 440.0);
+            uncut(&c.serif, &d.evidence[i].1, 18.0, 440.0);
+        }
+        uncut(&c.sans, &format!("Nearest canon: {}", d.nearest.join(" · ")), 22.0, 940.0);
+        uncut(&c.serif, &d.signature, 20.0, 940.0);
+        uncut(&c.sans, &d.user, 34.0, 470.0);
+        assert!(c.serif.wrap(&d.ability, 21.0, 800.0).len() <= 3 && c.serif.wrap(&d.weakness, 19.0, 800.0).len() <= 2);
     }
 }
