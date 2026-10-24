@@ -119,3 +119,11 @@ fn films_outside_the_table_are_skipped_and_counted() {
     assert_eq!(a.card.coverage[0], "only 0 of 2 films, needs 20");
     assert!(s.contains("class=\"f-mute\""));
 }
+
+#[test]
+fn unreadable_rating_cells_are_ignored_with_a_note() {
+    let w = "Date,Name,Year,Letterboxd URI\n2024-01-05,A,2000,https://boxd.it/a\n";
+    let r = "Date,Name,Year,Letterboxd URI,Rating\n2024-01-05,A,2000,https://boxd.it/a,NaN\n2024-01-05,B,2000,https://boxd.it/b,inf\n";
+    let (a, _) = card(&files(w, Some(r), None));
+    assert!(a.notes.iter().any(|n| n.contains("2 rating cell(s)") && n.contains("ignored")), "{:?}", a.notes);
+}

@@ -25,16 +25,22 @@ pub fn civil_from_days(z: Day) -> (i64, i64, i64) {
     (if m <= 2 { y + 1 } else { y }, m, d)
 }
 
-/// "YYYY-MM-DD" (extra time text after the date is ignored).
+/// "YYYY-MM-DD" (extra time text after the date is ignored). Works on bytes, so a multi-byte character anywhere in the
+/// cell gives None rather than a panic.
 pub fn parse_date(s: &str) -> Option<Day> {
-    let s = s.trim();
-    let b = s.as_bytes();
+    let b = s.trim().as_bytes();
     if b.len() < 10 || b[4] != b'-' || b[7] != b'-' {
         return None;
     }
-    let y: i64 = s[0..4].parse().ok()?;
-    let m: i64 = s[5..7].parse().ok()?;
-    let d: i64 = s[8..10].parse().ok()?;
+    let num = |r: std::ops::Range<usize>| -> Option<i64> {
+        let d = &b[r];
+        if d.iter().all(u8::is_ascii_digit) {
+            Some(d.iter().fold(0i64, |a, c| a * 10 + (c - b'0') as i64))
+        } else {
+            None
+        }
+    };
+    let (y, m, d) = (num(0..4)?, num(5..7)?, num(8..10)?);
     if !(1..=12).contains(&m) || !(1..=31).contains(&d) {
         return None;
     }
@@ -72,6 +78,14 @@ mod tests {
         }
         assert_eq!(parse_date("1970-01-01"), Some(0));
         assert_eq!(iso(parse_date("2022-07-06").unwrap()), "2022-07-06");
+    }
+
+    #[test]
+    fn malformed_dates_give_none_not_a_panic() {
+        for bad in ["2022-07-0é", "2022-0é-06", "é022-07-06", "２０２２-07-06", "2022/07/06", "2022-13-01", "2022-07-32", "", "2022-07", "2022-07-0\u{301}6"] {
+            assert_eq!(parse_date(bad), None, "{bad:?}");
+        }
+        assert_eq!(parse_date(" 2022-07-06 12:00"), parse_date("2022-07-06"));
     }
 
     #[test]

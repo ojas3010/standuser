@@ -44,6 +44,8 @@ pub struct Export {
     pub username: Option<String>,
     /// Export date taken from the ZIP file name, else None.
     pub as_of: Option<Day>,
+    /// Rating cells that were not a number from 0.5 to 5 and were ignored.
+    pub ignored_ratings: usize,
 }
 
 #[derive(Debug)]
@@ -91,24 +93,27 @@ pub fn read_zip(bytes: &[u8]) -> Result<BTreeMap<String, Vec<u8>>, ParseError> {
     Ok(out)
 }
 
-/// "letterboxd-<username>-2026-10-19-13-22-utc.zip" -> (username, export day)
+/// "letterboxd-<username>-2026-10-19-13-22-utc.zip" -> (username, export day).
+/// The timestamp is searched for rather than counted from the end, so what a browser or download manager appends
+/// ("... (1).zip", " - Copy", a query string) does not change the username or the date.
 pub fn parse_file_name(name: &str) -> (Option<String>, Option<Day>) {
     let base = name.rsplit(['/', '\\']).next().unwrap_or(name);
-    let base = base.strip_suffix(".zip").unwrap_or(base);
-    let rest = match base.strip_prefix("letterboxd-") {
-        Some(r) => r,
-        None => return (None, None),
-    };
-    let rest = rest.strip_suffix("-utc").unwrap_or(rest);
-    // ...-YYYY-MM-DD-HH-MM : peel 5 numeric groups from the right
-    let parts: Vec<&str> = rest.split('-').collect();
-    if parts.len() < 6 {
+    let Some(rest) = base.get(..11).filter(|p| p.eq_ignore_ascii_case("letterboxd-")).map(|_| &base[11..]) else {
         return (None, None);
+    };
+    let b = rest.as_bytes();
+    let ts = |i: usize| -> bool {
+        // YYYY-MM-DD-HH-MM
+        b.len() >= i + 16 && [0, 1, 2, 3, 5, 6, 8, 9, 11, 12, 14, 15].iter().all(|&k| b[i + k].is_ascii_digit()) && [4, 7, 10, 13].iter().all(|&k| b[i + k] == b'-')
+    };
+    for i in 1..b.len() {
+        if b[i - 1] == b'-' && ts(i) {
+            let user = &rest[..i - 1]; // cut at an ASCII '-', so this is a char boundary
+            let user = if user.is_empty() { None } else { Some(user.to_string()) };
+            return (user, parse_date(&rest[i..i + 10]));
+        }
     }
-    let n = parts.len();
-    let date = format!("{}-{}-{}", parts[n - 5], parts[n - 4], parts[n - 3]);
-    let user = parts[..n - 5].join("-");
-    (if user.is_empty() { None } else { Some(user) }, parse_date(&date))
+    (None, None)
 }
 
 fn reader(bytes: &[u8]) -> csv::Reader<&[u8]> {
@@ -150,7 +155,14 @@ pub fn parse_files(files: &BTreeMap<String, Vec<u8>>, file_name: Option<&str>) -
             let cu = col(&h, "Letterboxd URI");
             for rec in rd.records() {
                 let r = rec.map_err(|e| ParseError::Csv(e.to_string()))?;
-                let (Some(name), Some(year), Some(rating)) = (r.get(cn), r.get(cy).and_then(|y| y.trim().parse::<i32>().ok()), r.get(cr).and_then(|x| x.trim().parse::<f64>().ok())) else {
+                let (Some(name), Some(year)) = (r.get(cn), r.get(cy).and_then(|y| y.trim().parse::<i32>().ok())) else {
+                    continue;
+                };
+                // Letterboxd ratings are 0.5 to 5 in half stars; "NaN", "inf" and out-of-range cells are ignored
+                let Some(rating) = r.get(cr).and_then(|x| x.trim().parse::<f64>().ok()).filter(|x| x.is_finite() && (0.5..=5.0).contains(x)) else {
+                    if r.get(cr).is_some_and(|x| !x.trim().is_empty()) {
+                        ex.ignored_ratings += 1;
+                    }
                     continue;
                 };
                 ex.ratings.push(Rating { name: name.to_string(), year, rating, uri: cu.and_then(|i| r.get(i)).unwrap_or("").to_string() });
@@ -208,6 +220,33 @@ pub fn boxd_code(uri: &str) -> Option<&str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn download_suffixes_do_not_change_the_name_or_date() {
+        for n in [
+            "letterboxd-jas3344-2026-10-19-13-22-utc (1).zip",
+            "letterboxd-jas3344-2026-10-19-13-22-utc(2).zip",
+            "/tmp/x/letterboxd-jas3344-2026-10-19-13-22-utc - Copy.zip",
+            "C:\\Users\\me\\Downloads\\Letterboxd-jas3344-2026-10-19-13-22-utc (12).zip",
+            "letterboxd-jas3344-2026-10-19-13-22-utc.zip?download=1",
+        ] {
+            let (u, d) = parse_file_name(n);
+            assert_eq!(u.as_deref(), Some("jas3344"), "{n}");
+            assert_eq!(crate::dates::iso(d.unwrap()), "2026-10-19", "{n}");
+        }
+        assert_eq!(parse_file_name("letterboxd-ünï-2026-10-19-13-22-utc.zip").0.as_deref(), Some("ünï"));
+        assert_eq!(parse_file_name("letterboxd-é").0, None);
+    }
+
+    #[test]
+    fn bad_rating_cells_are_ignored_and_counted() {
+        let mut f = BTreeMap::new();
+        f.insert("watched.csv".into(), b"Date,Name,Year,Letterboxd URI\n".to_vec());
+        f.insert("ratings.csv".into(), b"Date,Name,Year,Letterboxd URI,Rating\n2024-01-01,A,2000,u,NaN\n2024-01-01,B,2000,u,inf\n2024-01-01,C,2000,u,9\n2024-01-01,D,2000,u,0\n2024-01-01,E,2000,u,4.5\n2024-01-01,F,2000,u,\n".to_vec());
+        let e = parse_files(&f, None).unwrap();
+        assert_eq!(e.ratings.len(), 1);
+        assert_eq!(e.ignored_ratings, 4, "NaN, inf, 9 and 0 are ignored; the empty cell is not a rating at all");
+    }
 
     #[test]
     fn file_name() {

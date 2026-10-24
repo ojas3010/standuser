@@ -111,6 +111,9 @@ impl StatCuts {
 
     /// Population percentile (0..1) of `v`, or None when the stat has no knots.
     pub fn percentile(&self, v: f64) -> Option<f64> {
+        if !v.is_finite() {
+            return None;
+        }
         let k = self.knots.as_ref()?;
         if k.len() < 2 {
             return None;
@@ -123,7 +126,7 @@ impl StatCuts {
         } else if v >= x[n - 1] {
             n - 2
         } else {
-            x.iter().rposition(|&a| a <= v).unwrap().min(n - 2)
+            x.iter().rposition(|&a| a <= v).unwrap_or(0).min(n - 2)
         };
         let zv = z[i] + (z[i + 1] - z[i]) * (v - x[i]) / (x[i + 1] - x[i]);
         Some(phi(zv))
@@ -131,12 +134,18 @@ impl StatCuts {
 
     /// Card letter 1..5 (E..A) by the percentile cut-points; a value on a cut goes to the higher grade.
     pub fn letter(&self, v: f64) -> Option<u8> {
+        if !v.is_finite() {
+            return None;
+        }
         let c = self.letter_cuts.as_ref()?;
         Some(1 + c.iter().filter(|&&x| v >= x).count() as u8)
     }
 
     /// Canon-equivalent grade 1..5: value cuts when shipped, else the percentile through canon's cumulative shares.
     pub fn canon_grade(&self, v: f64) -> Option<u8> {
+        if !v.is_finite() {
+            return None;
+        }
         if let Some(c) = &self.canon_cuts {
             return Some(1 + c.iter().filter(|&&x| v >= x).count() as u8);
         }

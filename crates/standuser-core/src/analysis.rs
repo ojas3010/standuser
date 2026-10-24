@@ -94,6 +94,9 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
     if ex.joined.is_none() {
         notes.push("no Date Joined found in profile.csv (file or column missing): the join day is taken as the earliest watched.csv date".to_string());
     }
+    if ex.ignored_ratings > 0 {
+        notes.push(format!("{} rating cell(s) in ratings.csv were not a number from 0.5 to 5 and were ignored", ex.ignored_ratings));
+    }
     if ex.as_of.is_none() {
         notes.push("the export date could not be read from the file name: the latest date in the export is used".to_string());
     }

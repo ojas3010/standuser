@@ -418,7 +418,7 @@ fn examples(ex: &Export, lk: &Lookup, tl: &Timeline, rated: &[RatedFilm], dir_co
                 let w = &ex.watched[wi];
                 (rating(&w.name, w.year).unwrap_or(-1.0), day, w.name.clone())
             })
-            .min_by(|a, b| b.0.partial_cmp(&a.0).unwrap().then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)))
+            .min_by(|a, b| b.0.total_cmp(&a.0).then(a.1.cmp(&b.1)).then(a.2.cmp(&b.2)))
             .map(|x| x.2)
     };
     let in_month = |m: i64| -> Vec<(usize, i64)> { tl.events.iter().filter(|e| crate::dates::month_of(e.day) == m).map(|e| (e.film, e.day)).collect() };
