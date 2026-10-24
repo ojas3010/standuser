@@ -95,7 +95,7 @@ pub fn ascii_fold(name: &str) -> Option<String> {
             c if c.is_ascii_alphabetic() => out.push(c.to_ascii_uppercase()),
             c if c.is_ascii_digit() => out.push(c),
             c if c.is_whitespace() => out.push(' '),
-            '.' | '\'' | '-' | '&' | ',' | '!' | '?' => out.push(c),
+            '.' | '\'' | '"' | '-' | '&' | ',' | '!' | '?' => out.push(c),
             _ => return None,
         }
     }

@@ -75,6 +75,8 @@ fn stand_names_are_folded_to_ascii() {
     assert_eq!(ascii_fold("Søren Ærø").as_deref(), Some("SOREN AERO"));
     assert_eq!(ascii_fold("Łukasz Błaszczyk").as_deref(), Some("LUKASZ BLASZCZYK"));
     assert_eq!(ascii_fold("Ennio Morricone").as_deref(), Some("ENNIO MORRICONE"));
+    assert_eq!(ascii_fold("Wayne \"The Train\" Hancock").as_deref(), Some("WAYNE \"THE TRAIN\" HANCOCK"), "a straight double quote is allowed");
+    assert_eq!(missing("「WAYNE \"THE TRAIN\" HANCOCK」", &[FontKind::Serif]), "", "and the card font draws it");
     assert_eq!(ascii_fold("久石 譲"), None, "a name with no ASCII form cannot be drawn");
     assert_eq!(ascii_fold("Сталкер"), None);
     assert_eq!(ascii_fold("   "), None);
