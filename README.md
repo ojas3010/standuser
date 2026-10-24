@@ -148,4 +148,4 @@ tools/*.py              table, font and calibration-table builders
 
 ## Credits and licence
 
-MIT licence. Fan work, not affiliated with Letterboxd, TMDB, or the rights holders of JoJo's Bizarre Adventure. Film data: TMDB (this product uses the TMDB API but is not endorsed or certified by TMDB). Ratings data: Letterboxd.
+MIT licence. Fan work, not affiliated with Letterboxd, TMDB, or the rights holders of JoJo's Bizarre Adventure. Ratings data: Letterboxd. Film data: TMDB. This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.

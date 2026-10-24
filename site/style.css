@@ -27,3 +27,5 @@ button:hover, button:focus-visible { border-color: var(--red); }
 table { width: 100%; border-collapse: collapse; font-size: .92rem; }
 th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
 footer { margin-top: 40px; }
+.tmdb { margin: 0 0 6px; line-height: 0; }
+.tmdb img { height: 14px; width: auto; opacity: .85; }
