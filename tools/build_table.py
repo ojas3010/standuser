@@ -1,86 +1,65 @@
 """Turn the collector's films_meta.jsonl + histograms.jsonl into the compact lookup table shipped with the site.
 
 Usage: python3 -I tools/build_table.py <out_dir_of_collector>... [--out crates/standuser-core/data/films.json]
-Several collector output folders can be given; the first record for a film wins (own films before sample films).
+                                       [--include-own] [--built YYYY-MM-DD] [--log tools/table_collisions.json]
+
+The shipped table holds the shared film list only (the collector's 'sample' group) and carries no Letterboxd codes, so it
+does not reveal anybody's watch list. `--include-own` adds the author's own films for a local test table. Films whose
+"title|year" key is shared by two different films are dropped and logged (see tools/table_lib.py).
 
 Format (see crates/standuser-core/src/lookup.rs):
   {"v":1,"built":"YYYY-MM-DD","countries":{code:name},"people":{id:name},
-   "films":[[key,lid,tmdb,year,runtime,lang,"US|PL","dirIds","composerIds",avg,histMean,count], ...]}
+   "films":[[key,"",tmdb,year,runtime,lang,"US|PL","dirIds","composerIds",avg,histMean,count], ...]}
+(the second column, a Letterboxd short code, is always empty in the shipped table)
 """
-import datetime, json, sys, unicodedata
+import datetime, json, sys
 from pathlib import Path
 
-
-def film_key(name, year):
-    t = "".join(c for c in unicodedata.normalize("NFKD", name) if c.isalnum()).lower()
-    return f"{t}|{year}"
-
-
-def read_jsonl(p):
-    out = []
-    if p.exists():
-        for line in p.open(encoding="utf-8"):
-            line = line.strip()
-            if line:
-                out.append(json.loads(line))
-    return out
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+import table_lib as TL  # noqa: E402
 
 
 def main(argv):
     out = Path("crates/standuser-core/data/films.json")
     built = datetime.date.today().isoformat()   # TMDB data may be cached for at most six months from this date
-    dirs = []
+    include_own, log_path, dirs = False, Path("tools/table_collisions.json"), []
     i = 0
     while i < len(argv):
-        if argv[i] == "--out":
+        a = argv[i]
+        if a == "--out":
             out = Path(argv[i + 1]); i += 2
-        elif argv[i] == "--built":
+        elif a == "--built":
             built = argv[i + 1]; i += 2
+        elif a == "--log":
+            log_path = Path(argv[i + 1]); i += 2
+        elif a == "--include-own":
+            include_own = True; i += 1
         else:
-            dirs.append(Path(argv[i])); i += 1
-    countries, people, films, seen = {}, {}, [], set()
-    stats = dict(records=0, kept=0, no_tmdb=0, not_movie=0, dup=0, no_count=0, with_hist=0)
-    for d in dirs:
-        hist = {h["slug"]: h for h in read_jsonl(d / "histograms.jsonl") if h.get("complete")}
-        for r in read_jsonl(d / "films_meta.jsonl"):
-            stats["records"] += 1
-            if r.get("tmdb_type") != "movie" or not r.get("tmdb_id"):
-                stats["not_movie" if r.get("tmdb_type") else "no_tmdb"] += 1
-                continue
-            name, year = r.get("name") or r.get("title"), r.get("year")
-            if not name or not year:
-                continue
-            key = film_key(name, int(year))
-            if key in seen:
-                stats["dup"] += 1
-                continue
-            seen.add(key)
-            codes = r.get("production_countries") or []
-            for c, n in zip(codes, r.get("production_country_names") or []):
-                countries[c] = n
-            dirs_ = [x for x in (r.get("directors") or [])]
-            for x in dirs_:
-                people[str(x["id"])] = x["name"]
-            comps = r.get("composers") or []
-            omc = [x for x in comps if x.get("job") == "Original Music Composer"] or comps
-            for x in omc:
-                people[str(x["id"])] = x["name"]
-            h = hist.get(r.get("lb_slug"))
-            hm = round(h["plain_mean"], 4) if h and h.get("plain_mean") else None
-            count = r.get("lb_rating_count") or (h["total"] if h else None)
-            if count is None:
-                stats["no_count"] += 1
-            if hm is not None:
-                stats["with_hist"] += 1
-            films.append([key, r.get("lid") or "", int(r["tmdb_id"]), int(year), int(r.get("runtime") or 0),
-                          r.get("original_language") or "", "|".join(codes),
-                          ",".join(str(x["id"]) for x in dirs_), ",".join(str(x["id"]) for x in omc),
-                          r.get("lb_avg"), hm, count])
-            stats["kept"] += 1
-    films.sort(key=lambda f: f[0])
-    out.write_text(json.dumps(dict(v=1, built=built, countries=dict(sorted(countries.items())), people=dict(sorted(people.items(), key=lambda kv: int(kv[0]))),
-                                  films=films), ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
-    print(stats, "->", out, f"{out.stat().st_size/1024:.0f} KB")
+            dirs.append(Path(a)); i += 1
+    films, log = TL.load(dirs, include_own=include_own)
+    countries, people, rows = {}, {}, []
+    no_count = with_hist = 0
+    for f in films:
+        for c, n in zip(f["codes"], f["code_names"]):
+            countries[c] = n
+        for x in f["directors"]:
+            people[str(x["id"])] = x["name"]
+        comps = [x for x in f["composers"] if x.get("job") == "Original Music Composer"] or f["composers"]
+        for x in comps:
+            people[str(x["id"])] = x["name"]
+        no_count += f["count"] is None
+        with_hist += f["hist"] is not None
+        rows.append([f["key"], "", f["tmdb"], f["year"], f["runtime"], f["lang"], "|".join(f["codes"]),
+                     ",".join(str(x["id"]) for x in f["directors"]), ",".join(str(x["id"]) for x in comps),
+                     f["avg"], f["hist"], f["count"]])
+    out.write_text(json.dumps(dict(v=1, built=built, countries=dict(sorted(countries.items())),
+                                  people=dict(sorted(people.items(), key=lambda kv: int(kv[0]))), films=rows),
+                              ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    log_path.write_text(json.dumps(dict(built=built, kept=len(rows), **{k: v for k, v in log.items()}), indent=1, ensure_ascii=False), encoding="utf-8")
+    for c in log["collisions"]:
+        print(f"collision dropped: {c['key']} ({c['films']} different films)", file=sys.stderr)
+    print(dict(records=log["records"], kept=len(rows), collisions_dropped=len(log["collisions"]), not_movie=log["not_movie"], no_tmdb=log["no_tmdb"],
+               no_year=log["no_year"], own_only_left_out=log["own_only_left_out"], no_count=no_count, with_hist=with_hist), "->", out, f"{out.stat().st_size/1024:.0f} KB")
 
 
 if __name__ == "__main__":

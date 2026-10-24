@@ -24,7 +24,9 @@ import pandas as pd
 
 HERE = Path(__file__).resolve().parent
 sys.path.insert(0, str(HERE / "golden/proto"))
+sys.path.insert(0, str(HERE))
 import rating_fns as RF  # noqa: E402
+import table_lib as TL  # noqa: E402
 
 QS = (0.01, 0.02, 0.05, 0.10, 0.25, 0.30, 0.50, 0.70, 0.75, 0.90, 0.95, 0.98, 0.99)
 CANON_CUM = dict(PWR=[26.3, 38.7, 58.4, 77.4], PRC=[38.7, 56.3, 83.8, 91.5], RNG=[15.6, 31.2, 59.6, 75.2], DEV=[27.9, 42.2, 70.1, 81.5])
@@ -37,20 +39,11 @@ def read_jsonl(p):
 
 
 def load_films(dirs):
-    films = {}
-    for d in dirs:
-        hist = {h["slug"]: h for h in read_jsonl(Path(d) / "histograms.jsonl") if h.get("complete")}
-        for r in read_jsonl(Path(d) / "films_meta.jsonl"):
-            slug = r.get("lb_slug")
-            if r.get("tmdb_type") != "movie" or not slug or slug in films:
-                continue
-            h = hist.get(slug)
-            films[slug] = dict(
-                avg=r.get("lb_avg"), hist=h["plain_mean"] if h and h.get("plain_mean") else None,
-                count=r.get("lb_rating_count") or (h["total"] if h else None),
-                countries=r.get("production_countries") or [], dirs=sorted({x["id"] for x in (r.get("directors") or [])}),
-                short=bool(r.get("runtime")) and r["runtime"] <= 40)
-    return films
+    """The films of the shipped table (shared list, collisions dropped; see tools/table_lib.py), keyed by Letterboxd slug."""
+    films, _ = TL.load([Path(d) for d in dirs])
+    return {f["slug"]: dict(avg=f["avg"], hist=f["hist"], count=f["count"], countries=f["codes"],
+                            dirs=sorted({x["id"] for x in f["directors"]}), short=bool(f["runtime"]) and f["runtime"] <= 40)
+            for f in films}
 
 
 def load_pool(root):
@@ -203,7 +196,7 @@ def main():
         print(f"Precision: users {len(dpa)}, pa_pop {pa_pop:.4f}, cuts {out['stats']['PRC']['letter_cuts']}")
     if len(U["rng"]) >= 200:
         x = np.array(U["rng"])
-        out["inf_cut_RNG"] = round(float(np.quantile(x, 0.999)), 6)
+        out["inf_cut_RNG"] = round(float(np.quantile(x, 0.999)), 6)   # over calibration users with >= 50 films
         out["stats"]["RNG"] = dict(knots=knots(x), letter_cuts=cuts_at(x, (.1, .3, .7, .9)), canon_cuts=cuts_at(x, [v / 100 for v in CANON_CUM["RNG"]]))
         print(f"Range: users {len(x)}, cuts {out['stats']['RNG']['letter_cuts']}, median {np.median(x):.3f}")
     if len(U["gt60"]) >= 200:

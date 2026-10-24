@@ -1,0 +1,36 @@
+{
+ "built": "2026-10-24",
+ "kept": 9787,
+ "records": 10347,
+ "not_movie": 19,
+ "no_tmdb": 10,
+ "no_year": 2,
+ "no_slug": 0,
+ "collisions": [
+  {
+   "key": "cobweb|2023",
+   "films": 2,
+   "shared_list_slugs": [
+    "cobweb-2023",
+    "cobweb-2023-1"
+   ]
+  },
+  {
+   "key": "leo|2023",
+   "films": 2,
+   "shared_list_slugs": [
+    "leo-2023",
+    "leo-2023-1"
+   ]
+  },
+  {
+   "key": "reality|2014",
+   "films": 2,
+   "shared_list_slugs": [
+    "reality-2014",
+    "reality-2014-1"
+   ]
+  }
+ ],
+ "own_only_left_out": 52
+}
