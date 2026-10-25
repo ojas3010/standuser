@@ -182,3 +182,30 @@ fn twelve_years_a_slave_credits_letter_writing_to_zimmers_score_and_freight_trai
     assert!(lk.names.values().filter(|n| n.cands.iter().map(|c| c.album).collect::<std::collections::HashSet<_>>().len() > 1).count() > 300);
     assert!(lk.names.values().all(|n| n.cands.iter().all(|c| c.album < n.albums.len())));
 }
+
+#[test]
+fn stand_json_keeps_the_per_film_favourite_flag_and_no_count_of_favourites_read() {
+    let lk = real();
+    // two seeded users: one with favourites in the export, one without
+    let (ex, _) = synth_users::users(1, &lk).remove(0);
+    assert!(!ex.favorites.is_empty(), "setup: the seeded user has favourites");
+    let mut none = ex.clone();
+    none.favorites.clear();
+    for e in [&ex, &none] {
+        let mut e = e.clone();
+        e.joined = standuser_core::dates::parse_date("2022-01-01");
+        e.as_of = standuser_core::dates::parse_date("2026-10-19");
+        let json = serde_json::to_value(analysis::analyze(&e, &lk)).unwrap();
+        assert!(!json.to_string().contains("favorites_read"), "no count of favourites read in stand.json");
+        let top = json["name"]["top"].as_array().unwrap();
+        assert!(!top.is_empty() && top.iter().all(|t| t["fav"].is_boolean()), "every listed name keeps its film's favourite flag");
+    }
+    let fav_flags = |e: &parse::Export| {
+        let mut e = e.clone();
+        e.joined = standuser_core::dates::parse_date("2022-01-01");
+        e.as_of = standuser_core::dates::parse_date("2026-10-19");
+        analysis::analyze(&e, &lk).name.top.iter().filter(|t| t.fav).count()
+    };
+    assert_eq!(fav_flags(&none), 0, "no favourites, no flag");
+    assert!(synth_users::users(40, &lk).iter().any(|(e, _)| fav_flags(e) > 0), "a listed name from a favourite film carries the flag");
+}
