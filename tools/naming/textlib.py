@@ -119,19 +119,27 @@ _BRACKETS = re.compile(r"\([^()]*\)|\[[^\[\]]*\]")
 _FEAT = re.compile(r"\s+(?:feat\.?|ft\.?|featuring)\s.*$", re.I)
 
 
-def strip_title(title):
+CUE_MARK = "\x00"
+
+
+def strip_title(title, cues=None):
     """Remove (...) and [...], then split cue-sheet merges on ' / '. Returns (parts, changed) where parts are
-    (text, split) pairs with anything after ' - ' or ': ' cut off."""
+    (text, split) pairs with anything after ' - ' or ': ' cut off. A bracket that holds a cue word (reprise, suite, ...) is
+    not just dropped: the piece it was in is rejected as a cue (not returned), and `cues`, if a list, gets one "cue-word" for it."""
     t = fold_ascii(title)
     prev = None
     while prev != t:
         prev = t
-        t = _BRACKETS.sub(" ", t)
+        t = _BRACKETS.sub(lambda m: f" {CUE_MARK} " if BAD_WORDS.search(m.group()) else " ", t)
     t = " ".join(t.split())
     pieces = [p.strip() for p in t.split(" / ")] if " / " in t else [t]
     split = len(pieces) > 1
     parts = []
     for p in pieces:
+        if CUE_MARK in p:
+            if cues is not None:
+                cues.append("cue-word")
+            continue
         p = re.split(r" - |: ", p)[0]
         p = _FEAT.sub("", p).strip(" -:,;")
         if p:
@@ -158,15 +166,16 @@ def tail_span(text):
     return None
 
 
-def stage5(title):
+def stage5(title, rejects=None):
     """Candidates from one track title: [(text, kind)] with kind v (verbatim), s (brackets or subtitle stripped),
-    c (one cue of a merged title), t (tail of a longer title)."""
+    c (one cue of a merged title), t (tail of a longer title). A piece whose brackets held a cue word, such as "(Reprise)", is
+    rejected here, and `rejects`, if a list, gets "cue-word" for it."""
     t0 = bilingual(title)
     if t0 is None:
         return []
     plain = " ".join(fold_ascii(t0).split())
     out = []
-    for text, split in strip_title(t0):
+    for text, split in strip_title(t0, rejects):
         changed = " ".join(text.split()).lower() != plain.lower()
         if len(words(text)) <= MAX_WORDS and len(text) <= MAX_CHARS:
             kind = "c" if split else ("s" if changed else "v")
@@ -338,7 +347,7 @@ def candidates_for_album(tracks, film_titles=(), canon=True, film=True, rejects=
     every candidate stage 6 or the card checks threw out."""
     seen, out = set(), []
     for i, title in enumerate(tracks, 1):
-        for text, kind in stage5(title):
+        for text, kind in stage5(title, rejects):
             why = stage6(text, film_titles, canon=canon, film=film) or extra_checks(text)
             if why:
                 if rejects is not None:

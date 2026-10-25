@@ -1,8 +1,8 @@
 {
  "rule": "a: no ring links through WordNet-definition top-up core words; b: drop ring lemmas whose share of the candidates table is above the 90th percentile over all (template, lemma) pairs",
- "candidates": 91087,
+ "candidates": 90972,
  "pairs_after_a": 3990,
- "p90_share": 0.0005159902071645789,
+ "p90_share": 0.0005166424834014861,
  "sizes": {
   "1": {
    "before": 336,

@@ -255,10 +255,10 @@ def test_candidates_for_album_filters_dedupes_and_numbers_tracks():
     tracks = ["Main Title", "Stranded", "Heaven's Door", "Track 4", "Dirty Weather (Reprise)", "Dirty Weather", "Lighthouse Keeper"]
     got = t.candidates_for_album(tracks, ["Lighthouse"])
     names = [c["name"] for c in got]
-    assert names == ["STRANDED", "DIRTY WEATHER"]  # generic, canon, number and film-title candidates are gone; no cue-word title is on this album
-    # the bracket on track 5 is stripped before stage 6, so the earliest track keeps the name and the plain repeat on 6 is dropped
-    assert [c["track"] for c in got] == [2, 5]
-    assert [c["kind"] for c in got] == ["v", "s"]
+    assert names == ["STRANDED", "DIRTY WEATHER"]  # generic, canon, number, film-title and bracketed-reprise candidates are gone
+    # track 5 "(Reprise)" is rejected as a cue, so the plain title on track 6 is the one that stays
+    assert [c["track"] for c in got] == [2, 6]
+    assert [c["kind"] for c in got] == ["v", "v"]
 
 
 # ---------------------------------------------------------------- hyphens
@@ -285,13 +285,31 @@ def test_a_reprise_cue_is_rejected_as_a_cue_word():
     got = t.candidates_for_album(["Dirty Weather Reprise", "Stranded", "Reprise"], ["Source Code"], rejects=rejects)
     assert [c["name"] for c in got] == ["STRANDED"]
     assert rejects == ["cue-word", "cue-word"]
-    # a bracketed "(Reprise)" never reaches stage 6: stage 5 strips the bracket, so the plain title is the candidate (kind s)
-    assert t.stage5("Dirty Weather (Reprise)") == [("Dirty Weather", "s")]
+
+
+def test_a_bracketed_cue_word_rejects_the_candidate_but_other_brackets_do_not():
+    rejects = []
+    assert t.stage5("Main Theme (Reprise)", rejects) == [] and rejects == ["cue-word"]
+    rejects = []
+    assert t.stage5("Dirty Weather (reprise)", rejects) == [] and rejects == ["cue-word"]
+    assert t.stage5("Dirty Weather [Suite]") == []
+    # brackets without a cue word are stripped as before, and the candidate is kept
+    rejects = []
+    assert t.stage5("Voodoo Child (Slight Return)", rejects) == [("Voodoo Child", "s")] and rejects == []
+    assert t.stage5("Rain [Live] (Remastered 2011)") == [("Rain", "s")]
+    # in a merged cue sheet only the piece whose bracket holds the cue word goes
+    rejects = []
+    assert t.stage5("Dirty Weather (Reprise) / Stranded", rejects) == [("Stranded", "c")] and rejects == ["cue-word"]
+    # through the album driver the reason is counted, and "Main Theme (Reprise)" does not come back as a plain "Main Theme"
+    rejects = []
+    got = t.candidates_for_album(["Main Theme (Reprise)", "Stranded", "Dirty Weather (Reprise)"], ["Source Code"], rejects=rejects)
+    assert [c["name"] for c in got] == ["STRANDED"]
+    assert rejects == ["cue-word", "cue-word"]
 
 
 # ---------------------------------------------------------------- sensitive phrases
 def test_racial_profiling_is_blocked_whatever_its_punctuation_or_case():
-    for x in ("Racial Profiling", "RACIAL PROFILING", "racial-profiling!", "Racial  Profiling (Reprise)"):
+    for x in ("Racial Profiling", "RACIAL PROFILING", "racial-profiling!", "Racial  Profiling (Live)"):
         assert t.stage6(t.strip_title(x)[0][0] if "(" in x else x, canon=False, film=False, profane=False) == "sensitive", x
 
 
@@ -307,7 +325,7 @@ def test_the_blocklist_matches_whole_phrases_only():
 @needs_ldnoobw
 def test_a_blocked_title_never_becomes_a_candidate_of_its_album():
     rejects = []
-    got = t.candidates_for_album(["Racial Profiling", "Stranded", "Racial Profiling (Reprise)"], ["Source Code"], rejects=rejects)
+    got = t.candidates_for_album(["Racial Profiling", "Stranded", "Racial Profiling (Live)"], ["Source Code"], rejects=rejects)
     assert [c["name"] for c in got] == ["STRANDED"]
     assert rejects.count("sensitive") == 2, rejects
 

@@ -20,7 +20,7 @@ def test_driver_writes_surviving_candidates_and_composer(tmp_path):
              "films": [["lighthouse|2019", "", 11, 2019, 109, "en", "US", "1", "7", 2.1, None, 5],
                        ["nomusic|2001", "", 12, 2001, 90, "en", "US", "1", "8", 2.0, None, 5]]}
     local = [{"key": "lighthouse|2019", "n_cands": 1, "local": {"composer": {"rg": "g1", "title": "The Lighthouse", "year": 2019, "artist": "X",
-              "via": "norm", "tracks": ["Main Title", "Stranded", "Lighthouse Keeper", "Killer Queen", "Dirty Weather (Reprise)"]}}},
+              "via": "norm", "tracks": ["Main Title", "Stranded", "Lighthouse Keeper", "Killer Queen", "Dirty Weather (Live)", "Dirty Weather (Reprise)"]}}},
              {"key": "nomusic|2001", "n_cands": 0, "local": {}}]
     (tmp_path / "films.json").write_text(json.dumps(films))
     (tmp_path / "titles.json").write_text(json.dumps({"11": ["Lighthouse"], "12": ["No Music"]}))
@@ -34,4 +34,4 @@ def test_driver_writes_surviving_candidates_and_composer(tmp_path):
     got = [(x["key"], x["flag"], x["name"], x["track"]) for x in rows]
     assert got == [("lighthouse|2019", "composer", "STRANDED", "2"), ("lighthouse|2019", "composer", "DIRTY WEATHER", "5"),
                    ("lighthouse|2019", "artist", "HANS ZIMMER", ""), ("nomusic|2001", "artist", "PAT METHENY", "")]
-    # Main Title is generic, Lighthouse Keeper repeats the film title, Killer Queen is canon
+    # Main Title is generic, Lighthouse Keeper repeats the film title, Killer Queen is canon, and the bracketed (Reprise) is a cue
