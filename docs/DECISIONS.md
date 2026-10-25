@@ -90,6 +90,8 @@ The naming route follows `docs/naming-spec.md` (nine stages); these agreed chang
 - **The Stand assigns its own name.** No user choice is required.
 - **Glasgow Norms** (Scott et al. 2019, Behavior Research Methods 51:1258) supply the concreteness and emotion ratings. The article is CC BY 4.0 (Crossref licence record, Europe PMC `cc by`); the csv supplement carries no licence text of its own, so it is taken to fall under the article's. Attribution is required wherever the ratings are redistributed. The tools read them from `$NAMING_DATA` and ship nothing from them.
 
+- **Status of the Cool gate (25 Oct).** The benchmark (`tools/naming/benchmark.py`) keeps 31 of 38 resolved canon Stands after the rule-based exclusions (more than 30 tracks, or a live / tour / session release). Tuned on Parts 4 and 5 (9 Stands), the shipped weight set is concreteness alone; on Parts 6 to 8 (15 Stands) its MRR is 0.33 against 0.45 for the first-track rule, whose bootstrap 95% interval is 0.28 to 0.64. The stop condition (tuned Cool must beat first-track outside its interval) fired, so no Rust integration was done; the Cool and lexicon tools are committed, the shipped candidate data is not built.
+
 ## Privacy
 
 - `profile.csv` is read through an allowlist of one column, `Date Joined`, in memory; every other column (the e-mail address and the username included) is never decoded, stored, shown or logged, and an unreadable `profile.csv` counts as absent. The username comes from the ZIP file name (or `--username`). The committed fixtures use a synthetic `profile.csv` with an invalid address.
