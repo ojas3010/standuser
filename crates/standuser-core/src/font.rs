@@ -144,6 +144,30 @@ impl Font {
         lines
     }
 
+    /// Fit a film line "Title: Subtitle (Country)" to `maxw` without cutting a word in half. Order: the line as it is; the part after
+    /// the title's ":" dropped; the title cut at a word boundary with "…" (the trailing "(Country)" kept); the whole line cut at a
+    /// word boundary with "…"; and only for a single word wider than the box, `fit`.
+    pub fn fit_title(&self, s: &str, size: f64, maxw: f64) -> String {
+        let fits = |t: &str| self.width(t, size, 0.0) <= maxw;
+        if fits(s) {
+            return s.to_string();
+        }
+        let (title, suffix) = match s.rfind(" (").filter(|_| s.ends_with(')')) {
+            Some(i) => (&s[..i], &s[i..]),
+            None => (s, ""),
+        };
+        let title = title.split(':').next().unwrap_or(title).trim_end();
+        let line = format!("{title}{suffix}");
+        if !title.is_empty() && fits(&line) {
+            return line;
+        }
+        let cut = |text: &str, tail: &str| -> Option<String> {
+            let words: Vec<&str> = text.split(' ').filter(|w| !w.is_empty()).collect();
+            (1..words.len()).rev().map(|n| format!("{}…{tail}", words[..n].join(" "))).find(|c| fits(c))
+        };
+        cut(title, suffix).or_else(|| cut(&line, "")).unwrap_or_else(|| self.fit(&line, size, maxw))
+    }
+
     /// Cut `s` to fit `maxw`, ending with an ellipsis.
     pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
         if self.width(s, size, 0.0) <= maxw {
@@ -160,3 +184,63 @@ impl Font {
         "…".into()
     }
 }
+
+#[cfg(test)]
+mod title_tests {
+    use super::*;
+
+    fn serif() -> Font {
+        font(FontKind::Serif)
+    }
+
+    #[test]
+    fn a_title_that_fits_is_left_alone() {
+        let f = serif();
+        assert_eq!(f.fit_title("Ghost Rider: Spirit of Vengeance (Denmark)", 18.0, 2000.0), "Ghost Rider: Spirit of Vengeance (Denmark)");
+    }
+
+    #[test]
+    fn the_subtitle_after_the_colon_goes_first_and_the_country_stays() {
+        let f = serif();
+        let long = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
+        let short = "Ghost Rider (United Arab Emirates)";
+        let w = f.width(short, 18.0, 0.0) + 1.0;
+        assert!(f.width(long, 18.0, 0.0) > w);
+        assert_eq!(f.fit_title(long, 18.0, w), short);
+    }
+
+    #[test]
+    fn if_still_too_long_the_title_is_cut_at_a_word_boundary_with_an_ellipsis() {
+        let f = serif();
+        let long = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
+        let w = f.width("Ghost… (United Arab Emirates)", 18.0, 0.0) + 1.0;
+        assert_eq!(f.fit_title(long, 18.0, w), "Ghost… (United Arab Emirates)");
+        let t = "The Lord of the Rings the Fellowship of the Ring (Denmark)";
+        let w = f.width("The Lord of the Rings… (Denmark)", 18.0, 0.0) + 1.0;
+        assert_eq!(f.fit_title(t, 18.0, w), "The Lord of the Rings… (Denmark)");
+    }
+
+    #[test]
+    fn never_cuts_inside_a_word_at_any_width() {
+        let f = serif();
+        let src = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
+        let words: Vec<&str> = src.split([' ', ':']).map(|w| w.trim_matches(|c| c == '(' || c == ')')).filter(|w| !w.is_empty()).collect();
+        for w in (120..460).step_by(7) {
+            let r = f.fit_title(src, 18.0, w as f64);
+            assert!(f.width(&r, 18.0, 0.0) <= w as f64 + 0.01, "{r} at {w}");
+            // every complete word of the result is a word of the source; only the ellipsis may end a piece early
+            for piece in r.replace('…', " … ").split_whitespace().filter(|p| *p != "…") {
+                let piece = piece.trim_matches(|c| c == '(' || c == ')' || c == ':');
+                assert!(words.contains(&piece), "{piece:?} is not a whole word of the source in {r:?} at width {w}");
+            }
+        }
+    }
+
+    #[test]
+    fn a_single_word_wider_than_the_box_falls_back_to_a_character_cut() {
+        let f = serif();
+        let r = f.fit_title("Supercalifragilisticexpialidocious", 18.0, 100.0);
+        assert!(r.ends_with('…') && f.width(&r, 18.0, 0.0) <= 100.0);
+    }
+}
+

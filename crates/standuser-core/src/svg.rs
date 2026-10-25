@@ -262,7 +262,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
         let m = c.sans.fit(&d.evidence[i].0, 18.0, 440.0);
         c.text(&m, x, y + 42.0, 18.0, Sans, "mute", "start", 0.0, 0.0, None);
-        let f = c.serif.fit(&d.evidence[i].1, 18.0, 440.0);
+        let f = c.serif.fit_title(&d.evidence[i].1, 18.0, 440.0);
         c.text(&f, x, y + 61.0, 18.0, Serif, "ink", "start", 0.0, 0.0, None);
     }
 
