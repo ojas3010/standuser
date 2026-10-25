@@ -241,8 +241,8 @@ mod tests {
     fn diary_view_date_wins_and_pre_join_views_ignored() {
         let mut ex = Export::default();
         ex.watched.push(w("2022-08-01", "A"));
-        ex.diary.push(DiaryEntry { log_day: d("2022-08-01"), name: "A".into(), year: 2000, view_day: d("2022-07-20") });
-        ex.diary.push(DiaryEntry { log_day: d("2022-08-01"), name: "A".into(), year: 2000, view_day: d("2022-07-30") });
+        ex.diary.push(DiaryEntry { log_day: d("2022-08-01"), name: "A".into(), year: 2000, view_day: d("2022-07-20"), rewatch: false });
+        ex.diary.push(DiaryEntry { log_day: d("2022-08-01"), name: "A".into(), year: 2000, view_day: d("2022-07-30"), rewatch: false });
         let tl = build(&ex, d("2022-07-25"), d("2022-12-20"));
         assert_eq!(tl.events.len(), 1);
         assert_eq!(tl.events[0].day, d("2022-07-30"), "earliest view on or after the join day");

@@ -121,6 +121,13 @@ pub fn template(stat: &str, dir: &str) -> Template {
     }
 }
 
+/// The template with this id (1 to 17); the balanced one for anything else.
+pub fn template_by_id(id: u8) -> Template {
+    const KEYS: [(&str, &str); 17] = [("PWR", "hi"), ("PWR", "lo"), ("SPD", "hi"), ("SPD", "inf"), ("SPD", "lo"), ("RNG", "hi"), ("RNG", "inf"), ("RNG", "lo"), ("STA", "hi"),
+        ("STA", "inf"), ("STA", "lo"), ("PRC", "hi"), ("PRC", "lo"), ("DEV", "hi"), ("DEV", "lo"), ("DEV", "complete"), ("BAL", "bal")];
+    KEYS.iter().map(|(s, d)| template(s, d)).find(|t| t.id == id).unwrap_or_else(|| template("BAL", "bal"))
+}
+
 fn template_key(sig: &Signature, grades: &[Grade; 6]) -> (String, &'static str) {
     if sig.stat == "BAL" {
         return ("BAL".into(), "bal");

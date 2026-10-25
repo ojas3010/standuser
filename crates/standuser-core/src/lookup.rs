@@ -61,6 +61,39 @@ pub struct FilmMeta {
     pub lb_count: Option<u64>,
 }
 
+/// One name candidate of a film (tools/naming/build_names_data.py): a soundtrack track title, scored offline.
+#[derive(Debug, Clone, PartialEq)]
+pub struct NameCand {
+    /// Upper-case name the card can draw.
+    pub name: String,
+    /// Cool(n) x 100, 0 to 100.
+    pub cool: u8,
+    /// 1-based track number on the album.
+    pub track: u16,
+    /// v verbatim, s brackets stripped, c one cue of a merged title, t tail of a longer title.
+    pub kind: char,
+    /// The source track title when it differs from the name, else empty.
+    pub src: String,
+    /// Lexicon matches: template * 16 + word index * 2 + (1 for a core word, 0 for a WordNet ring word).
+    pub codes: Vec<u16>,
+}
+
+#[derive(Debug, Clone, PartialEq)]
+pub struct FilmNames {
+    pub artist: String,
+    /// The album credits the film's composer (a score) rather than a songs album or various artists.
+    pub score: bool,
+    pub cands: Vec<NameCand>,
+}
+
+type NameRow = (String, String, Vec<(String, u8, u16, String, String, Vec<u16>)>);
+
+#[derive(Deserialize)]
+struct NamesFile {
+    #[serde(default)]
+    names: HashMap<String, NameRow>,
+}
+
 #[derive(Debug, Clone, Default)]
 pub struct Lookup {
     pub films: Vec<FilmMeta>,
@@ -68,6 +101,8 @@ pub struct Lookup {
     by_lid: HashMap<String, usize>,
     pub country_names: HashMap<String, String>,
     pub people: HashMap<u32, String>,
+    /// Name candidates by TMDB id (names.json); empty when none were loaded, which leaves the composer route.
+    pub names: HashMap<u32, FilmNames>,
     /// Build date of the table (the oldest one when tables were merged).
     pub built: Option<crate::dates::Day>,
 }
@@ -127,6 +162,20 @@ impl Lookup {
         Ok(())
     }
 
+    /// Add the name candidates of names.json (a separate file; the film table's format is unchanged).
+    pub fn load_names(&mut self, json: &str) -> Result<(), String> {
+        let f: NamesFile = serde_json::from_str(json).map_err(|e| format!("bad names file: {e}"))?;
+        for (k, (artist, flag, cands)) in f.names {
+            let Ok(id) = k.parse::<u32>() else { continue };
+            let cands = cands
+                .into_iter()
+                .map(|(name, cool, track, kind, src, codes)| NameCand { name, cool, track, kind: kind.chars().next().unwrap_or('v'), src, codes })
+                .collect();
+            self.names.insert(id, FilmNames { artist, score: flag == "c", cands });
+        }
+        Ok(())
+    }
+
     /// Letterboxd short code first (exact), then the normalised title and year.
     pub fn find(&self, lid: Option<&str>, name: &str, year: i32) -> Option<&FilmMeta> {
         if let Some(l) = lid {
@@ -177,6 +226,19 @@ mod tests {
         assert_eq!(film_key("Amélie", 2001), "amelie|2001");
         assert_eq!(film_key("Borat: Cultural Learnings", 2006), "boratculturallearnings|2006");
         assert_eq!(film_key("Se7en", 1995), "se7en|1995");
+    }
+
+    #[test]
+    fn names_load_separately_from_the_table() {
+        let mut l = Lookup::from_json(r#"{"v":1,"films":[]}"#).unwrap();
+        assert!(l.names.is_empty());
+        l.load_names(r#"{"v":1,"meta":{},"names":{"7840":["A B","c",[["WOUNDED HUNTER",88,11,"v","",[33,48]],["WALKING","74",2,"c","x / y",[]]]]}}"#).unwrap_err();
+        l.load_names(r#"{"v":1,"meta":{},"names":{"7840":["A B","c",[["WOUNDED HUNTER",88,11,"v","",[33,48]],["WALKING",74,2,"c","x / y",[]]]],"x":["","o",[]]}}"#).unwrap();
+        let n = &l.names[&7840];
+        assert!(n.score && n.artist == "A B" && n.cands.len() == 2);
+        assert_eq!(n.cands[1], NameCand { name: "WALKING".into(), cool: 74, track: 2, kind: 'c', src: "x / y".into(), codes: vec![] });
+        assert_eq!(l.names.len(), 1, "a non-numeric id is skipped");
+        assert!(l.load_names("not json").is_err());
     }
 
     #[test]

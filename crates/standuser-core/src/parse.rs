@@ -1,9 +1,9 @@
 //! Letterboxd export reading: ZIP (or a map of file name -> bytes) to plain rows.
 //!
-//! profile.csv is read through an allowlist of one column: `Date Joined`, in memory. Every other column (the e-mail
-//! address, name, location, bio, favourite films, the username included) is never decoded, stored, shown or logged.
-//! profile.csv or the column may be absent, and an unreadable profile.csv is treated as absent; the username then
-//! comes from the ZIP file name or a flag.
+//! profile.csv is read through an allowlist of two columns: `Date Joined` and `Favorite Films`, in memory. Every other
+//! column (the e-mail address, name, location, bio, the username included) is never decoded, stored, shown or logged;
+//! from `Favorite Films` only the boxd.it film codes are kept. profile.csv or either column may be absent, and an
+//! unreadable profile.csv is treated as absent; the username then comes from the ZIP file name or a flag.
 
 use crate::dates::{parse_date, Day};
 use std::collections::BTreeMap;
@@ -33,6 +33,8 @@ pub struct DiaryEntry {
     pub year: i32,
     /// Watched Date (the viewing day); falls back to the log day when blank.
     pub view_day: Day,
+    /// The Rewatch column says "Yes".
+    pub rewatch: bool,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -41,6 +43,10 @@ pub struct Export {
     pub ratings: Vec<Rating>,
     pub diary: Vec<DiaryEntry>,
     pub joined: Option<Day>,
+    /// Letterboxd short codes (boxd.it/<code>) of the Favorite Films column of profile.csv, in order; nothing else of that cell is kept.
+    pub favorites: Vec<String>,
+    /// The Favorite Films cell had text but no boxd.it code could be read from it (the text itself is not kept).
+    pub favorites_unreadable: bool,
     pub username: Option<String>,
     /// Export date taken from the ZIP file name, else None.
     pub as_of: Option<Day>,
@@ -175,36 +181,66 @@ pub fn parse_files(files: &BTreeMap<String, Vec<u8>>, file_name: Option<&str>) -
         let h = rd.headers().map_err(|e| ParseError::Csv(e.to_string()))?.clone();
         if let (Some(cd), Some(cn), Some(cy)) = (col(&h, "Date"), col(&h, "Name"), col(&h, "Year")) {
             let cv = col(&h, "Watched Date");
+            let cw = col(&h, "Rewatch");
             for rec in rd.records() {
                 let r = rec.map_err(|e| ParseError::Csv(e.to_string()))?;
                 let (Some(log_day), Some(name), Some(year)) = (r.get(cd).and_then(parse_date), r.get(cn), r.get(cy).and_then(|y| y.trim().parse::<i32>().ok())) else {
                     continue;
                 };
                 let view_day = cv.and_then(|i| r.get(i)).and_then(parse_date).unwrap_or(log_day);
-                ex.diary.push(DiaryEntry { log_day, name: name.to_string(), year, view_day });
+                let rewatch = cw.and_then(|i| r.get(i)).is_some_and(|x| x.trim().eq_ignore_ascii_case("yes"));
+                ex.diary.push(DiaryEntry { log_day, name: name.to_string(), year, view_day, rewatch });
             }
         }
     }
 
     if let Some(b) = files.get("profile.csv") {
-        ex.joined = joined_from_profile(b);
+        let p = read_profile(b);
+        ex.joined = p.joined;
+        ex.favorites = p.favorites;
+        ex.favorites_unreadable = p.favorites_unreadable;
     }
     Ok(ex)
 }
 
-/// The `Date Joined` value of profile.csv, or None when the column or value is missing or the file cannot be read.
-/// Only the header names and that one field are decoded; errors carry no file content.
-fn joined_from_profile(bytes: &[u8]) -> Option<Day> {
+struct Profile {
+    joined: Option<Day>,
+    favorites: Vec<String>,
+    favorites_unreadable: bool,
+}
+
+/// The `Date Joined` and `Favorite Films` fields of profile.csv; either is empty when the column or value is missing or the
+/// file cannot be read. Only the header names and those two fields are decoded (no other column is touched); errors carry no
+/// file content, and from the favourites cell only the boxd.it codes are kept.
+fn read_profile(bytes: &[u8]) -> Profile {
+    let mut p = Profile { joined: None, favorites: vec![], favorites_unreadable: false };
     let mut rd = reader(bytes);
-    let cj = {
-        let h = rd.headers().ok()?;
-        col(h, "Date Joined")?
+    let (cj, cf) = match rd.headers() {
+        Ok(h) => (col(h, "Date Joined"), col(h, "Favorite Films")),
+        Err(_) => return p,
     };
     let mut br = csv::ByteRecord::new();
-    if !rd.read_byte_record(&mut br).ok()? {
-        return None;
+    if !matches!(rd.read_byte_record(&mut br), Ok(true)) {
+        return p;
     }
-    br.get(cj).and_then(|f| std::str::from_utf8(f).ok()).and_then(parse_date)
+    p.joined = cj.and_then(|i| br.get(i)).and_then(|f| std::str::from_utf8(f).ok()).and_then(parse_date);
+    if let Some(cell) = cf.and_then(|i| br.get(i)).and_then(|f| std::str::from_utf8(f).ok()) {
+        p.favorites = boxd_codes(cell);
+        p.favorites_unreadable = p.favorites.is_empty() && !cell.trim().is_empty();
+    }
+    p
+}
+
+/// Every Letterboxd short code ("https://boxd.it/jUk4" -> "jUk4") in a text, in order, without repeats.
+pub fn boxd_codes(text: &str) -> Vec<String> {
+    let mut out: Vec<String> = vec![];
+    for part in text.split("boxd.it/").skip(1) {
+        let code: String = part.chars().take_while(|c| c.is_ascii_alphanumeric()).collect();
+        if !code.is_empty() && !out.contains(&code) {
+            out.push(code);
+        }
+    }
+    out
 }
 
 pub fn parse_zip(bytes: &[u8], file_name: Option<&str>) -> Result<Export, ParseError> {
@@ -319,5 +355,47 @@ mod tests {
         f.insert("watched.csv".into(), b"Date,Name,Year,Letterboxd URI\n".to_vec());
         let e = parse_files(&f, None).unwrap();
         assert!(e.joined.is_none() && e.watched.is_empty());
+    }
+
+    #[test]
+    fn profile_reads_exactly_two_columns_and_keeps_only_film_codes() {
+        let mut f = base();
+        // the e-mail column is invalid UTF-8: if it were decoded, the whole profile would be dropped as unreadable
+        let mut body = b"Date Joined,Username,Email Address,Favorite Films,Bio
+2021-03-09,someone,".to_vec();
+        body.extend_from_slice(b"\xff\xfe@bad.invalid");
+        body.extend_from_slice(b",\"https://boxd.it/aaa, https://boxd.it/Bb2 and some words, https://boxd.it/aaa\",secret bio\n");
+        f.insert("profile.csv".into(), body);
+        let e = parse_files(&f, None).unwrap();
+        assert_eq!(crate::dates::iso(e.joined.unwrap()), "2021-03-09");
+        assert_eq!(e.favorites, vec!["aaa".to_string(), "Bb2".to_string()], "codes only, in order, without repeats");
+        assert!(!e.favorites_unreadable);
+        let dump = format!("{e:?}");
+        for secret in ["someone", "bad.invalid", "secret bio", "some words"] {
+            assert!(!dump.contains(secret), "{secret} leaked");
+        }
+    }
+
+    #[test]
+    fn favourites_cell_without_codes_is_flagged_not_kept() {
+        let mut f = base();
+        f.insert("profile.csv".into(), b"Date Joined,Favorite Films
+2021-03-09,\"Heat (1995), Ran (1985)\"\n".to_vec());
+        let e = parse_files(&f, None).unwrap();
+        assert!(e.favorites.is_empty() && e.favorites_unreadable);
+        assert!(!format!("{e:?}").contains("Heat"));
+        let mut f = base();
+        f.insert("profile.csv".into(), b"Date Joined,Favorite Films\n2021-03-09,\n".to_vec());
+        let e = parse_files(&f, None).unwrap();
+        assert!(e.favorites.is_empty() && !e.favorites_unreadable);
+        assert_eq!(boxd_codes("x https://boxd.it/a1?utm=2 https://boxd.it/"), vec!["a1".to_string()]);
+    }
+
+    #[test]
+    fn diary_rewatch_column() {
+        let mut f = base();
+        f.insert("diary.csv".into(), b"Date,Name,Year,Letterboxd URI,Rating,Rewatch,Tags,Watched Date\n2022-07-07,A,1999,u,4,Yes,,2022-07-05\n2022-07-08,B,1999,u,4,,,2022-07-06\n".to_vec());
+        let e = parse_files(&f, None).unwrap();
+        assert_eq!(e.diary.iter().map(|d| d.rewatch).collect::<Vec<_>>(), vec![true, false]);
     }
 }
