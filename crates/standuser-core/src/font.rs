@@ -125,17 +125,24 @@ impl Font {
         if !cur.is_empty() {
             toks.push(cur);
         }
+        // the width of the line is kept as it grows: re-measuring the whole line for every token made wrapping quadratic
         let mut lines = Vec::new();
         let mut line = String::new();
+        let (mut w, mut trail) = (0.0, 0.0); // advance of the line, and of the spaces at its end
         for t in toks {
-            let cand = format!("{line}{t}");
-            if self.width(cand.trim_end(), size, 0.0) <= maxw {
-                line = cand;
+            let tw: f64 = t.chars().map(|c| self.adv(c, size)).sum();
+            let blank = t.chars().all(|c| c == ' ');
+            if (if blank { w - trail } else { w + tw }) <= maxw {
+                line.push_str(&t);
+                w += tw;
+                trail = if blank { trail + tw } else { 0.0 };
             } else {
                 if !line.trim().is_empty() {
                     lines.push(line.trim_end().to_string());
                 }
                 line = t.trim_start().to_string();
+                w = line.chars().map(|c| self.adv(c, size)).sum();
+                trail = 0.0;
             }
         }
         if !line.trim().is_empty() {
@@ -218,6 +225,61 @@ impl Font {
 #[cfg(test)]
 mod title_tests {
     use super::*;
+
+    /// The wrap the card used before it kept the line width as it grows: every line of the new one is the same.
+    fn wrap_naive(f: &Font, text: &str, size: f64, maxw: f64) -> Vec<String> {
+        let mut toks: Vec<String> = Vec::new();
+        let mut cur = String::new();
+        for ch in text.chars() {
+            if (ch as u32) > 0x2E80 {
+                if !cur.is_empty() {
+                    toks.push(std::mem::take(&mut cur));
+                }
+                toks.push(ch.to_string());
+            } else if ch == ' ' {
+                if !cur.is_empty() {
+                    toks.push(std::mem::take(&mut cur));
+                }
+                toks.push(" ".into());
+            } else {
+                cur.push(ch);
+            }
+        }
+        if !cur.is_empty() {
+            toks.push(cur);
+        }
+        let (mut lines, mut line) = (Vec::new(), String::new());
+        for t in toks {
+            let cand = format!("{line}{t}");
+            if f.width(cand.trim_end(), size, 0.0) <= maxw {
+                line = cand;
+            } else {
+                if !line.trim().is_empty() {
+                    lines.push(line.trim_end().to_string());
+                }
+                line = t.trim_start().to_string();
+            }
+        }
+        if !line.trim().is_empty() {
+            lines.push(line.trim_end().to_string());
+        }
+        lines
+    }
+
+    #[test]
+    fn wrap_is_unchanged_by_the_incremental_width() {
+        let f = font(FontKind::Sans);
+        let mut texts: Vec<String> = crate::ability::all_sample_sentences();
+        texts.push("Why 「DIRTY WEATHER」: verbatim: \"DIRTY WEATHER\", track 3 of Some Band's Lighthouse score (2019); Lighthouse is one of your Favourite Films (4.5★). \"weather\" fits your Wind Reading ability.".into());
+        texts.push("日本語の文章と English words mixed together 久石譲 달파란  with  double  spaces and a verylongunbrokenwordthatcannotbebrokenanywhereatallbecauseithasnospaces ".repeat(3));
+        texts.push("  leading spaces and a trailing one ".into());
+        texts.push(String::new());
+        for t in &texts {
+            for (size, w) in [(20.0, 820.0), (19.0, 820.0), (20.0, 940.0), (18.0, 300.0), (20.0, 60.0)] {
+                assert_eq!(f.wrap(t, size, w), wrap_naive(&f, t, size, w), "{t} at {size}/{w}");
+            }
+        }
+    }
 
     fn serif() -> Font {
         font(FontKind::Serif)
