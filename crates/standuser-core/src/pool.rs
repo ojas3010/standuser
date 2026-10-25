@@ -135,6 +135,11 @@ pub struct Scored {
     pub a: f64,
     pub eligible: bool,
     pub picked: bool,
+    /// The source film is one of the user's favourites (report only).
+    pub fav: bool,
+    /// The word of the name that matched the ability lexicon, and whether it is a "core" or "ring" word (report only).
+    pub matched: Option<String>,
+    pub fit_kind: String,
 }
 
 #[derive(Debug, Clone, Serialize)]
@@ -179,6 +184,11 @@ fn median(v: &mut [f64]) -> f64 {
 
 /// The pool's pick for a user with ability template `template`, or None when no film of theirs has candidates.
 pub fn pick(ex: &Export, lk: &Lookup, template: u8, username: &str) -> Option<Picked> {
+    pick_top(ex, lk, template, username, 5)
+}
+
+/// `pick` listing the `n` best eligible candidates instead of five (the pick itself does not depend on `n`).
+pub fn pick_top(ex: &Export, lk: &Lookup, template: u8, username: &str, n: usize) -> Option<Picked> {
     if lk.names.is_empty() {
         return None;
     }
@@ -221,9 +231,12 @@ pub fn pick(ex: &Export, lk: &Lookup, template: u8, username: &str) -> Option<Pi
             a: r5(r.film.a),
             eligible: true,
             picked: i == win,
+            fav: r.film.fav,
+            matched: r.word.and_then(|k| r.cand.name.split_whitespace().nth(k)).map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase()),
+            fit_kind: if r.f >= 1.0 { "core" } else if r.f > 0.0 { "ring" } else { "" }.to_string(),
         }
     };
-    let mut top: Vec<Scored> = elig.iter().take(5).map(|i| scored(*i)).collect();
+    let mut top: Vec<Scored> = elig.iter().take(n).map(|i| scored(*i)).collect();
     if !top.iter().any(|t| t.picked) {
         top.pop();
         top.push(scored(win));

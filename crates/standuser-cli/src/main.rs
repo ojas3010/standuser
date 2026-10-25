@@ -18,7 +18,6 @@ fn usage() -> ExitCode {
          --theme <t>        light | dark (png); the svg is always light with a dark-mode override (default: light)\n  \
          --joined <date>    YYYY-MM-DD, when the zip has no profile.csv\n  \
          --username <name>  override the username\n  \
-         --favorites <codes>  boxd.it codes of your favourite films, comma separated, when the zip has no profile.csv\n  \
          --json             print the analysis as JSON instead of the summary"
     );
     ExitCode::from(2)
@@ -33,7 +32,7 @@ fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
     let mut input: Option<String> = None;
     let (mut out, mut table, mut theme, mut joined, mut user, mut json) = (PathBuf::from("."), None::<String>, "light".to_string(), None::<String>, None::<String>, false);
-    let (mut names, mut name_table, mut favorites) = (None::<String>, false, None::<String>);
+    let (mut names, mut name_table) = (None::<String>, false);
     while let Some(a) = args.next() {
         // every option that takes a value must get one; a bad command line stops here with exit code 2
         macro_rules! value {
@@ -57,7 +56,6 @@ fn main() -> ExitCode {
             }
             "--joined" => joined = Some(value!()),
             "--username" => user = Some(value!()),
-            "--favorites" => favorites = Some(value!()),
             "--json" => json = true,
             "-h" | "--help" => return usage(),
             x if x.starts_with("--") => {
@@ -99,9 +97,6 @@ fn main() -> ExitCode {
     }
     if let Some(u) = user {
         ex.username = Some(u);
-    }
-    if let Some(f) = favorites {
-        ex.favorites = f.split(',').map(|c| c.trim().rsplit('/').next().unwrap_or("").to_string()).filter(|c| !c.is_empty()).collect();
     }
     let table_json = match table {
         Some(p) => match std::fs::read_to_string(&p) {

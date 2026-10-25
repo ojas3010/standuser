@@ -97,7 +97,7 @@ fn bad_options_exit_nonzero_without_writing_anything() {
 }
 
 #[test]
-fn name_table_prints_the_five_best_candidates_and_the_favourites_flag_changes_the_affinity() {
+fn name_table_prints_the_five_best_candidates_and_only_the_table() {
     let (zip, table) = fixture();
     let names = zip.parent().unwrap().join("names.json");
     let run = |extra: &[&str]| {
@@ -113,11 +113,4 @@ fn name_table_prints_the_five_best_candidates_and_the_favourites_flag_changes_th
     assert_eq!(plain.matches('*').count(), 1, "exactly the pick is starred: {plain}");
     assert!(plain.contains("first-track rule:"));
     assert!(!plain.contains("Nearest canon"), "only the table is printed");
-    // the favourites flag takes codes or boxd.it URLs. Make every film the pool shows a favourite: their A moves to the top
-    let ratings = std::fs::read_to_string(zip.parent().unwrap().join("files/ratings.csv")).unwrap();
-    let codes: Vec<String> = ratings.lines().skip(1).filter_map(|l| l.split(',').nth(3)).map(|u| u.rsplit('/').next().unwrap().to_string()).collect();
-    let all = codes.join(",");
-    let fav = run(&["--favorites", &all]);
-    assert_ne!(fav, plain, "favourites raise A for every film, so the A column cannot stay the same");
-    assert_eq!(fav, run(&["--favorites", &all]), "deterministic");
 }
