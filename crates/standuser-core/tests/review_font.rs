@@ -120,3 +120,32 @@ fn every_ability_and_weakness_sentence_has_its_glyphs() {
         assert_eq!(missing(s, &[FontKind::Sans]), "", "{s}");
     }
 }
+
+/// The why line carries an artist credit from names.json, drawn in the sans. Every character of every credit must have a
+/// glyph (Japanese, Korean and Chinese names, Latin Extended letters, Greek with tonos): the names are not folded or dropped.
+#[test]
+fn every_artist_credit_in_names_json_is_drawable() {
+    let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
+    let (mut credits, mut bad) = (0, vec![]);
+    for v in names["names"].as_object().unwrap().values() {
+        for artist in v[0].as_array().unwrap() {
+            let a = artist[0].as_str().unwrap();
+            credits += 1;
+            let miss = missing(a, &[FontKind::Sans]);
+            if !miss.is_empty() {
+                bad.push(format!("{a:?} missing {miss:?}"));
+            }
+        }
+    }
+    assert!(credits > 1000);
+    assert!(bad.is_empty(), "{} credits would draw a box, e.g. {:?}", bad.len(), &bad[..bad.len().min(5)]);
+}
+
+/// Serif is display only (the Stand name and the 【】 labels): it keeps Basic Latin and Latin-1, and does not carry the
+/// kana, Greek or Cyrillic that the sans draws.
+#[test]
+fn serif_is_display_only() {
+    let serif = font(FontKind::Serif);
+    assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '&-.,!?:\"「」【】…".chars().all(|c| serif.has(c)));
+    assert!(!serif.has('ひ') && !serif.has('Ж'));
+}
