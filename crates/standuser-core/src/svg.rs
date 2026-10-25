@@ -264,9 +264,9 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     c.text("【STAND NAME】", 70.0, 84.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     if d.badge {
         // neutral, not the accent of the grades: the badge is a note, not a mark
-        // on the type row, on the right: the top right is where the name climbs to
-        c.els.push("<rect x=\"770\" y=\"226\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-mute\" stroke-width=\"2\"/>".into());
-        c.text("PROVISIONAL DATA", 890.0, 253.0, 19.0, Sans, "mute", "middle", 0.0, 1.5, None);
+        // on the right of the note rows, clear of the type name and of the top right, where the name climbs to
+        c.els.push("<rect x=\"770\" y=\"268\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-mute\" stroke-width=\"2\"/>".into());
+        c.text("PROVISIONAL DATA", 890.0, 295.0, 19.0, Sans, "mute", "middle", 0.0, 1.5, None);
     }
     // the Stand name: the card's one diagonal, largest size that keeps its tilted box in the header
     let np = place_name(&c.serif, &d.name);
