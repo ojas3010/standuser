@@ -62,14 +62,36 @@ fn seeded_real_table_users_get_deterministic_valid_names_and_clean_why_lines() {
     assert!(differs > 0, "the S winner is not always the first track");
 }
 
+/// The distinct names within the tie band of the top S for this history (the band does not depend on the username).
+fn band_names(ex: &parse::Export, lk: &Lookup, t: u8) -> Vec<String> {
+    let p = pool::pick_top(ex, lk, t, "band", 10_000).unwrap();
+    let top_s = p.top[0].s;
+    let mut names: Vec<String> = vec![];
+    for s in p.top.iter().filter(|s| s.s >= top_s - pool::TIE_BAND - 1e-9) {
+        if !names.contains(&s.name) {
+            names.push(s.name.clone());
+        }
+    }
+    names
+}
+
 #[test]
 fn different_usernames_do_not_all_get_the_same_name_from_the_same_history() {
     let lk = real();
-    let (ex, t) = synth_users::users(1, &lk).remove(0);
-    let names: std::collections::HashSet<String> = (0..60).filter_map(|i| pool::pick(&ex, &lk, t, &format!("user-{i}")).map(|p| p.name)).collect();
-    assert!(names.len() >= 1);
-    // the pick can only move within 0.03 of the top S, so it is a handful of names at most
-    assert!(names.len() <= 12, "{names:?}");
+    // set up a history whose tie band holds at least 2 names (one seeded user is enough, and the search must find one)
+    let (ex, t, band) = synth_users::users(40, &lk)
+        .into_iter()
+        .map(|(ex, t)| {
+            let b = band_names(&ex, &lk, t);
+            (ex, t, b)
+        })
+        .find(|(_, _, b)| b.len() >= 2)
+        .expect("a seeded user with a band of at least 2 names");
+    let picks: std::collections::HashSet<String> = (0..60).filter_map(|i| pool::pick(&ex, &lk, t, &format!("user-{i}")).map(|p| p.name)).collect();
+    // the pick can only move within 0.03 of the top S, so it is one of the band's names
+    assert!(picks.iter().all(|n| band.contains(n)), "{picks:?} outside the band {band:?}");
+    println!("band of {} names; 60 usernames picked {} of them", band.len(), picks.len());
+    assert!(picks.len() >= 2, "60 usernames must not all get one name from a band of {}: {picks:?}", band.len());
 }
 
 #[test]
