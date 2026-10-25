@@ -149,3 +149,28 @@ fn serif_is_display_only() {
     assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '&-.,!?:\"「」【】…".chars().all(|c| serif.has(c)));
     assert!(!serif.has('ひ') && !serif.has('Ж'));
 }
+
+/// A track-title Stand name is drawn in the serif inside 「」. Every character of every candidate title in names.json must
+/// have a glyph in serif.ttf; a failure lists each missing character with the names that use it.
+#[test]
+fn every_stand_name_in_names_json_is_drawable_in_the_serif() {
+    let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
+    let serif = font(FontKind::Serif);
+    let mut by_char: BTreeMap<char, Vec<String>> = BTreeMap::new();
+    let mut total = 0;
+    for v in names["names"].as_object().unwrap().values() {
+        for cand in v[1].as_array().unwrap() {
+            let title = cand[0].as_str().unwrap();
+            total += 1;
+            for c in format!("「{title}」").chars().filter(|c| !c.is_whitespace() && !serif.has(*c)) {
+                let e = by_char.entry(c).or_default();
+                if !e.contains(&title.to_string()) {
+                    e.push(title.to_string());
+                }
+            }
+        }
+    }
+    assert!(total > 20000, "{total}");
+    let report: Vec<String> = by_char.iter().map(|(c, n)| format!("{c:?} U+{:04X} ({} names): {:?}", *c as u32, n.len(), &n[..n.len().min(8)])).collect();
+    assert!(by_char.is_empty(), "{} characters missing from serif.ttf over {total} names:\n{}", by_char.len(), report.join("\n"));
+}
