@@ -1,0 +1,42 @@
+# Phrases a Stand must never be named after: real-world discrimination, atrocity, and violence against people.
+# One phrase per line, lower case, matched as whole words after folding to ASCII and dropping punctuation
+# (so "Racial Profiling" and "racial-profiling!" both hit). Lines starting with # are comments.
+# Read by tools/naming/textlib.py (stage 6 "sensitive") and by crates/standuser-core/tests/names.rs.
+racial profiling
+racism
+racist
+racists
+hate crime
+hate crimes
+hate speech
+ethnic cleansing
+white supremacy
+white supremacist
+white power
+ku klux klan
+kkk
+lynching
+lynch mob
+apartheid
+segregation
+antisemitism
+anti semitism
+genocide
+holocaust
+concentration camp
+death camp
+gas chamber
+school shooting
+mass shooting
+mass murder
+massacre
+terrorist attack
+suicide
+suicide bomber
+self harm
+child abuse
+sexual assault
+domestic violence
+human trafficking
+slave trade
+slavery

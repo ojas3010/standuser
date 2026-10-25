@@ -191,6 +191,21 @@ def profanity():
     return [re.compile(r"(?<![a-z0-9])" + re.escape(w) + r"(?![a-z0-9])") for w in sorted(set(words_))]
 
 
+SENSITIVE_FILE = os.path.join(HERE, "data", "sensitive_phrases.txt")
+
+
+@lru_cache(maxsize=1)
+def sensitive_phrases():
+    """Compiled whole-phrase patterns of tools/naming/data/sensitive_phrases.txt, matched against the folded, punctuation-free words."""
+    lines = [l.strip().lower() for l in open(SENSITIVE_FILE, encoding="utf-8")]
+    return [re.compile(r"(?<![a-z0-9])" + re.escape(" ".join(l.split())) + r"(?![a-z0-9])") for l in lines if l and not l.startswith("#")]
+
+
+def is_sensitive(text):
+    low = " ".join(alnum_words(text))
+    return any(p.search(low) for p in sensitive_phrases())
+
+
 def _canon_norm(name):
     w = alnum_words(name)
     if w and w[0] == "the" and len(w) > 1:
@@ -263,7 +278,7 @@ def is_proper_x(x, film_titles):
     return not any(x.lower() in alnum_words(ft) for ft in film_titles if ft)
 
 
-def stage6(text, film_titles=(), canon=True, film=True, profane=True):
+def stage6(text, film_titles=(), canon=True, film=True, profane=True, sensitive=True):
     """Return the first filter that rejects `text`, or None when it survives."""
     t = text.strip()
     poss = POSS_THEME.match(t)
@@ -288,6 +303,8 @@ def stage6(text, film_titles=(), canon=True, film=True, profane=True):
         low = " ".join(alnum_words(t))
         if any(p.search(low) for p in profanity()):
             return "profanity"
+    if sensitive and is_sensitive(t):
+        return "sensitive"
     if film and film_title_hit(t, film_titles):
         return "film-title"
     if canon and collides_with_canon(t):

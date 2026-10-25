@@ -93,3 +93,46 @@ fn every_shipped_lexicon_code_points_at_a_word_of_its_name() {
     assert!(codes > 10_000, "{codes}");
     assert!(woodys > 100, "names with an apostrophe are covered: {woodys}");
 }
+
+// ---------------------------------------------------------------- sensitive phrases
+// the list is tools/naming/data/sensitive_phrases.txt, the one the builder filters with
+const PHRASES: &str = include_str!("../../../tools/naming/data/sensitive_phrases.txt");
+
+fn blocked(name: &str) -> Option<&'static str> {
+    let words: Vec<String> = name.to_lowercase().split(|c: char| !c.is_ascii_alphanumeric()).filter(|w| !w.is_empty()).map(String::from).collect();
+    let padded = format!(" {} ", words.join(" "));
+    PHRASES.lines().map(str::trim).filter(|l| !l.is_empty() && !l.starts_with('#')).find(|p| padded.contains(&format!(" {p} ")))
+}
+
+#[test]
+fn the_blocklist_helper_catches_the_case_that_won_for_synthetic_user_7() {
+    assert_eq!(blocked("RACIAL PROFILING"), Some("racial profiling"));
+    assert_eq!(blocked("Racial-Profiling!"), Some("racial profiling"));
+    assert_eq!(blocked("RACIAL HARMONY"), None);
+    assert_eq!(blocked("SLAVE TO THE RHYTHM"), None);
+}
+
+#[test]
+fn no_shipped_name_matches_the_sensitive_phrase_list() {
+    let lk = real();
+    let bad: Vec<(&str, &str)> = lk.names.values().flat_map(|f| f.cands.iter()).filter_map(|c| blocked(&c.name).map(|p| (c.name.as_str(), p))).collect();
+    assert!(bad.is_empty(), "{bad:?}");
+}
+
+#[test]
+fn synthetic_user_7_no_longer_wins_racial_profiling_and_no_seeded_user_gets_a_blocked_name() {
+    let lk = real();
+    for (i, (mut ex, _)) in synth_users::users(40, &lk).into_iter().enumerate() {
+        // as the CLI sees the zips written by the synthetic_zips example: join day and export date, and the history's real template
+        ex.joined = standuser_core::dates::parse_date("2022-01-01");
+        ex.as_of = standuser_core::dates::parse_date("2026-10-19");
+        let a = analysis::analyze(&ex, &lk);
+        assert_eq!(a.name.route, "titles", "user {i}");
+        assert_eq!(blocked(&a.name.name), None, "user {i} won {}", a.name.name);
+        assert!(a.name.top.iter().all(|t| blocked(&t.name).is_none()), "user {i}: {:?}", a.name.top.iter().map(|t| &t.name).collect::<Vec<_>>());
+        if i == 7 {
+            assert_ne!(a.name.name, "RACIAL PROFILING");
+            println!("user 7 now wins {} (track {} of {})", a.name.name, a.name.top.iter().find(|t| t.picked).map(|t| t.track).unwrap_or(0), a.name.top.iter().find(|t| t.picked).map(|t| t.film.as_str()).unwrap_or(""));
+        }
+    }
+}

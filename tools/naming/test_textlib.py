@@ -241,3 +241,40 @@ def test_candidates_for_album_filters_dedupes_and_numbers_tracks():
     # the bracket on track 5 is stripped before stage 6, so the earliest track keeps the name and the plain repeat on 6 is dropped
     assert [c["track"] for c in got] == [2, 5]
     assert [c["kind"] for c in got] == ["v", "s"]
+
+
+# ---------------------------------------------------------------- sensitive phrases
+def test_racial_profiling_is_blocked_whatever_its_punctuation_or_case():
+    for x in ("Racial Profiling", "RACIAL PROFILING", "racial-profiling!", "Racial  Profiling (Reprise)"):
+        assert t.stage6(t.strip_title(x)[0][0] if "(" in x else x, canon=False, film=False, profane=False) == "sensitive", x
+
+
+def test_the_blocklist_matches_whole_phrases_only():
+    ok = ("Racial Harmony", "Profiling", "Slave to the Rhythm", "Suicidal Tendencies Cover", "Massacred Silence", "Genocidal", "Lynchpin", "Racing Heart", "Holocaustic")
+    for x in ok:
+        assert t.stage6(x, canon=False, film=False, profane=False) is None, x
+    for x in ("Suicide Eyes", "The Massacre", "Mass Murder in the Air", "A Hate Crime", "Gas Chamber"):
+        assert t.stage6(x, canon=False, film=False, profane=False) == "sensitive", x
+
+
+@needs_wordnet
+@needs_ldnoobw
+def test_a_blocked_title_never_becomes_a_candidate_of_its_album():
+    rejects = []
+    got = t.candidates_for_album(["Racial Profiling", "Stranded", "Racial Profiling (Reprise)"], ["Source Code"], rejects=rejects)
+    assert [c["name"] for c in got] == ["STRANDED"]
+    assert rejects.count("sensitive") == 2, rejects
+
+
+def test_the_phrase_file_is_lower_case_ascii_and_has_no_duplicates():
+    lines = [l.strip() for l in open(t.SENSITIVE_FILE, encoding="utf-8") if l.strip() and not l.startswith("#")]
+    assert len(lines) > 20 and len(set(lines)) == len(lines)
+    for l in lines:
+        assert l == l.lower() and l.isascii() and all(w.isalnum() for w in l.split()), l
+
+
+def test_no_shipped_candidate_name_matches_the_blocklist():
+    import json
+    names = json.load(open(os.path.join(t.REPO, "crates", "standuser-core", "data", "names.json"), encoding="utf-8"))["names"]
+    bad = sorted({c[0] for v in names.values() for c in v[2] if t.is_sensitive(c[0])})
+    assert bad == []
