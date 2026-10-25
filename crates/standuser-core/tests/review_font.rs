@@ -88,14 +88,14 @@ fn every_fixed_card_label_has_its_glyphs() {
     use standuser_core::{grading, name, svg, types};
     let sans_only: Vec<String> = svg::JP.iter().map(|s| s.to_string())
         .chain(svg::LEGEND.iter().map(|(a, b)| format!("{a}―{b}")))
-        .chain(["PROVISIONAL DATA", "ゴ", "完成", "∞", "∅", "?", "*", "本体 ―", "A B C D E", "E D C B A"].map(String::from))
+        .chain(["PROVISIONAL DATA", "ゴ", "完成", "∞", "∅", "?", "*", "本体 ―", "能力―", "弱点―", "A B C D E", "E D C B A"].map(String::from))
         .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().flat_map(|t| [t.jp().to_string(), t.en().to_string()]))
         .chain(grading::LABEL.iter().map(|s| s.to_string()))
         .collect();
     for s in &sans_only {
         assert_eq!(missing(s, &[FontKind::Sans]), "", "sans: {s}");
     }
-    let serif: Vec<String> = ["【STAND NAME】", "【STAND MASTER】", "「」", "能力―", "弱点―", "…"].map(String::from).into_iter()
+    let serif: Vec<String> = ["【STAND NAME】", "【STAND MASTER】", "「」", "…"].map(String::from).into_iter()
         .chain(name::tarot_names())
         .collect();
     for s in &serif {
@@ -110,11 +110,11 @@ fn every_fixed_card_label_has_its_glyphs() {
 }
 
 /// Every ability, weakness and coverage sentence the engine can write draws without a hole (they use ★, curly quotes,
-/// the ellipsis and the minus sign).
+/// the ellipsis and the minus sign). The ability box is drawn in the sans.
 #[test]
 fn every_ability_and_weakness_sentence_has_its_glyphs() {
     for s in standuser_core::ability::all_sample_sentences() {
-        assert_eq!(missing(&s, &[FontKind::Serif]), "", "{s}");
+        assert_eq!(missing(&s, &[FontKind::Sans]), "", "{s}");
     }
     for s in ["graded on 450 of 512 films", "224 of 533 dated watches", "only 4 of 5 dated watches, needs 12", "−0.13★ vs crowd", "DPA 0.88, top 3%", "47% directors seen once", "· from marking dates"] {
         assert_eq!(missing(s, &[FontKind::Sans]), "", "{s}");

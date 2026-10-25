@@ -12,8 +12,8 @@ pub const H: f64 = 1350.0;
 
 pub const JP: [&str; 6] = ["破壊力", "スピード", "射程距離", "持続力", "精密動作性", "成長性"];
 pub const EN: [&str; 6] = ["Destructive Power", "Speed", "Range", "Stamina", "Precision", "Potential"];
-/// The small print at the bottom of the card.
-pub const FOOTER: &str = "* provisional  ·  Fan work, not affiliated. Ratings: Letterboxd. Film data: TMDB (not endorsed or certified by TMDB). Soundtrack data from MusicBrainz.";
+/// The one credit line at the bottom of the card. The TMDB disclaimer is on the site.
+pub const FOOTER: &str = "* provisional  ·  Fan work, not affiliated  ·  Data: Letterboxd, TMDB, MusicBrainz";
 /// Under the type name: it is a reading of the stats, not a canon fact.
 pub const TYPE_NOTE: &str = "archetype by stats · about 60% agreement with canon";
 /// Added for the weakest type rule (Far-Distance Autopilot, AUC 0.59).
@@ -115,12 +115,38 @@ impl Ctx {
     }
 }
 
-const WHY_SIZE: f64 = 14.0;
+/// The why line sits in its own two rows under the signature film, at the size of the evidence lines.
+const WHY_SIZE: f64 = 18.0;
 const WHY_WIDTH: f64 = 940.0;
+const WHY_PITCH: f64 = 21.0;
+/// Baselines of the bottom rows, from the top: nearest canon, signature film, the two why rows, the credit line.
+pub const NEAR_Y: f64 = 1216.0;
+pub const SIG_Y: f64 = 1239.0;
+pub const WHY_Y: f64 = 1264.0;
+pub const FOOT_Y: f64 = 1304.0;
+/// The block from 【STAND MASTER】 down sits this much higher than the old layout, which freed the header's why rows for them.
+const UP: f64 = 36.0;
+/// Top of the first stat-cell row.
+const CELLS_Y: f64 = 852.0 - UP;
+/// Row pitch of the stat cells: 72 px, or 68 px when the ability box is at its tallest (3 ability lines, 2 weakness lines),
+/// so that the box always ends above the nearest-canon row. Returns (pitch, box top, box height).
+pub fn box_layout(ability_lines: usize, weakness_lines: usize) -> (f64, f64, f64) {
+    let hbox = 22.0 + ability_lines as f64 * ABILITY_PITCH + 8.0 + weakness_lines as f64 * WEAK_PITCH + 12.0;
+    let pitch = if CELLS_Y + 3.0 * 72.0 + 14.0 + hbox + 4.0 <= NEAR_Y - 17.0 { 72.0 } else { 68.0 };
+    (pitch, CELLS_Y + 3.0 * pitch + 14.0, hbox)
+}
+const ABILITY_SIZE: f64 = 20.0;
+const ABILITY_PITCH: f64 = 25.0;
+const WEAK_SIZE: f64 = 19.0;
+const WEAK_PITCH: f64 = 22.0;
+const TEXT_WIDTH: f64 = 820.0;
 
 /// The type note is 14 px and at most this wide: at 15 px with a 400 px limit its end touched the medallion's rim.
 const NOTE_SIZE: f64 = 14.0;
 const NOTE_WIDTH: f64 = 380.0;
+pub const NOTE_Y: f64 = 309.0 - UP;
+/// The medallion centre.
+pub const CY: f64 = 546.0 - UP;
 
 /// Pack the note's " · " parts into lines no wider than NOTE_WIDTH, so no part is ever cut.
 fn note_lines(f: &Font, note: &str) -> Vec<String> {
@@ -137,7 +163,7 @@ fn note_lines(f: &Font, note: &str) -> Vec<String> {
 pub fn card_svg(d: &CardData, theme: Theme) -> String {
     use FontKind::{Sans, Serif};
     let mut c = Ctx { sans: font(Sans), serif: font(Serif), els: vec![] };
-    let (cx, cy, r_chart) = (540.0, 546.0, 138.0);
+    let (cx, cy, r_chart) = (540.0, CY, 138.0);
     let k = r_chart / 150.0;
 
     // background and paper frame
@@ -152,8 +178,9 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     // header
     c.text("【STAND NAME】", 70.0, 84.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     if d.badge {
-        c.els.push("<rect x=\"770\" y=\"64\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-red\" stroke-width=\"2.5\"/>".into());
-        c.text("PROVISIONAL DATA", 890.0, 91.0, 19.0, Sans, "red", "middle", 0.0, 1.5, None);
+        // neutral, not the red of the grades: the badge is a note, not a mark
+        c.els.push("<rect x=\"770\" y=\"64\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-mute\" stroke-width=\"2\"/>".into());
+        c.text("PROVISIONAL DATA", 890.0, 91.0, 19.0, Sans, "mute", "middle", 0.0, 1.5, None);
     }
     // shrink to 44 px, then cut with an ellipsis so the name never leaves the frame
     let mut name = format!("「{}」", d.name);
@@ -169,18 +196,12 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         name = format!("「{}…」", inner.iter().collect::<String>().trim_end());
     }
     c.text(&name, 70.0, 168.0, nsz, Serif, "ink", "start", 0.0, 2.0, None);
-    // the why line: two lines of 14 px under the name, cut with an ellipsis rather than overflowing
-    let why = c.sans.wrap(&d.why, WHY_SIZE, WHY_WIDTH);
-    for (i, ln) in why.iter().take(2).enumerate() {
-        let ln = if i == 1 && why.len() > 2 { c.sans.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() };
-        c.text(&ln, 70.0, 190.0 + i as f64 * 16.0, WHY_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
-    }
-    c.text("【STAND MASTER】", 70.0, 238.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
+    c.text("【STAND MASTER】", 70.0, 238.0 - UP, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     let user = c.sans.fit(&d.user, 34.0, 470.0);
-    c.text(&format!("本体 ― {user}"), 350.0, 240.0, 34.0, Sans, "ink", "start", 0.0, 0.0, None);
-    c.text(&format!("{} · {}", d.type_jp, d.type_en), 70.0, 288.0, 28.0, Sans, "mute", "start", 0.0, 0.0, None);
+    c.text(&format!("本体 ― {user}"), 350.0, 240.0 - UP, 34.0, Sans, "ink", "start", 0.0, 0.0, None);
+    c.text(&format!("{} · {}", d.type_jp, d.type_en), 70.0, 288.0 - UP, 28.0, Sans, "mute", "start", 0.0, 0.0, None);
     for (i, ln) in note_lines(&c.sans, &d.type_note).iter().enumerate() {
-        c.text(ln, 70.0, 309.0 + i as f64 * 16.0, NOTE_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
+        c.text(ln, 70.0, NOTE_Y + i as f64 * 16.0, NOTE_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
     }
 
     // medallion
@@ -247,9 +268,13 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     }
 
     // legend, rule, six stat cells (2 columns x 3 rows)
-    let (y0, pitch) = (852.0, 72.0);
+    let ab = c.sans.wrap(&d.ability, ABILITY_SIZE, TEXT_WIDTH);
+    let wk = c.sans.wrap(&d.weakness, WEAK_SIZE, TEXT_WIDTH);
+    let (al, wl) = (ab.len().min(3), wk.len().min(2));
+    let (pitch, top, hbox) = box_layout(al, wl);
+    let y0 = CELLS_Y;
     let legend = LEGEND.iter().map(|(a, b)| format!("{a}―{b}")).collect::<Vec<_>>().join("  ");
-    c.text(&legend, W / 2.0, 818.0, 20.0, Sans, "mute", "middle", 0.0, 0.0, None);
+    c.text(&legend, W / 2.0, 818.0 - UP, 20.0, Sans, "mute", "middle", 0.0, 0.0, None);
     c.els.push(format!("<line x1=\"70\" y1=\"{}\" x2=\"{}\" y2=\"{}\" class=\"s-ink\" stroke-width=\"2\"/>", y0 - 24.0, W - 70.0, y0 - 24.0));
     for i in 0..6 {
         let (col, row) = (i % 2, i / 2);
@@ -262,35 +287,35 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
         let m = c.sans.fit(&d.evidence[i].0, 18.0, 440.0);
         c.text(&m, x, y + 42.0, 18.0, Sans, "mute", "start", 0.0, 0.0, None);
-        let f = c.serif.fit_title(&d.evidence[i].1, 18.0, 440.0);
-        c.text(&f, x, y + 61.0, 18.0, Serif, "ink", "start", 0.0, 0.0, None);
+        let f = c.sans.fit_title(&d.evidence[i].1, 18.0, 440.0);
+        c.text(&f, x, y + 61.0, 18.0, Sans, "ink", "start", 0.0, 0.0, None);
     }
 
-    // ability and weakness box
-    let ab = c.serif.wrap(&d.ability, 21.0, 800.0);
-    let wk = c.serif.wrap(&d.weakness, 19.0, 800.0);
-    let (al, wl) = (ab.len().min(3), wk.len().min(2));
-    let top = 1078.0;
-    let hbox = 22.0 + al as f64 * 26.0 + 8.0 + wl as f64 * 23.0 + 12.0;
+    // ability and weakness box, in the card's sans (serif is for the Stand name and the 【】 labels only)
     c.els.push(format!("<rect x=\"70\" y=\"{top}\" width=\"{}\" height=\"{hbox}\" rx=\"2\" class=\"f-card s-ink\" stroke-width=\"2\"/>", W - 140.0));
     c.text("能力―", 88.0, top + 30.0, 22.0, Sans, "red", "start", 0.0, 0.0, None);
     for (i, ln) in ab.iter().take(3).enumerate() {
-        let ln = if i == 2 && ab.len() > 3 { c.serif.fit(&format!("{ln} …"), 21.0, 800.0) } else { ln.clone() };
-        c.text(&ln, 170.0, top + 30.0 + i as f64 * 26.0, 21.0, Serif, "ink", "start", 0.0, 0.0, None);
+        let ln = if i == 2 && ab.len() > 3 { c.sans.fit(&format!("{ln} …"), ABILITY_SIZE, TEXT_WIDTH) } else { ln.clone() };
+        c.text(&ln, 170.0, top + 30.0 + i as f64 * ABILITY_PITCH, ABILITY_SIZE, Sans, "ink", "start", 0.0, 0.0, None);
     }
-    let wy = top + 30.0 + (al as f64 - 1.0) * 26.0 + 34.0;
+    let wy = top + 30.0 + (al as f64 - 1.0) * ABILITY_PITCH + 32.0;
     c.text("弱点―", 88.0, wy, 20.0, Sans, "mute", "start", 0.0, 0.0, None);
     for (i, ln) in wk.iter().take(2).enumerate() {
-        let ln = if i == 1 && wk.len() > 2 { c.serif.fit(&format!("{ln} …"), 19.0, 800.0) } else { ln.clone() };
-        c.text(&ln, 170.0, wy + i as f64 * 23.0, 19.0, Serif, "mute", "start", 0.0, 0.0, None);
+        let ln = if i == 1 && wk.len() > 2 { c.sans.fit(&format!("{ln} …"), WEAK_SIZE, TEXT_WIDTH) } else { ln.clone() };
+        c.text(&ln, 170.0, wy + i as f64 * WEAK_PITCH, WEAK_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
     }
 
-    // footer rows
+    // bottom rows: nearest canon, signature film, the why line in two rows, one credit line
     let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), 22.0, 940.0);
-    c.text(&near, 70.0, 1272.0, 22.0, Sans, "ink", "start", 0.0, 0.0, None);
-    let sig = c.serif.fit_signature(&d.signature, 20.0, 940.0);
-    c.text(&sig, 70.0, 1294.0, 20.0, Serif, "mute", "start", 0.0, 0.0, None);
-    c.text(FOOTER, 70.0, 1312.0, 12.5, Sans, "mute", "start", 0.0, 0.0, None);
+    c.text(&near, 70.0, NEAR_Y, 22.0, Sans, "ink", "start", 0.0, 0.0, None);
+    let sig = c.sans.fit_signature(&d.signature, 20.0, 940.0);
+    c.text(&sig, 70.0, SIG_Y, 20.0, Sans, "mute", "start", 0.0, 0.0, None);
+    let why = c.sans.wrap(&d.why, WHY_SIZE, WHY_WIDTH);
+    for (i, ln) in why.iter().take(2).enumerate() {
+        let ln = if i == 1 && why.len() > 2 { c.sans.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() };
+        c.text(&ln, 70.0, WHY_Y + i as f64 * WHY_PITCH, WHY_SIZE, Sans, "ink", "start", 0.0, 0.0, None);
+    }
+    c.text(FOOTER, 70.0, FOOT_Y, 16.0, Sans, "mute", "start", 0.0, 0.0, None);
 
     // assemble
     let (base, extra) = match theme {
@@ -378,6 +403,38 @@ mod tests {
     }
 
     #[test]
+    fn bottom_rows_do_not_collide() {
+        // the tallest ability box ends above the nearest-canon row (22 px type, cap height about 17), the rows keep their order,
+        // and the last why row clears the credit line
+        for (al, wl) in [(1, 1), (2, 1), (2, 2), (3, 1), (3, 2)] {
+            let (pitch, top, hbox) = box_layout(al, wl);
+            assert!(top + hbox + 4.0 <= NEAR_Y - 17.0, "{al}+{wl} lines: box ends {}", top + hbox);
+            assert!(pitch >= 68.0 && top > CELLS_Y + 2.0 * pitch + 61.0 + 10.0, "the box touches the last stat row");
+        }
+        assert!(NEAR_Y + 6.0 < SIG_Y - 14.0 && SIG_Y + 6.0 < WHY_Y - 13.0, "rows overlap");
+        assert!(WHY_Y + WHY_PITCH + 5.0 < FOOT_Y - 11.0, "why rows reach the credit line");
+        assert!(FOOT_Y + 4.0 < H - 34.0, "the credit line is outside the inner frame");
+    }
+
+    #[test]
+    fn the_credit_line_and_why_row_are_readable() {
+        // one credit line, one line of text (no TMDB disclaimer on the card), and it fits in the frame at 16 px
+        assert!(!FOOTER.contains('\n'));
+        assert!(!FOOTER.contains("endorsed"));
+        assert!(font(FontKind::Sans).width(FOOTER, 16.0, 0.0) < 940.0);
+        // the why row is body size: the same as the evidence lines
+        assert!(WHY_SIZE >= 18.0);
+    }
+
+    #[test]
+    fn the_badge_is_not_red() {
+        let s = card_svg(&sample(), Theme::Light);
+        let badge = &s[s.find("<rect x=\"770\"").unwrap()..];
+        let badge = &badge[..badge.find("/>").unwrap()];
+        assert!(badge.contains("s-mute") && !badge.contains("s-red"), "{badge}");
+    }
+
+    #[test]
     fn very_long_names_are_cut_inside_the_frame() {
         let mut d = sample();
         d.name = "THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE".into();
@@ -391,9 +448,9 @@ mod tests {
     #[test]
     fn text_fits_the_frame() {
         // wrapping keeps lines inside the box
-        let f = font(FontKind::Serif);
-        for ln in f.wrap(&sample().ability, 21.0, 800.0) {
-            assert!(f.width(&ln, 21.0, 0.0) <= 800.0 + 0.01);
+        let f = font(FontKind::Sans);
+        for ln in f.wrap(&sample().ability, ABILITY_SIZE, TEXT_WIDTH) {
+            assert!(f.width(&ln, ABILITY_SIZE, 0.0) <= TEXT_WIDTH + 0.01);
         }
         assert!(f.fit("a very long film title ".repeat(10).as_str(), 19.0, 440.0).ends_with('…'));
     }
@@ -411,21 +468,21 @@ mod tests {
                 assert!(c.sans.width(ln, NOTE_SIZE, 0.0) <= NOTE_WIDTH, "{ln}");
             }
         }
-        // the note stays clear of the medallion rim (centre 540,546, outer radius 268*138/150) on every line
-        let (cx, cy, ro) = (540.0f64, 546.0f64, 268.0 * 138.0 / 150.0);
+        // the note stays clear of the medallion rim (centre 540,CY, outer radius 268*138/150) on every line
+        let (cx, cy, ro) = (540.0f64, CY, 268.0 * 138.0 / 150.0);
         for (i, ln) in note_lines(&c.sans, &d.type_note).iter().enumerate() {
-            let y = 309.0 + i as f64 * 16.0 + 3.0; // lowest point of the glyphs
+            let y = NOTE_Y + i as f64 * 16.0 + 3.0; // lowest point of the glyphs
             let rim_x = cx - (ro * ro - (cy - y).powi(2)).max(0.0).sqrt();
             assert!(70.0 + c.sans.width(ln, NOTE_SIZE, 0.0) < rim_x, "line {i} reaches the rim at x={rim_x}");
         }
         for i in 0..6 {
             uncut(&c.sans, &d.coverage[i], 15.0, 270.0);
             uncut(&c.sans, &d.evidence[i].0, 18.0, 440.0);
-            uncut(&c.serif, &d.evidence[i].1, 18.0, 440.0);
+            uncut(&c.sans, &d.evidence[i].1, 18.0, 440.0);
         }
         uncut(&c.sans, &format!("Nearest canon: {}", d.nearest.join(" · ")), 22.0, 940.0);
-        uncut(&c.serif, &d.signature, 20.0, 940.0);
+        uncut(&c.sans, &d.signature, 20.0, 940.0);
         uncut(&c.sans, &d.user, 34.0, 470.0);
-        assert!(c.serif.wrap(&d.ability, 21.0, 800.0).len() <= 3 && c.serif.wrap(&d.weakness, 19.0, 800.0).len() <= 2);
+        assert!(c.sans.wrap(&d.ability, ABILITY_SIZE, TEXT_WIDTH).len() <= 3 && c.sans.wrap(&d.weakness, WEAK_SIZE, TEXT_WIDTH).len() <= 2);
     }
 }
