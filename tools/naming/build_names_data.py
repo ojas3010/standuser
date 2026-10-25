@@ -121,7 +121,8 @@ def main():
 
 def lexicons_with_rings():
     core = json.load(open(os.path.join(t.HERE, "data", "lexicons.json"), encoding="utf-8"))
-    return [{**x, "ring": L.ring_of([c["lemma"] for c in x["core"]])} for x in core]
+    drop = L.load_drop()
+    return [{**x, "ring": L.ring_for(x["core"], drop.get(str(x["id"]), ()))} for x in core]
 
 
 if __name__ == "__main__":

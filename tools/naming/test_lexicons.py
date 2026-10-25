@@ -78,3 +78,28 @@ def test_matches_index_the_same_words_the_rust_side_indexes_woodys_gone():
     sc = L.Scorer([{"core": [{"lemma": "go"}], "ring": []}, {"core": [{"lemma": "woody"}], "ring": []}])
     assert sc.matches("WOODY'S GONE") == [(1.0, 1), (1.0, 0)]  # 'gone' -> go at word 1; "woody's" -> woody at word 0
     assert L.word_lemma("woody's") == "woody"
+
+
+@needs_wordnet
+def test_ring_rules_a_and_b_for_template_12():
+    lx = [x for x in lex() if x["id"] == 12][0]
+    drop = L.load_drop()
+    only_a = set(L.ring_for(lx["core"]))
+    final = set(L.ring_for(lx["core"], drop["12"]))
+    # (a) 'ride' and 'fall' were reachable only through the top-up word 'move'
+    assert "move" in [c["lemma"] for c in lx["core"] if "top-up" in c["from"]]
+    assert "ride" not in only_a and "fall" not in only_a
+    # (b) 'go' and 'travel' are frequent in titles and are dropped; 'weather' is rare and stays
+    assert {"go", "travel"} <= only_a and not {"go", "travel"} & final
+    assert "weather" in final
+
+
+@needs_wordnet
+def test_every_template_is_thinned_by_the_same_rules_and_no_dropped_lemma_is_left():
+    drop = L.load_drop()
+    for x in lex():
+        full = set(L.ring_of([c["lemma"] for c in x["core"]]))
+        final = set(L.ring_for(x["core"], drop.get(str(x["id"]), ())))
+        assert final <= full
+        assert not final & set(drop.get(str(x["id"]), ()))
+        assert not final & {c["lemma"] for c in x["core"]}
