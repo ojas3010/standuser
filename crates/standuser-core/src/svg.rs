@@ -157,7 +157,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     }
     // shrink to 44 px, then cut with an ellipsis so the name never leaves the frame
     let mut name = format!("「{}」", d.name);
-    let mut nsz = 84.0;
+    let mut nsz = 78.0;
     while c.serif.width(&name, nsz, 2.0) > 940.0 && nsz > 44.0 {
         nsz -= 2.0;
     }
@@ -168,12 +168,12 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
         name = format!("「{}…」", inner.iter().collect::<String>().trim_end());
     }
-    c.text(&name, 70.0, 176.0, nsz, Serif, "ink", "start", 0.0, 2.0, None);
+    c.text(&name, 70.0, 168.0, nsz, Serif, "ink", "start", 0.0, 2.0, None);
     // the why line: two lines of 14 px under the name, cut with an ellipsis rather than overflowing
     let why = c.sans.wrap(&d.why, WHY_SIZE, WHY_WIDTH);
     for (i, ln) in why.iter().take(2).enumerate() {
         let ln = if i == 1 && why.len() > 2 { c.sans.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() };
-        c.text(&ln, 70.0, 199.0 + i as f64 * 16.0, WHY_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
+        c.text(&ln, 70.0, 190.0 + i as f64 * 16.0, WHY_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
     }
     c.text("【STAND MASTER】", 70.0, 238.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     let user = c.sans.fit(&d.user, 34.0, 470.0);
@@ -290,7 +290,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     c.text(&near, 70.0, 1272.0, 22.0, Sans, "ink", "start", 0.0, 0.0, None);
     let sig = c.serif.fit(&d.signature, 20.0, 940.0);
     c.text(&sig, 70.0, 1294.0, 20.0, Serif, "mute", "start", 0.0, 0.0, None);
-    c.text(FOOTER, 70.0, 1312.0, 13.0, Sans, "mute", "start", 0.0, 0.0, None);
+    c.text(FOOTER, 70.0, 1312.0, 12.5, Sans, "mute", "start", 0.0, 0.0, None);
 
     // assemble
     let (base, extra) = match theme {

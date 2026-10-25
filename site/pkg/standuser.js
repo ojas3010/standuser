@@ -2,19 +2,20 @@
 
 /**
  * Analyse an export entirely in the page: no network. `table_json` is the film lookup table; films missing from it are
- * skipped by every stat that needs film data. `today` ("YYYY-MM-DD") is only used to warn about an out-of-date table. `joined` ("YYYY-MM-DD") and `username` override the profile.csv values when non-empty.
+ * skipped by every stat that needs film data. `names_json` is names.json (the track-title name candidates; "" leaves the composer route). `today` ("YYYY-MM-DD") is only used to warn about an out-of-date table. `joined` ("YYYY-MM-DD") and `username` override the profile.csv values when non-empty.
  * Returns JSON: { analysis, svgs: { light, dark, auto } } or { error }.
  * @param {Uint8Array} zip
  * @param {string} file_name
  * @param {string} table_json
+ * @param {string} names_json
  * @param {string} joined
  * @param {string} username
  * @param {string} today
  * @returns {string}
  */
-export function run(zip, file_name, table_json, joined, username, today) {
-    let deferred7_0;
-    let deferred7_1;
+export function run(zip, file_name, table_json, names_json, joined, username, today) {
+    let deferred8_0;
+    let deferred8_1;
     try {
         const ptr0 = passArray8ToWasm0(zip, wasm.__wbindgen_malloc);
         const len0 = WASM_VECTOR_LEN;
@@ -22,18 +23,20 @@ export function run(zip, file_name, table_json, joined, username, today) {
         const len1 = WASM_VECTOR_LEN;
         const ptr2 = passStringToWasm0(table_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len2 = WASM_VECTOR_LEN;
-        const ptr3 = passStringToWasm0(joined, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr3 = passStringToWasm0(names_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len3 = WASM_VECTOR_LEN;
-        const ptr4 = passStringToWasm0(username, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr4 = passStringToWasm0(joined, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len4 = WASM_VECTOR_LEN;
-        const ptr5 = passStringToWasm0(today, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const ptr5 = passStringToWasm0(username, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
         const len5 = WASM_VECTOR_LEN;
-        const ret = wasm.run(ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5);
-        deferred7_0 = ret[0];
-        deferred7_1 = ret[1];
+        const ptr6 = passStringToWasm0(today, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len6 = WASM_VECTOR_LEN;
+        const ret = wasm.run(ptr0, len0, ptr1, len1, ptr2, len2, ptr3, len3, ptr4, len4, ptr5, len5, ptr6, len6);
+        deferred8_0 = ret[0];
+        deferred8_1 = ret[1];
         return getStringFromWasm0(ret[0], ret[1]);
     } finally {
-        wasm.__wbindgen_free(deferred7_0, deferred7_1, 1);
+        wasm.__wbindgen_free(deferred8_0, deferred8_1, 1);
     }
 }
 function __wbg_get_imports() {
