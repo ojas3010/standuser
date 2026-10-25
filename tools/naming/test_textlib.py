@@ -255,10 +255,24 @@ def test_candidates_for_album_filters_dedupes_and_numbers_tracks():
     tracks = ["Main Title", "Stranded", "Heaven's Door", "Track 4", "Dirty Weather (Reprise)", "Dirty Weather", "Lighthouse Keeper"]
     got = t.candidates_for_album(tracks, ["Lighthouse"])
     names = [c["name"] for c in got]
-    assert names == ["STRANDED", "DIRTY WEATHER"]  # generic, canon, number, cue-word and film-title candidates are gone
+    assert names == ["STRANDED", "DIRTY WEATHER"]  # generic, canon, number and film-title candidates are gone; no cue-word title is on this album
     # the bracket on track 5 is stripped before stage 6, so the earliest track keeps the name and the plain repeat on 6 is dropped
     assert [c["track"] for c in got] == [2, 5]
     assert [c["kind"] for c in got] == ["v", "s"]
+
+
+# ---------------------------------------------------------------- cue words
+@needs_wordnet
+@needs_ldnoobw
+def test_a_reprise_cue_is_rejected_as_a_cue_word():
+    for title in ("Dirty Weather Reprise", "Reprise", "Dirty Weather - Reprise Theme", "The Reprises of Rain"):
+        assert t.stage6(title, canon=False, film=False, profane=False) == "cue-word", title
+    rejects = []
+    got = t.candidates_for_album(["Dirty Weather Reprise", "Stranded", "Reprise"], ["Source Code"], rejects=rejects)
+    assert [c["name"] for c in got] == ["STRANDED"]
+    assert rejects == ["cue-word", "cue-word"]
+    # a bracketed "(Reprise)" never reaches stage 6: stage 5 strips the bracket, so the plain title is the candidate (kind s)
+    assert t.stage5("Dirty Weather (Reprise)") == [("Dirty Weather", "s")]
 
 
 # ---------------------------------------------------------------- sensitive phrases
