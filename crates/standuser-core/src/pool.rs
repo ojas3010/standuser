@@ -6,7 +6,7 @@
 //!   A(f) = 0.40 fav + 0.25 q_rating + 0.15 q_gap + 0.10 q_rewatch + 0.10 q_composer   (each q a mid-rank percentile among the
 //!          user's own films; 0.5 when the film has no value)
 //!   S(n) = 0.45 Cool + 0.35 F + 0.20 A(f(n)),   F = L for the user's ability template (1 core word, 0.5 ring word, else 0)
-//!   pool = the 8 films of highest A that have candidates; a candidate below the pool's median Cool cannot win;
+//!   pool = the 8 films of highest A that have candidates (equal A: higher crowd average, then lower TMDB id); a candidate below the pool's median Cool cannot win;
 //!   among eligible candidates within 0.03 of the top S, FNV-1a of the lower-cased username picks.
 
 use crate::ability::template_by_id;
@@ -110,7 +110,10 @@ pub fn user_films(ex: &Export, lk: &Lookup) -> Vec<UserFilm> {
         let qs = [if f.fav { 1.0 } else { 0.0 }, q(f.rating, &rated), q(f.rating.zip(f.crowd).map(|(r, c)| r - c), &gaps), percentile(f.rewatch as f64, &rew), q(f.composer, &comp)];
         f.a = qs.iter().zip(W_A).map(|(x, w)| x * w).sum();
     }
-    v.sort_by(|a, b| b.a.total_cmp(&a.a).then(a.tmdb.cmp(&b.tmdb)));
+    // equal A (a user with no ratings, favourites or rewatches ties everywhere): the higher crowd average first, a film without one
+    // last, then the lower TMDB id (spec stage 3 order)
+    let crowd = |f: &UserFilm| f.crowd.unwrap_or(f64::NEG_INFINITY);
+    v.sort_by(|a, b| b.a.total_cmp(&a.a).then_with(|| crowd(b).total_cmp(&crowd(a))).then(a.tmdb.cmp(&b.tmdb)));
     v
 }
 
@@ -432,6 +435,28 @@ mod tests {
         assert!(a(4) > 0.0 && a(4) < a(3), "unrated films sit at the neutral 0.5 on the rating terms");
         assert_eq!(v[0].tmdb, 2, "sorted by A, best first");
         assert!(v.windows(2).all(|w| w[0].a >= w[1].a));
+    }
+
+    #[test]
+    fn equal_affinity_is_broken_by_crowd_average_then_tmdb_id() {
+        // five films A..E = TMDB 1..5 with crowd averages 3.0, 4.2, 3.6, 4.2 and none
+        let avgs = ["3.0", "4.2", "3.6", "4.2", "null"];
+        let rows: Vec<String> = "ABCDE".chars().enumerate().map(|(i, c)| format!(r#"["{}|{}","",{},{},100,"en","US","","",{},null,100000]"#, c.to_lowercase(), 2000 + i, i + 1, 2000 + i, avgs[i])).collect();
+        let mut lk = Lookup::from_json(&format!(r#"{{"films":[{}]}}"#, rows.join(","))).unwrap();
+        // a user with no ratings, no favourites and no rewatches: every film has the same A
+        let ex = export(&[], &[]);
+        let v = user_films(&ex, &lk);
+        assert!(v.iter().all(|f| f.a == v[0].a), "setup: A is equal for all: {:?}", v.iter().map(|f| f.a).collect::<Vec<_>>());
+        assert_eq!(v.iter().map(|f| f.tmdb).collect::<Vec<_>>(), vec![2, 4, 3, 1, 5], "4.2 (TMDB 2 before 4), 3.6, 3.0, then no crowd average");
+        // the pool starts with the same film, so the first-track comparison uses it
+        let one: &[(&str, u8, u16, &str, &[u16])] = &[("X", 50, 1, "v", &[])];
+        let spec: Vec<(u32, &str, &str, &[(&str, u8, u16, &str, &[u16])])> = (1..=5).map(|i| (i as u32, "", "o", one)).collect();
+        lk.load_names(&names_json(&spec)).unwrap();
+        let p = pick(&ex, &lk, 1, "u").unwrap();
+        assert_eq!(p.first_track.unwrap().film, "B");
+        // the tie-break only orders equal A: a film the user rates 5 stars over a 1-star one comes first despite the lowest crowd average
+        let ex = export(&[(0, 5.0), (1, 1.0)], &[]);
+        assert_eq!(user_films(&ex, &lk)[0].tmdb, 1);
     }
 
     #[test]
