@@ -88,7 +88,7 @@ cargo build --release -p standuser
 ./target/release/standuser letterboxd-yourname-2026-10-19-13-22-utc.zip --out out/
 ```
 
-Writes `out/card.svg` (light, with a dark-mode override), `out/card.png` (1080×1350) and `out/stand.json` (every number behind the card). Options: `--theme dark`, `--joined YYYY-MM-DD` and `--username` (when the ZIP has no `profile.csv`), `--table films.json` (a different film table), `--json`.
+Writes `out/card.svg` (light, with a dark-mode override), `out/card.png` (1080×1350) and `out/stand.json` (every number behind the card). Options: `--theme dark`, `--joined YYYY-MM-DD`, `--username` and `--favorites code,code` (when the ZIP has no `profile.csv`), `--table films.json` (a different film table), `--json`.
 
 ### Run the tests
 
