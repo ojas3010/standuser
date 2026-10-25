@@ -21,6 +21,8 @@ pub fn films(n: usize) -> Vec<(String, i32, f64)> {
 }
 
 /// Export rows for table films: the table key "title|year" is itself a valid Name (it normalises to the same key).
+pub mod synth_users;
+
 pub fn export(n: usize, rating: Option<f64>, diary: bool) -> BTreeMap<String, Vec<u8>> {
     let fs = films(n);
     let (mut w, mut r, mut d) = (String::from("Date,Name,Year,Letterboxd URI\n"), String::from("Date,Name,Year,Letterboxd URI,Rating\n"),

@@ -22,6 +22,8 @@ pub struct Coverage {
     pub eligible: usize,
     /// Watched films the film table does not know; every stat that needs film data skips them.
     pub not_in_table: usize,
+    /// Favourite films read from profile.csv (their codes only).
+    pub favorites_read: usize,
     /// Per stat: graded on N of M films, against the spec's minimum.
     pub per_stat: Vec<crate::stats::StatCoverage>,
     /// Build date of the film table, and its age when the caller gave today's date.
@@ -112,6 +114,9 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
     if ex.joined.is_none() {
         notes.push("no Date Joined found in profile.csv (file or column missing): the join day is taken as the earliest watched.csv date".to_string());
     }
+    if ex.favorites_unreadable {
+        notes.push("the Favorite Films column of profile.csv has text but no Letterboxd film link (boxd.it) could be read from it, so no film counts as a favourite".to_string());
+    }
     if ex.ignored_ratings > 0 {
         notes.push(format!("{} rating cell(s) in ratings.csv were not a number from 0.5 to 5 and were ignored", ex.ignored_ratings));
     }
@@ -150,6 +155,7 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         .collect();
     let card = CardData {
         name: nm.name.clone(),
+        why: if nm.route == "titles" { nm.why.clone() } else { String::new() },
         user: username.clone(),
         type_jp: kind.jp().into(),
         type_en: kind.en().into(),
@@ -173,6 +179,7 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         rated_missing: st.facts.n_rated_missing,
         eligible: st.facts.n_elig,
         not_in_table: st.facts.n_watched - st.facts.n_watched_in_table,
+        favorites_read: ex.favorites.len(),
         per_stat: st.coverage.clone(),
         table_built: lk.built.map(iso),
         table_age_days: age,

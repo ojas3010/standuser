@@ -20,6 +20,7 @@ pub mod lookup;
 pub mod matching;
 pub mod name;
 pub mod parse;
+pub mod pool;
 pub mod rng;
 pub mod stats;
 pub mod svg;

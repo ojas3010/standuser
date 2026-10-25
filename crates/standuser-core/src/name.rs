@@ -1,8 +1,8 @@
-//! Stand name (offline route of the naming algorithm, reports/Stand naming algorithm.md).
+//! Stand name (naming algorithm, docs/naming-spec.md with the 25 Oct changes in docs/DECISIONS.md).
 //!
-//! Stages 3 and 9 run here: the personal pool by composer, then the fallbacks Route A (the anchor composer) and
-//! Part 3 mode (colour + Tarot card). Soundtrack track titles (stages 4 to 8) need MusicBrainz/Discogs lookups and
-//! are not available offline, so music-title names are not produced; see README "Limits".
+//! First the track-title route (`pool`): the user's top films by affinity that have soundtrack candidates in names.json,
+//! scored S = 0.45 Cool + 0.35 F + 0.20 A. Fallbacks in order: the composer route (the composer of your rated films with the
+//! highest shrunk mean, else your most frequent), then Part 3 mode (colour + Tarot card).
 
 use crate::ability::Signature;
 use crate::grading::STATS;
@@ -18,9 +18,21 @@ const CANON_NAMES: &str = include_str!("../data/canon_names.txt");
 pub struct NameResult {
     /// Upper-case English name without the 「」 brackets; "???" when no stat could be graded.
     pub name: String,
-    /// "composer" | "tarot" | "none"
+    /// "titles" | "composer" | "tarot" | "none"
     pub route: String,
     pub why: String,
+    /// The five best candidates of the track-title route (empty on the other routes), the pick marked.
+    #[serde(default)]
+    pub top: Vec<crate::pool::Scored>,
+    /// What the first-track rule would have named the Stand (track-title route only).
+    #[serde(default)]
+    pub first_track: Option<crate::pool::FirstTrack>,
+}
+
+impl NameResult {
+    fn plain(name: String, route: &str, why: String) -> NameResult {
+        NameResult { name, route: route.into(), why, top: vec![], first_track: None }
+    }
 }
 
 const CARDS: [&str; 17] = [
@@ -134,8 +146,11 @@ fn usable(lk: &Lookup, id: u32) -> Option<(String, String)> {
 
 pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id: Option<u8>) -> NameResult {
     let Some(sig) = sig else {
-        return NameResult { name: "???".into(), route: "none".into(), why: "No stat could be graded.".into() };
+        return NameResult::plain("???".into(), "none", "No stat could be graded.".into());
     };
+    if let Some(p) = crate::pool::pick(ex, lk, template_id.unwrap_or(17), ex.username.as_deref().unwrap_or("unknown")) {
+        return NameResult { name: p.name, route: "titles".into(), why: p.why, top: p.top, first_track: p.first_track };
+    }
     // ---- composer pool: the user's rated films, and their watched films (for users without ratings)
     let mut by: BTreeMap<u32, Cand> = BTreeMap::new();
     let ok_runtime = |m: &crate::lookup::FilmMeta| m.runtime == 0 || m.runtime >= crate::stats::MIN_RUNTIME;
@@ -182,11 +197,11 @@ pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id
     rated.sort_by(|a, b| shrunk(b).total_cmp(&shrunk(a)).then(b.rated_n.cmp(&a.rated_n)).then(a.id.cmp(&b.id)));
     for c in rated {
         if let Some((who, name)) = usable(lk, c.id) {
-            return NameResult {
-                name: name.clone(),
-                route: "composer".into(),
-                why: format!("Why 「{name}」: {} of your rated films credit {who}; their shrunk mean of {:.2}★ makes {who} your top film composer.", c.rated_n, shrunk(c)),
-            };
+            return NameResult::plain(
+                name.clone(),
+                "composer",
+                format!("Why 「{name}」: {} of your rated films credit {who}; their shrunk mean of {:.2}★ makes {who} your top film composer.", c.rated_n, shrunk(c)),
+            );
         }
     }
     // 2. users without ratings (and the anchor fallback): the most frequent composers among watched films, ties to the
@@ -195,11 +210,11 @@ pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id
     freq.sort_by(|a, b| b.watched_n.cmp(&a.watched_n).then(crowd(b).total_cmp(&crowd(a))).then(a.id.cmp(&b.id)));
     for c in freq {
         if let Some((who, name)) = usable(lk, c.id) {
-            return NameResult {
-                name: name.clone(),
-                route: "composer".into(),
-                why: format!("Why 「{name}」: {} of your watched films credit {who}, your most frequent film composer (their films average {:.2}★ on Letterboxd).", c.watched_n, crowd(c)),
-            };
+            return NameResult::plain(
+                name.clone(),
+                "composer",
+                format!("Why 「{name}」: {} of your watched films credit {who}, your most frequent film composer (their films average {:.2}★ on Letterboxd).", c.watched_n, crowd(c)),
+            );
         }
     }
     // ---- Part 3 mode, only when no composer credit is usable: colour of the runner-up stat's extreme + Tarot card
@@ -212,7 +227,7 @@ pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id
     let ix = STATS.iter().position(|s| *s == stat).unwrap_or(0);
     let colour = if z >= 0.0 { COLOURS[ix].0 } else { COLOURS[ix].1 };
     let name = format!("{colour} {card}").to_uppercase();
-    NameResult { name: name.clone(), route: "tarot".into(), why: format!("Why 「{name}」: none of your films carries a usable composer credit, so the name is the colour of your {} extreme plus the Tarot card of your ability.", crate::grading::LABEL[ix]) }
+    NameResult::plain(name.clone(), "tarot", format!("Why 「{name}」: none of your films carries a usable composer credit, so the name is the colour of your {} extreme plus the Tarot card of your ability.", crate::grading::LABEL[ix]))
 }
 
 #[cfg(test)]
@@ -313,5 +328,29 @@ mod tests {
         assert_eq!(ascii_fold("O’Brien – Jr.").as_deref(), Some("O'BRIEN - JR."));
         assert_eq!(ascii_fold("久石 譲"), None);
         assert_eq!(tarot_names().len(), 17 + 6 * 2 * 17);
+    }
+
+    #[test]
+    fn fallback_order_titles_then_composer_then_tarot() {
+        let ex = watched(&[("A", 2000), ("B", 2001), ("C", 2002), ("D", 2003)]);
+        // 1. a watched film has track-title candidates: the title route
+        let mut lk = lk3();
+        lk.load_names(r#"{"v":1,"names":{"1":["Some Band","o",[["WOUNDED HUNTER",70,3,"v","",[]],["STRANDED",60,5,"v","",[]]]]}}"#).unwrap();
+        let n = name_stand(&ex, &lk, Some(&sig()), Some(12));
+        assert_eq!(n.route, "titles", "{n:?}");
+        assert!(n.name == "WOUNDED HUNTER" || n.name == "STRANDED");
+        assert!(n.why.starts_with("Why 「"), "{}", n.why);
+        assert!(!n.top.is_empty() && n.top.iter().filter(|t| t.picked).count() == 1);
+        // 2. names exist, but none for this user's films: the composer route
+        let mut lk = lk3();
+        lk.load_names(r#"{"v":1,"names":{"99":["x","o",[["NOT YOURS",70,3,"v","",[]]]]}}"#).unwrap();
+        let n = name_stand(&ex, &lk, Some(&sig()), Some(12));
+        assert_eq!((n.route.as_str(), n.name.as_str()), ("composer", "ANTONIN DVORAK"), "{n:?}");
+        assert!(n.top.is_empty());
+        // 3. no names and no usable composer: Tarot plus colour
+        let lk = Lookup::from_json(r#"{"people":{"8":"久石 譲"},"films":[["c|2002","",3,2002,100,"en","US","","8",4.5,null,100000]]}"#).unwrap();
+        assert_eq!(name_stand(&watched(&[("C", 2002)]), &lk, Some(&sig()), Some(12)).route, "tarot");
+        // 4. nothing graded: ???
+        assert_eq!(name_stand(&ex, &lk3(), None, None).route, "none");
     }
 }
