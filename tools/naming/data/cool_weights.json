@@ -1,11 +1,11 @@
 {
  "weights": {
-  "rarity": 0.0,
-  "shape": 0.0,
+  "rarity": 1.0,
+  "shape": 1.0,
   "conc": 1.0,
-  "emo": 0.0,
-  "prior": 0.0,
-  "proper": 0.0
+  "emo": 1.0,
+  "prior": 1.0,
+  "proper": 1.0
  },
  "features": [
   "rarity",
@@ -16,5 +16,6 @@
   "proper"
  ],
  "benchmark_stands": 31,
- "beats_first_track": false
+ "reason": "no weight set has support in the data (n=9 train, n=15 test), so equal weights are the uninformed default",
+ "scale": "raw = sum of five features - proper, min-max scaled over the candidates table (scale_lo, scale_hi in names meta)"
 }

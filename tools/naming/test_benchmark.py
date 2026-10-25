@@ -40,3 +40,12 @@ def test_grid_weights_sum_to_one_and_include_the_penalty():
     ws = list(B.grid())
     assert len(ws) == 70 * 3
     assert all(abs(sum(w[p] for p in B.POS) - 1) < 1e-9 for w in ws)
+
+
+def test_equal_weight_cool_is_the_sum_minus_the_penalty_and_scales_to_the_unit_interval():
+    import cool as C
+    f = dict(rarity=0.5, shape=1.0, conc=0.5, emo=0.5, prior=1.0, proper=0.0)
+    assert C.raw_equal(f) == pytest.approx(3.5)
+    assert C.raw_equal({**f, "proper": 1.0}) == pytest.approx(2.5)
+    assert C.scale(3.5, 0.5, 4.5) == pytest.approx(0.75)
+    assert C.scale(-1, 0.5, 4.5) == 0.0 and C.scale(9, 0.5, 4.5) == 1.0

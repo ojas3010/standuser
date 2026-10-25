@@ -7,7 +7,9 @@ Features, each in [0,1]:
   emo      mean Glasgow emotion of the rated content words, (|valence-5|/4 + (arousal-1)/8)/2, 0.5 when none is rated
   prior    the spec's canon word-count prior W = {1: .49, 2: 1, 3: .34, 4: .08, 5: .04}
   proper   1 when every word is unknown to WordNet (a name made only of proper nouns): the lone-proper-name penalty
-Cool = clip(w_rarity*rarity + w_shape*shape + w_conc*conc + w_emo*emo + w_prior*prior - w_proper*proper, 0, 1).
+Shipped Cool: equal weights, raw = rarity + shape + conc + emo + prior - proper, then min-max scaled to [0,1] over the candidates
+table (`scale`). No weight set has support in the 24-Stand benchmark, so equal weights are the uninformed default (docs/DECISIONS.md).
+`cool(f, w)` is the weighted form the benchmark's grid search uses.
 Glasgow Norms: Scott et al. 2019, Behavior Research Methods 51:1258, CC BY 4.0, read from $NAMING_DATA/glasgow (not shipped).
 """
 import csv
@@ -88,3 +90,16 @@ def features(text, kind, df, n):
 def cool(f, w):
     x = sum(w.get(k, 0.0) * f[k] for k in FEATURES if k != "proper") - w.get("proper", 0.0) * f["proper"]
     return min(1.0, max(0.0, x))
+
+
+EQUAL = {k: 1.0 for k in FEATURES}
+
+
+def raw_equal(f):
+    """Equal weights, the lone-proper-name penalty negative: the sum of the five features minus `proper`, in [-1, 5]."""
+    return sum(f[k] for k in FEATURES if k != "proper") - f["proper"]
+
+
+def scale(raw, lo, hi):
+    """Min-max scale to [0,1] with the bounds observed on the candidates table; values outside are clipped."""
+    return min(1.0, max(0.0, (raw - lo) / (hi - lo)))

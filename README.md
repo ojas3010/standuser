@@ -160,3 +160,5 @@ tools/*.py              table, font and calibration-table builders
 ## Credits and licence
 
 MIT licence. Fan work, not affiliated with Letterboxd, TMDB, or the rights holders of JoJo's Bizarre Adventure. Ratings data: Letterboxd. Film data: TMDB. This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.
+
+Word ratings used to score name candidates (concreteness, valence and arousal) come from the Glasgow Norms: Scott, G. G., Keitel, A., Becirspahic, M., Yao, B., & Sereno, S. C. (2019). The Glasgow Norms: Ratings of 5,500 words on nine scales. *Behavior Research Methods, 51*, 1258-1270, [doi:10.3758/s13428-018-1099-3](https://doi.org/10.3758/s13428-018-1099-3), licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The ratings are read offline by `tools/naming/` to compute a score per candidate; the table itself is not shipped. Word relations come from Princeton WordNet 3.0 (offline only). Soundtrack track titles come from MusicBrainz core data (CC0).
