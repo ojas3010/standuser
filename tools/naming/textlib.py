@@ -49,9 +49,9 @@ def wn_pos(word):
 
 def is_noun(word):
     """Noun test for the tail rule. WordNet noun, or a word WordNet does not know at all (a capitalised title word that is not
-    a common word is a proper noun)."""
+    a common word is a proper noun). A function word is never a noun, whatever WordNet says of it (it does not know "the")."""
     w = re.sub(r"[^A-Za-z']", "", word)
-    if not w:
+    if not w or w.lower() in FUNCTION_WORDS:
         return False
     pos = wn_pos(w)
     return "n" in pos or not pos

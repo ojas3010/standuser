@@ -85,7 +85,7 @@ def test_tail_rule_reproduces_the_three_function_word_canon_truncations():
 def test_tail_skips_function_word_starts_and_non_noun_ends():
     assert t.tail_span("Two Words") is None  # not longer than the tail
     assert t.tail_span("Walking Along Quickly") is None  # 'quickly' is not a noun
-    assert t.tail_span("Run for the") is None  # ends in a function word
+    assert t.tail_span("Go Run for the") is None  # 4 words, so a tail is tried; "Run for the" ends in a function word (WordNet does not know "the")
 
 
 def test_auxiliaries_modals_and_conjunctions_are_function_words():
@@ -111,6 +111,15 @@ def test_is_noun_treats_unknown_capitalised_words_as_proper_nouns():
     assert t.is_noun("Zzyzxville")
     assert not t.is_noun("quickly")
     assert not t.is_noun("1-5")
+
+
+@needs_wordnet
+def test_no_function_word_is_a_noun_whatever_its_case_or_punctuation():
+    # WordNet knows some of them as nouns (will, may, mine, one, us) and not others at all (the, of), and "unknown" counts as a noun
+    for w in sorted(t.FUNCTION_WORDS):
+        assert not t.is_noun(w), w
+        assert not t.is_noun(w.capitalize() + ","), w
+    assert t.is_noun("Willow") and t.is_noun("Mayhem") and t.is_noun("Oneness")  # a function word inside a longer word is fine
 
 
 # ---------------------------------------------------------------- stage 6 filters
