@@ -148,24 +148,43 @@ impl Font {
     /// the title's ":" dropped; the title cut at a word boundary with "…" (the trailing "(Country)" kept); the whole line cut at a
     /// word boundary with "…"; and only for a single word wider than the box, `fit`.
     pub fn fit_title(&self, s: &str, size: f64, maxw: f64) -> String {
-        let fits = |t: &str| self.width(t, size, 0.0) <= maxw;
-        if fits(s) {
-            return s.to_string();
-        }
         let (title, suffix) = match s.rfind(" (").filter(|_| s.ends_with(')')) {
             Some(i) => (&s[..i], &s[i..]),
             None => (s, ""),
         };
+        self.fit_parts("", title, suffix, size, maxw)
+    }
+
+    /// The signature-film line "Signature film: Title (1999), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings." under the same
+    /// rule: only the title gives way (subtitle first, then words from its end), so the numbers stay; a line of another shape is
+    /// treated as a plain film line.
+    pub fn fit_signature(&self, s: &str, size: f64, maxw: f64) -> String {
+        const PREFIX: &str = "Signature film: ";
+        let year_at = |rest: &str| {
+            rest.match_indices(" (").map(|(i, _)| i).find(|&i| rest.get(i + 2..i + 7).is_some_and(|y| y.as_bytes()[..4].iter().all(u8::is_ascii_digit) && y.ends_with(')')))
+        };
+        match s.strip_prefix(PREFIX).and_then(|rest| year_at(rest).map(|i| (&rest[..i], &rest[i..]))) {
+            Some((title, tail)) => self.fit_parts(PREFIX, title, tail, size, maxw),
+            None => self.fit_title(s, size, maxw),
+        }
+    }
+
+    fn fit_parts(&self, prefix: &str, title: &str, suffix: &str, size: f64, maxw: f64) -> String {
+        let fits = |t: &str| self.width(t, size, 0.0) <= maxw;
+        let whole = format!("{prefix}{title}{suffix}");
+        if fits(&whole) {
+            return whole;
+        }
         let title = title.split(':').next().unwrap_or(title).trim_end();
-        let line = format!("{title}{suffix}");
+        let line = format!("{prefix}{title}{suffix}");
         if !title.is_empty() && fits(&line) {
             return line;
         }
-        let cut = |text: &str, tail: &str| -> Option<String> {
+        let cut = |text: &str, head: &str, tail: &str| -> Option<String> {
             let words: Vec<&str> = text.split(' ').filter(|w| !w.is_empty()).collect();
-            (1..words.len()).rev().map(|n| format!("{}…{tail}", words[..n].join(" "))).find(|c| fits(c))
+            (1..words.len()).rev().map(|n| format!("{head}{}…{tail}", words[..n].join(" "))).find(|c| fits(c))
         };
-        cut(title, suffix).or_else(|| cut(&line, "")).unwrap_or_else(|| self.fit(&line, size, maxw))
+        cut(title, prefix, suffix).or_else(|| cut(&line, "", "")).unwrap_or_else(|| self.fit(&line, size, maxw))
     }
 
     /// Cut `s` to fit `maxw`, ending with an ellipsis.
@@ -234,6 +253,34 @@ mod title_tests {
                 assert!(words.contains(&piece), "{piece:?} is not a whole word of the source in {r:?} at width {w}");
             }
         }
+    }
+
+    const LONG_SIG: &str = "Signature film: Borat: Cultural Learnings of America for Make Benefit Glorious Nation of Kazakhstan (2006), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.";
+
+    #[test]
+    fn the_signature_line_is_cut_mid_word_by_plain_fit_and_not_by_fit_signature() {
+        let f = serif();
+        assert!(f.width(LONG_SIG, 20.0, 0.0) > 940.0);
+        let old = f.fit(LONG_SIG, 20.0, 940.0);
+        assert!(old.ends_with('…') && !old.ends_with(" …") && !old.contains("ratings"), "the old cut ends inside the line: {old}");
+        // the subtitle after ':' goes first, and the numbers stay
+        let r = f.fit_signature(LONG_SIG, 20.0, 940.0);
+        assert_eq!(r, "Signature film: Borat (2006), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.");
+    }
+
+    #[test]
+    fn a_signature_title_without_a_colon_is_cut_at_a_word_boundary_and_keeps_the_numbers() {
+        let f = serif();
+        let s = "Signature film: The Lord of the Rings the Fellowship of the Ring Extended Edition Director's Cut (2001), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.";
+        let r = f.fit_signature(s, 20.0, 940.0);
+        assert!(f.width(&r, 20.0, 0.0) <= 940.0, "{r}");
+        assert!(r.starts_with("Signature film: The Lord of") && r.contains("… (2001), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings."), "{r}");
+        let title = r.strip_prefix("Signature film: ").unwrap().split('…').next().unwrap();
+        assert!(s.contains(&format!("{title} ")), "the title ends on a whole word: {title:?}");
+        // short lines and other shapes pass through
+        assert_eq!(f.fit_signature("Signature film: not enough crowd data", 20.0, 940.0), "Signature film: not enough crowd data");
+        let odd = f.fit_signature("Something else entirely: with a colon and a very long tail that goes on and on and on and on and on and on and on and on and on and on", 20.0, 500.0);
+        assert_eq!(odd, "Something else entirely", "another shape is a plain film line: the part after the colon goes");
     }
 
     #[test]

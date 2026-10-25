@@ -288,7 +288,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     // footer rows
     let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), 22.0, 940.0);
     c.text(&near, 70.0, 1272.0, 22.0, Sans, "ink", "start", 0.0, 0.0, None);
-    let sig = c.serif.fit(&d.signature, 20.0, 940.0);
+    let sig = c.serif.fit_signature(&d.signature, 20.0, 940.0);
     c.text(&sig, 70.0, 1294.0, 20.0, Serif, "mute", "start", 0.0, 0.0, None);
     c.text(FOOTER, 70.0, 1312.0, 12.5, Sans, "mute", "start", 0.0, 0.0, None);
 
