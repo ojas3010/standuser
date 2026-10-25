@@ -148,8 +148,17 @@ def test_possessive_theme_exception_needs_a_proper_noun_that_is_not_the_film():
 
 
 def test_non_ascii_ratio():
-    assert t.stage6("Ça Ira Ça Ira", canon=False, film=False, profane=False) is None  # accents fold; letters stay ASCII-class
-    assert t.stage6("チョコレイト Disco", canon=False, film=False, profane=False) == "non-ascii"
+    # stage 6 sees the folded stage 5 output, so that is what is tested: accents are gone before the ratio is taken
+    assert t.stage5("Ça Ira Ça Ira") == [("Ca Ira Ca Ira", "v")]
+    assert t.stage5("Éééé Ééé") == [("Eeee Eee", "v")]
+    for title in ("Ça Ira Ça Ira", "Éééé Ééé"):
+        for text, _ in t.stage5(title):
+            assert t.stage6(text, canon=False, film=False, profane=False) is None, text
+    # the unfolded text of the second title would fail the ratio (all its letters are accented): folding is what lets it through
+    assert t.stage6("Éééé Ééé", canon=False, film=False, profane=False) == "non-ascii"
+    # a script that does not fold stays non-ASCII after stage 5 and is rejected by stage 6
+    assert t.stage5("チョコレイト Disco") == [("チョコレイト Disco", "v")]
+    assert [t.stage6(text, canon=False, film=False, profane=False) for text, _ in t.stage5("チョコレイト Disco")] == ["non-ascii"]
 
 
 @needs_ldnoobw
