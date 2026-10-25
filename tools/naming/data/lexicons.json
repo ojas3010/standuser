@@ -1,0 +1,1332 @@
+[
+ {
+  "id": 1,
+  "name": "Bomb Transmutation",
+  "canon": "Killer Queen",
+  "core": [
+   {
+    "lemma": "bomb",
+    "word": "bomb",
+    "from": "name",
+    "phrase": "Bomb Transmutation"
+   },
+   {
+    "lemma": "transmutation",
+    "word": "transmutation",
+    "from": "name",
+    "phrase": "Bomb Transmutation"
+   },
+   {
+    "lemma": "turn",
+    "word": "turn",
+    "from": "quote",
+    "phrase": "Killer Queen can turn anything it touches into a bomb"
+   },
+   {
+    "lemma": "touch",
+    "word": "touches",
+    "from": "quote",
+    "phrase": "Killer Queen can turn anything it touches into a bomb"
+   },
+   {
+    "lemma": "limitation",
+    "word": "limitations",
+    "from": "canon quote (research note)",
+    "phrase": "There are several limitations to this ability"
+   },
+   {
+    "lemma": "charge",
+    "word": "charge",
+    "from": "canon quote (research note)",
+    "phrase": "Killer Queen can only charge one object at a time"
+   },
+   {
+    "lemma": "object",
+    "word": "object",
+    "from": "canon quote (research note)",
+    "phrase": "Killer Queen can only charge one object at a time"
+   },
+   {
+    "lemma": "explosive",
+    "word": "explosive",
+    "from": "WordNet definition of 'bomb' (top-up)",
+    "phrase": "an explosive device fused to explode under specific conditions"
+   },
+   {
+    "lemma": "device",
+    "word": "device",
+    "from": "WordNet definition of 'bomb' (top-up)",
+    "phrase": "an explosive device fused to explode under specific conditions"
+   },
+   {
+    "lemma": "fuse",
+    "word": "fused",
+    "from": "WordNet definition of 'bomb' (top-up)",
+    "phrase": "an explosive device fused to explode under specific conditions"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 2,
+  "name": "Curative Cooking",
+  "canon": "Pearl Jam",
+  "core": [
+   {
+    "lemma": "curative",
+    "word": "curative",
+    "from": "name",
+    "phrase": "Curative Cooking"
+   },
+   {
+    "lemma": "cook",
+    "word": "cooking",
+    "from": "name",
+    "phrase": "Curative Cooking"
+   },
+   {
+    "lemma": "heal",
+    "word": "heal",
+    "from": "quote",
+    "phrase": "it can heal incurable illnesses provided the right ingredients are involved"
+   },
+   {
+    "lemma": "incurable",
+    "word": "incurable",
+    "from": "quote",
+    "phrase": "it can heal incurable illnesses provided the right ingredients are involved"
+   },
+   {
+    "lemma": "illness",
+    "word": "illnesses",
+    "from": "quote",
+    "phrase": "it can heal incurable illnesses provided the right ingredients are involved"
+   },
+   {
+    "lemma": "ingredient",
+    "word": "ingredients",
+    "from": "quote",
+    "phrase": "it can heal incurable illnesses provided the right ingredients are involved"
+   },
+   {
+    "lemma": "wound",
+    "word": "wounded",
+    "from": "card sentence",
+    "phrase": "It heals what the crowd wounded"
+   },
+   {
+    "lemma": "eater",
+    "word": "eater",
+    "from": "canon quote (research note)",
+    "phrase": "if the eater does not have the specific ailment a dish is made for"
+   },
+   {
+    "lemma": "ailment",
+    "word": "ailment",
+    "from": "canon quote (research note)",
+    "phrase": "if the eater does not have the specific ailment a dish is made for"
+   },
+   {
+    "lemma": "dish",
+    "word": "dish",
+    "from": "canon quote (research note)",
+    "phrase": "if the eater does not have the specific ailment a dish is made for"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 3,
+  "name": "Hora Rush",
+  "canon": "Silver Chariot",
+  "core": [
+   {
+    "lemma": "hora",
+    "word": "hora",
+    "from": "name",
+    "phrase": "Hora Rush"
+   },
+   {
+    "lemma": "rush",
+    "word": "rush",
+    "from": "name",
+    "phrase": "Hora Rush"
+   },
+   {
+    "lemma": "rely",
+    "word": "relying",
+    "from": "quote",
+    "phrase": "usually relying on attacking enemies with barrages of sword slashes and thrusts"
+   },
+   {
+    "lemma": "attack",
+    "word": "attacking",
+    "from": "quote",
+    "phrase": "usually relying on attacking enemies with barrages of sword slashes and thrusts"
+   },
+   {
+    "lemma": "enemy",
+    "word": "enemies",
+    "from": "quote",
+    "phrase": "usually relying on attacking enemies with barrages of sword slashes and thrusts"
+   },
+   {
+    "lemma": "barrage",
+    "word": "barrages",
+    "from": "quote",
+    "phrase": "usually relying on attacking enemies with barrages of sword slashes and thrusts"
+   },
+   {
+    "lemma": "sword",
+    "word": "sword",
+    "from": "quote",
+    "phrase": "usually relying on attacking enemies with barrages of sword slashes and thrusts"
+   },
+   {
+    "lemma": "slash",
+    "word": "slashes",
+    "from": "quote",
+    "phrase": "usually relying on attacking enemies with barrages of sword slashes and thrusts"
+   },
+   {
+    "lemma": "thrust",
+    "word": "thrusts",
+    "from": "quote",
+    "phrase": "usually relying on attacking enemies with barrages of sword slashes and thrusts"
+   },
+   {
+    "lemma": "fast",
+    "word": "fast",
+    "from": "card sentence",
+    "phrase": "A barrage too fast to follow"
+   },
+   {
+    "lemma": "follow",
+    "word": "follow",
+    "from": "card sentence",
+    "phrase": "A barrage too fast to follow"
+   },
+   {
+    "lemma": "agile",
+    "word": "agile",
+    "from": "canon quote (research note)",
+    "phrase": "It is an incredibly agile Stand"
+   },
+   {
+    "lemma": "speed",
+    "word": "speed",
+    "from": "canon quote (research note)",
+    "phrase": "lowers its speed"
+   },
+   {
+    "lemma": "reach",
+    "word": "reach",
+    "from": "canon quote (research note)",
+    "phrase": "can reach its full speed by shedding its armor plate"
+   },
+   {
+    "lemma": "shed",
+    "word": "shedding",
+    "from": "canon quote (research note)",
+    "phrase": "can reach its full speed by shedding its armor plate"
+   },
+   {
+    "lemma": "armor",
+    "word": "armor",
+    "from": "canon quote (research note)",
+    "phrase": "can reach its full speed by shedding its armor plate"
+   },
+   {
+    "lemma": "plate",
+    "word": "plate",
+    "from": "canon quote (research note)",
+    "phrase": "can reach its full speed by shedding its armor plate"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 4,
+  "name": "Time Acceleration",
+  "canon": "Made in Heaven",
+  "core": [
+   {
+    "lemma": "acceleration",
+    "word": "acceleration",
+    "from": "name",
+    "phrase": "Time Acceleration"
+   },
+   {
+    "lemma": "live",
+    "word": "living",
+    "from": "quote",
+    "phrase": "The only living beings who can move freely within time's acceleration are Made in Heaven itself and its user"
+   },
+   {
+    "lemma": "move",
+    "word": "move",
+    "from": "quote",
+    "phrase": "The only living beings who can move freely within time's acceleration are Made in Heaven itself and its user"
+   },
+   {
+    "lemma": "freely",
+    "word": "freely",
+    "from": "quote",
+    "phrase": "The only living beings who can move freely within time's acceleration are Made in Heaven itself and its user"
+   },
+   {
+    "lemma": "speed",
+    "word": "speeds",
+    "from": "card sentence",
+    "phrase": "Time speeds up around it"
+   },
+   {
+    "lemma": "pace",
+    "word": "pace",
+    "from": "card sentence",
+    "phrase": "films per active month  peaking at   in    a pace almost no other user reaches"
+   },
+   {
+    "lemma": "reach",
+    "word": "reaches",
+    "from": "card sentence",
+    "phrase": "films per active month  peaking at   in    a pace almost no other user reaches"
+   },
+   {
+    "lemma": "retain",
+    "word": "retains",
+    "from": "canon quote (research note)",
+    "phrase": "retains all of his human weaknesses"
+   },
+   {
+    "lemma": "human",
+    "word": "human",
+    "from": "canon quote (research note)",
+    "phrase": "retains all of his human weaknesses"
+   },
+   {
+    "lemma": "increase",
+    "word": "increase",
+    "from": "WordNet definition of 'acceleration' (top-up)",
+    "phrase": "an increase in rate of change"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 5,
+  "name": "Accelerated Aging",
+  "canon": "The Grateful Dead",
+  "core": [
+   {
+    "lemma": "accelerate",
+    "word": "accelerated",
+    "from": "name",
+    "phrase": "Accelerated Aging"
+   },
+   {
+    "lemma": "age",
+    "word": "aging",
+    "from": "name",
+    "phrase": "Accelerated Aging"
+   },
+   {
+    "lemma": "manifest",
+    "word": "manifests",
+    "from": "quote",
+    "phrase": "The activation of this ability manifests itself as mist spreading from The Grateful Dead"
+   },
+   {
+    "lemma": "mist",
+    "word": "mist",
+    "from": "quote",
+    "phrase": "The activation of this ability manifests itself as mist spreading from The Grateful Dead"
+   },
+   {
+    "lemma": "spread",
+    "word": "spreading",
+    "from": "quote",
+    "phrase": "The activation of this ability manifests itself as mist spreading from The Grateful Dead"
+   },
+   {
+    "lemma": "slow",
+    "word": "slow",
+    "from": "card sentence",
+    "phrase": "A slow mist drifts rather than strikes"
+   },
+   {
+    "lemma": "drift",
+    "word": "drifts",
+    "from": "card sentence",
+    "phrase": "A slow mist drifts rather than strikes"
+   },
+   {
+    "lemma": "strike",
+    "word": "strikes",
+    "from": "card sentence",
+    "phrase": "A slow mist drifts rather than strikes"
+   },
+   {
+    "lemma": "deadly",
+    "word": "deadly",
+    "from": "canon quote (research note)",
+    "phrase": "It has the simple but deadly ability to rapidly age any living organism"
+   },
+   {
+    "lemma": "rapidly",
+    "word": "rapidly",
+    "from": "canon quote (research note)",
+    "phrase": "It has the simple but deadly ability to rapidly age any living organism"
+   },
+   {
+    "lemma": "live",
+    "word": "living",
+    "from": "canon quote (research note)",
+    "phrase": "It has the simple but deadly ability to rapidly age any living organism"
+   },
+   {
+    "lemma": "organism",
+    "word": "organism",
+    "from": "canon quote (research note)",
+    "phrase": "It has the simple but deadly ability to rapidly age any living organism"
+   },
+   {
+    "lemma": "fast",
+    "word": "faster",
+    "from": "canon quote (research note)",
+    "phrase": "the aging is faster than one can react"
+   },
+   {
+    "lemma": "react",
+    "word": "react",
+    "from": "canon quote (research note)",
+    "phrase": "the aging is faster than one can react"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 6,
+  "name": "Coiled Body",
+  "canon": "Hierophant Green",
+  "core": [
+   {
+    "lemma": "coil",
+    "word": "coiled",
+    "from": "name",
+    "phrase": "Coiled Body"
+   },
+   {
+    "lemma": "body",
+    "word": "body",
+    "from": "name",
+    "phrase": "Coiled Body"
+   },
+   {
+    "lemma": "distance",
+    "word": "distance",
+    "from": "quote",
+    "phrase": "being able to distance itself from its user at least 100 meters"
+   },
+   {
+    "lemma": "meter",
+    "word": "meters",
+    "from": "quote",
+    "phrase": "being able to distance itself from its user at least 100 meters"
+   },
+   {
+    "lemma": "unravel",
+    "word": "unravels",
+    "from": "card sentence",
+    "phrase": "It unravels into tendrils that cross borders"
+   },
+   {
+    "lemma": "tendril",
+    "word": "tendrils",
+    "from": "card sentence",
+    "phrase": "It unravels into tendrils that cross borders"
+   },
+   {
+    "lemma": "cross",
+    "word": "cross",
+    "from": "card sentence",
+    "phrase": "It unravels into tendrils that cross borders"
+   },
+   {
+    "lemma": "border",
+    "word": "borders",
+    "from": "card sentence",
+    "phrase": "It unravels into tendrils that cross borders"
+   },
+   {
+    "lemma": "country",
+    "word": "countries",
+    "from": "card sentence",
+    "phrase": "effective production countries per   films  led by   ( % of films)"
+   },
+   {
+    "lemma": "lead",
+    "word": "led",
+    "from": "card sentence",
+    "phrase": "effective production countries per   films  led by   ( % of films)"
+   },
+   {
+    "lemma": "weak",
+    "word": "weak",
+    "from": "canon quote (research note)",
+    "phrase": "relatively weak in direct hand-to-hand combat"
+   },
+   {
+    "lemma": "hand",
+    "word": "hand",
+    "from": "canon quote (research note)",
+    "phrase": "relatively weak in direct hand-to-hand combat"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 7,
+  "name": "Fictional Manifestation",
+  "canon": "Bohemian Rhapsody",
+  "core": [
+   {
+    "lemma": "fictional",
+    "word": "fictional",
+    "from": "name",
+    "phrase": "Fictional Manifestation"
+   },
+   {
+    "lemma": "manifestation",
+    "word": "manifestation",
+    "from": "name",
+    "phrase": "Fictional Manifestation"
+   },
+   {
+    "lemma": "break",
+    "word": "breaks",
+    "from": "quote",
+    "phrase": "a Stand ability that breaks the barrier between fiction and reality"
+   },
+   {
+    "lemma": "barrier",
+    "word": "barrier",
+    "from": "quote",
+    "phrase": "a Stand ability that breaks the barrier between fiction and reality"
+   },
+   {
+    "lemma": "fiction",
+    "word": "fiction",
+    "from": "quote",
+    "phrase": "a Stand ability that breaks the barrier between fiction and reality"
+   },
+   {
+    "lemma": "reality",
+    "word": "reality",
+    "from": "quote",
+    "phrase": "a Stand ability that breaks the barrier between fiction and reality"
+   },
+   {
+    "lemma": "nation",
+    "word": "nation",
+    "from": "card sentence",
+    "phrase": "Fiction from every nation walks into the world"
+   },
+   {
+    "lemma": "walk",
+    "word": "walks",
+    "from": "card sentence",
+    "phrase": "Fiction from every nation walks into the world"
+   },
+   {
+    "lemma": "world",
+    "word": "world",
+    "from": "card sentence",
+    "phrase": "Fiction from every nation walks into the world"
+   },
+   {
+    "lemma": "country",
+    "word": "countries",
+    "from": "card sentence",
+    "phrase": "effective production countries per   films  across   films"
+   },
+   {
+    "lemma": "glare",
+    "word": "glaring",
+    "from": "canon quote (research note)",
+    "phrase": "a glaring flaw in that it indiscriminately brings any and all fiction to life"
+   },
+   {
+    "lemma": "flaw",
+    "word": "flaw",
+    "from": "canon quote (research note)",
+    "phrase": "a glaring flaw in that it indiscriminately brings any and all fiction to life"
+   },
+   {
+    "lemma": "indiscriminately",
+    "word": "indiscriminately",
+    "from": "canon quote (research note)",
+    "phrase": "a glaring flaw in that it indiscriminately brings any and all fiction to life"
+   },
+   {
+    "lemma": "bring",
+    "word": "brings",
+    "from": "canon quote (research note)",
+    "phrase": "a glaring flaw in that it indiscriminately brings any and all fiction to life"
+   },
+   {
+    "lemma": "life",
+    "word": "life",
+    "from": "canon quote (research note)",
+    "phrase": "a glaring flaw in that it indiscriminately brings any and all fiction to life"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 8,
+  "name": "Position Locking",
+  "canon": "Kraft Work",
+  "core": [
+   {
+    "lemma": "position",
+    "word": "position",
+    "from": "name",
+    "phrase": "Position Locking"
+   },
+   {
+    "lemma": "lock",
+    "word": "locking",
+    "from": "name",
+    "phrase": "Position Locking"
+   },
+   {
+    "lemma": "object",
+    "word": "object",
+    "from": "quote",
+    "phrase": "the ability to lock an object's position"
+   },
+   {
+    "lemma": "completely",
+    "word": "completely",
+    "from": "quote",
+    "phrase": "completely freezing it in place"
+   },
+   {
+    "lemma": "freeze",
+    "word": "freezing",
+    "from": "quote",
+    "phrase": "completely freezing it in place"
+   },
+   {
+    "lemma": "place",
+    "word": "place",
+    "from": "quote",
+    "phrase": "completely freezing it in place"
+   },
+   {
+    "lemma": "country",
+    "word": "countries",
+    "from": "card sentence",
+    "phrase": "only   effective production countries per   films  and  % of your films come from"
+   },
+   {
+    "lemma": "move",
+    "word": "moves",
+    "from": "canon quote (research note)",
+    "phrase": "If Sale moves far enough from immobilized objects or people"
+   },
+   {
+    "lemma": "immobilize",
+    "word": "immobilized",
+    "from": "canon quote (research note)",
+    "phrase": "If Sale moves far enough from immobilized objects or people"
+   },
+   {
+    "lemma": "people",
+    "word": "people",
+    "from": "canon quote (research note)",
+    "phrase": "If Sale moves far enough from immobilized objects or people"
+   },
+   {
+    "lemma": "effect",
+    "word": "effects",
+    "from": "canon quote (research note)",
+    "phrase": "the effects of Kraft Work's ability will eventually dissipate"
+   },
+   {
+    "lemma": "dissipate",
+    "word": "dissipate",
+    "from": "canon quote (research note)",
+    "phrase": "the effects of Kraft Work's ability will eventually dissipate"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 9,
+  "name": "Heat-Seeking Detonation",
+  "canon": "Sheer Heart Attack",
+  "core": [
+   {
+    "lemma": "heat",
+    "word": "heat",
+    "from": "name",
+    "phrase": "Heat-Seeking Detonation"
+   },
+   {
+    "lemma": "seek",
+    "word": "seeking",
+    "from": "name",
+    "phrase": "Heat-Seeking Detonation"
+   },
+   {
+    "lemma": "detonation",
+    "word": "detonation",
+    "from": "name",
+    "phrase": "Heat-Seeking Detonation"
+   },
+   {
+    "lemma": "continue",
+    "word": "continue",
+    "from": "quote",
+    "phrase": "it will continue to seek out targets until it explodes from a human"
+   },
+   {
+    "lemma": "target",
+    "word": "targets",
+    "from": "quote",
+    "phrase": "it will continue to seek out targets until it explodes from a human"
+   },
+   {
+    "lemma": "explode",
+    "word": "explodes",
+    "from": "quote",
+    "phrase": "it will continue to seek out targets until it explodes from a human"
+   },
+   {
+    "lemma": "human",
+    "word": "human",
+    "from": "quote",
+    "phrase": "it will continue to seek out targets until it explodes from a human"
+   },
+   {
+    "lemma": "stop",
+    "word": "stops",
+    "from": "card sentence",
+    "phrase": "It never stops tracking"
+   },
+   {
+    "lemma": "track",
+    "word": "tracking",
+    "from": "card sentence",
+    "phrase": "It never stops tracking"
+   },
+   {
+    "lemma": "streak",
+    "word": "streak",
+    "from": "card sentence",
+    "phrase": "films in   of   months  with a streak of   in a row"
+   },
+   {
+    "lemma": "row",
+    "word": "row",
+    "from": "card sentence",
+    "phrase": "films in   of   months  with a streak of   in a row"
+   },
+   {
+    "lemma": "automatic",
+    "word": "automatic",
+    "from": "canon quote (research note)",
+    "phrase": "an automatic indestructible ability that seeks heat"
+   },
+   {
+    "lemma": "indestructible",
+    "word": "indestructible",
+    "from": "canon quote (research note)",
+    "phrase": "an automatic indestructible ability that seeks heat"
+   },
+   {
+    "lemma": "simplistic",
+    "word": "simplistic",
+    "from": "canon quote (research note)",
+    "phrase": "main weakness is the simplistic way it prioritizes targets from the heat they emit"
+   },
+   {
+    "lemma": "prioritize",
+    "word": "prioritizes",
+    "from": "canon quote (research note)",
+    "phrase": "main weakness is the simplistic way it prioritizes targets from the heat they emit"
+   },
+   {
+    "lemma": "emit",
+    "word": "emit",
+    "from": "canon quote (research note)",
+    "phrase": "main weakness is the simplistic way it prioritizes targets from the heat they emit"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 10,
+  "name": "Energy Absorption",
+  "canon": "Notorious B.I.G",
+  "core": [
+   {
+    "lemma": "energy",
+    "word": "energy",
+    "from": "name",
+    "phrase": "Energy Absorption"
+   },
+   {
+    "lemma": "absorption",
+    "word": "absorption",
+    "from": "name",
+    "phrase": "Energy Absorption"
+   },
+   {
+    "lemma": "exist",
+    "word": "exist",
+    "from": "quote",
+    "phrase": "one of the few Stands able to exist even after its user's death"
+   },
+   {
+    "lemma": "death",
+    "word": "death",
+    "from": "quote",
+    "phrase": "one of the few Stands able to exist even after its user's death"
+   },
+   {
+    "lemma": "grow",
+    "word": "growing",
+    "from": "card sentence",
+    "phrase": "It keeps growing on whatever it touches"
+   },
+   {
+    "lemma": "touch",
+    "word": "touches",
+    "from": "card sentence",
+    "phrase": "It keeps growing on whatever it touches"
+   },
+   {
+    "lemma": "simplicity",
+    "word": "simplicity",
+    "from": "canon quote (research note)",
+    "phrase": "its simplicity can be exploited"
+   },
+   {
+    "lemma": "exploit",
+    "word": "exploited",
+    "from": "canon quote (research note)",
+    "phrase": "its simplicity can be exploited"
+   },
+   {
+    "lemma": "physics",
+    "word": "physics",
+    "from": "WordNet definition of 'energy' (top-up)",
+    "phrase": "(physics) a thermodynamic quantity equivalent to the capacity of a physical system to do work"
+   },
+   {
+    "lemma": "thermodynamic",
+    "word": "thermodynamic",
+    "from": "WordNet definition of 'energy' (top-up)",
+    "phrase": "(physics) a thermodynamic quantity equivalent to the capacity of a physical system to do work"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 11,
+  "name": "Time Erasure",
+  "canon": "King Crimson",
+  "core": [
+   {
+    "lemma": "erasure",
+    "word": "erasure",
+    "from": "name",
+    "phrase": "Time Erasure"
+   },
+   {
+    "lemma": "erase",
+    "word": "erase",
+    "from": "quote",
+    "phrase": "erase time for up to around ten seconds"
+   },
+   {
+    "lemma": "vanish",
+    "word": "vanishes",
+    "from": "card sentence",
+    "phrase": "Time vanishes and only the result remains"
+   },
+   {
+    "lemma": "result",
+    "word": "result",
+    "from": "card sentence",
+    "phrase": "Time vanishes and only the result remains"
+   },
+   {
+    "lemma": "remain",
+    "word": "remains",
+    "from": "card sentence",
+    "phrase": "Time vanishes and only the result remains"
+   },
+   {
+    "lemma": "blank",
+    "word": "blank",
+    "from": "card sentence",
+    "phrase": "of   months hold no film  and the longest blank runs   months"
+   },
+   {
+    "lemma": "poor",
+    "word": "poor",
+    "from": "canon quote (research note)",
+    "phrase": "weaknesses are poor effective range (about 2-3 meters)"
+   },
+   {
+    "lemma": "range",
+    "word": "range",
+    "from": "canon quote (research note)",
+    "phrase": "weaknesses are poor effective range (about 2-3 meters)"
+   },
+   {
+    "lemma": "meter",
+    "word": "meters",
+    "from": "canon quote (research note)",
+    "phrase": "weaknesses are poor effective range (about 2-3 meters)"
+   },
+   {
+    "lemma": "attack",
+    "word": "attack",
+    "from": "canon quote (research note)",
+    "phrase": "is unable to attack while King Crimson's time erasure is active"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 12,
+  "name": "Wind Reading",
+  "canon": "Manhattan Transfer",
+  "core": [
+   {
+    "lemma": "wind",
+    "word": "wind",
+    "from": "name",
+    "phrase": "Wind Reading"
+   },
+   {
+    "lemma": "read",
+    "word": "reading",
+    "from": "name",
+    "phrase": "Wind Reading"
+   },
+   {
+    "lemma": "float",
+    "word": "floating",
+    "from": "quote",
+    "phrase": "floating around and detecting the air movements near it"
+   },
+   {
+    "lemma": "detect",
+    "word": "detecting",
+    "from": "quote",
+    "phrase": "floating around and detecting the air movements near it"
+   },
+   {
+    "lemma": "air",
+    "word": "air",
+    "from": "quote",
+    "phrase": "floating around and detecting the air movements near it"
+   },
+   {
+    "lemma": "movement",
+    "word": "movements",
+    "from": "quote",
+    "phrase": "floating around and detecting the air movements near it"
+   },
+   {
+    "lemma": "satellite",
+    "word": "satellite",
+    "from": "canon quote (research note)",
+    "phrase": "a small satellite-like Stand"
+   },
+   {
+    "lemma": "fool",
+    "word": "fool",
+    "from": "canon quote (research note)",
+    "phrase": "it is possible to fool Johngalli A"
+   },
+   {
+    "lemma": "misread",
+    "word": "misreading",
+    "from": "canon quote (research note)",
+    "phrase": "into misreading the wind"
+   },
+   {
+    "lemma": "move",
+    "word": "moving",
+    "from": "WordNet definition of 'wind' (top-up)",
+    "phrase": "air moving (sometimes with considerable force) from an area of high pressure to an area of low pressure"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 13,
+  "name": "Killer Virus Infection",
+  "canon": "Purple Haze",
+  "core": [
+   {
+    "lemma": "killer",
+    "word": "killer",
+    "from": "name",
+    "phrase": "Killer Virus Infection"
+   },
+   {
+    "lemma": "virus",
+    "word": "virus",
+    "from": "name",
+    "phrase": "Killer Virus Infection"
+   },
+   {
+    "lemma": "infection",
+    "word": "infection",
+    "from": "name",
+    "phrase": "Killer Virus Infection"
+   },
+   {
+    "lemma": "indiscriminately",
+    "word": "indiscriminately",
+    "from": "quote",
+    "phrase": "Because the virus indiscriminately affects friends and foes"
+   },
+   {
+    "lemma": "affect",
+    "word": "affects",
+    "from": "quote",
+    "phrase": "Because the virus indiscriminately affects friends and foes"
+   },
+   {
+    "lemma": "friend",
+    "word": "friends",
+    "from": "quote",
+    "phrase": "Because the virus indiscriminately affects friends and foes"
+   },
+   {
+    "lemma": "foe",
+    "word": "foes",
+    "from": "quote",
+    "phrase": "Because the virus indiscriminately affects friends and foes"
+   },
+   {
+    "lemma": "verdict",
+    "word": "verdicts",
+    "from": "card sentence",
+    "phrase": "Its verdicts scatter without regard for the crowd"
+   },
+   {
+    "lemma": "scatter",
+    "word": "scatter",
+    "from": "card sentence",
+    "phrase": "Its verdicts scatter without regard for the crowd"
+   },
+   {
+    "lemma": "regard",
+    "word": "regard",
+    "from": "card sentence",
+    "phrase": "Its verdicts scatter without regard for the crowd"
+   },
+   {
+    "lemma": "cancel",
+    "word": "cancel",
+    "from": "canon quote (research note)",
+    "phrase": "not even Fugo himself could cancel the effect of his power"
+   },
+   {
+    "lemma": "effect",
+    "word": "effect",
+    "from": "canon quote (research note)",
+    "phrase": "not even Fugo himself could cancel the effect of his power"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 14,
+  "name": "Life Giver",
+  "canon": "Gold Experience",
+  "core": [
+   {
+    "lemma": "life",
+    "word": "life",
+    "from": "name",
+    "phrase": "Life Giver"
+   },
+   {
+    "lemma": "giver",
+    "word": "giver",
+    "from": "name",
+    "phrase": "Life Giver"
+   },
+   {
+    "lemma": "create",
+    "word": "create",
+    "from": "quote",
+    "phrase": "the ability to create life from inanimate material"
+   },
+   {
+    "lemma": "inanimate",
+    "word": "inanimate",
+    "from": "quote",
+    "phrase": "the ability to create life from inanimate material"
+   },
+   {
+    "lemma": "material",
+    "word": "material",
+    "from": "quote",
+    "phrase": "the ability to create life from inanimate material"
+   },
+   {
+    "lemma": "unfamiliar",
+    "word": "unfamiliar",
+    "from": "card sentence",
+    "phrase": "Every unfamiliar name becomes a new life"
+   },
+   {
+    "lemma": "behave",
+    "word": "behave",
+    "from": "canon quote (research note)",
+    "phrase": "behave[s] with [its] own free will"
+   },
+   {
+    "lemma": "characteristic",
+    "word": "characteristic",
+    "from": "WordNet definition of 'life' (top-up)",
+    "phrase": "a characteristic state or mode of living"
+   },
+   {
+    "lemma": "mode",
+    "word": "mode",
+    "from": "WordNet definition of 'life' (top-up)",
+    "phrase": "a characteristic state or mode of living"
+   },
+   {
+    "lemma": "live",
+    "word": "living",
+    "from": "WordNet definition of 'life' (top-up)",
+    "phrase": "a characteristic state or mode of living"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 15,
+  "name": "Divination",
+  "canon": "Hermit Purple",
+  "core": [
+   {
+    "lemma": "divination",
+    "word": "divination",
+    "from": "name",
+    "phrase": "Divination"
+   },
+   {
+    "lemma": "allow",
+    "word": "allows",
+    "from": "quote",
+    "phrase": "It allows its user to divine information and messages from other locations"
+   },
+   {
+    "lemma": "divine",
+    "word": "divine",
+    "from": "quote",
+    "phrase": "It allows its user to divine information and messages from other locations"
+   },
+   {
+    "lemma": "information",
+    "word": "information",
+    "from": "quote",
+    "phrase": "It allows its user to divine information and messages from other locations"
+   },
+   {
+    "lemma": "message",
+    "word": "messages",
+    "from": "quote",
+    "phrase": "It allows its user to divine information and messages from other locations"
+   },
+   {
+    "lemma": "location",
+    "word": "locations",
+    "from": "quote",
+    "phrase": "It allows its user to divine information and messages from other locations"
+   },
+   {
+    "lemma": "familiar",
+    "word": "familiar",
+    "from": "card sentence",
+    "phrase": "It divines through familiar vines"
+   },
+   {
+    "lemma": "vine",
+    "word": "vines",
+    "from": "card sentence",
+    "phrase": "It divines through familiar vines"
+   },
+   {
+    "lemma": "return",
+    "word": "returning",
+    "from": "card sentence",
+    "phrase": "only  % of your   director credits are one-offs  and it keeps returning to   (  films)"
+   },
+   {
+    "lemma": "resistance",
+    "word": "resistance",
+    "from": "canon quote (research note)",
+    "phrase": "The vines have limited resistance"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 16,
+  "name": "Complete Mastery",
+  "canon": "Star Platinum (Part 6)",
+  "core": [
+   {
+    "lemma": "complete",
+    "word": "complete",
+    "from": "name",
+    "phrase": "Complete Mastery"
+   },
+   {
+    "lemma": "mastery",
+    "word": "mastery",
+    "from": "name",
+    "phrase": "Complete Mastery"
+   },
+   {
+    "lemma": "decrease",
+    "word": "decreases",
+    "from": "quote",
+    "phrase": "It decreases in rank as the user masters their Stand"
+   },
+   {
+    "lemma": "master",
+    "word": "masters",
+    "from": "quote",
+    "phrase": "It decreases in rank as the user masters their Stand"
+   },
+   {
+    "lemma": "frontier",
+    "word": "frontier",
+    "from": "card sentence",
+    "phrase": "across   director credits the frontier has closed  with only  % one-offs"
+   },
+   {
+    "lemma": "phenomenal",
+    "word": "phenomenal",
+    "from": "canon quote (research note)",
+    "phrase": "phenomenal speed"
+   },
+   {
+    "lemma": "speed",
+    "word": "speed",
+    "from": "canon quote (research note)",
+    "phrase": "phenomenal speed"
+   },
+   {
+    "lemma": "fast",
+    "word": "fast",
+    "from": "canon quote (research note)",
+    "phrase": "extremely fast but precise barrage"
+   },
+   {
+    "lemma": "precise",
+    "word": "precise",
+    "from": "canon quote (research note)",
+    "phrase": "extremely fast but precise barrage"
+   },
+   {
+    "lemma": "barrage",
+    "word": "barrage",
+    "from": "canon quote (research note)",
+    "phrase": "extremely fast but precise barrage"
+   },
+   {
+    "lemma": "meter",
+    "word": "meters",
+    "from": "canon quote (research note)",
+    "phrase": "two meters"
+   }
+  ],
+  "ring": null
+ },
+ {
+  "id": 17,
+  "name": "Mimicry",
+  "canon": "Surface",
+  "core": [
+   {
+    "lemma": "mimicry",
+    "word": "mimicry",
+    "from": "name",
+    "phrase": "Mimicry"
+   },
+   {
+    "lemma": "copy",
+    "word": "copy",
+    "from": "quote",
+    "phrase": "Surface's primary ability is to copy the appearance of another person"
+   },
+   {
+    "lemma": "appearance",
+    "word": "appearance",
+    "from": "quote",
+    "phrase": "Surface's primary ability is to copy the appearance of another person"
+   },
+   {
+    "lemma": "person",
+    "word": "person",
+    "from": "quote",
+    "phrase": "Surface's primary ability is to copy the appearance of another person"
+   },
+   {
+    "lemma": "victim",
+    "word": "victim",
+    "from": "canon quote (research note)",
+    "phrase": "Surface and the victim must stand face-to-face for it to work"
+   },
+   {
+    "lemma": "act",
+    "word": "act",
+    "from": "WordNet definition of 'mimicry' (top-up)",
+    "phrase": "the act of mimicking"
+   },
+   {
+    "lemma": "mimic",
+    "word": "mimicking",
+    "from": "WordNet definition of 'mimicry' (top-up)",
+    "phrase": "the act of mimicking"
+   },
+   {
+    "lemma": "imitative",
+    "word": "imitative",
+    "from": "WordNet definition of 'mimicry' (top-up)",
+    "phrase": "imitative behavior"
+   },
+   {
+    "lemma": "behavior",
+    "word": "behavior",
+    "from": "WordNet definition of 'mimicry' (top-up)",
+    "phrase": "imitative behavior"
+   },
+   {
+    "lemma": "reproduction",
+    "word": "reproduction",
+    "from": "WordNet definition of 'copy' (top-up)",
+    "phrase": "a reproduction of a written record (e"
+   }
+  ],
+  "ring": null
+ }
+]
