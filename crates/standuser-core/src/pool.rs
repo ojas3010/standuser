@@ -308,16 +308,18 @@ fn why_line(w: &Row, all: &[(f64, f64, f64, u32, f64)], pool_films: usize, templ
         's' => "trimmed from",
         _ => "verbatim:",
     };
-    let kind = if w.names.score { "score" } else { "soundtrack" };
+    // the artist and the score / soundtrack flag are those of the candidate's own album: a film can have several
+    let album = &w.names.albums[w.cand.album];
+    let kind = if album.score { "score" } else { "soundtrack" };
     let year = w.film.year.to_string();
     let track = w.cand.track.to_string();
     let rating = w.film.rating.map(|r| format!("{r:.1}"));
     let mut slots: Vec<String> = vec![name.clone(), src.clone(), film.clone(), year.clone(), track.clone(), ability.to_string()];
-    let place = if w.names.artist.is_empty() || w.names.artist == "Various Artists" {
+    let place = if album.artist.is_empty() || album.artist == "Various Artists" {
         format!("track {track} of the {film} {kind} ({year})")
     } else {
-        slots.push(w.names.artist.clone());
-        format!("track {track} of {}'s {film} {kind} ({year})", w.names.artist)
+        slots.push(album.artist.clone());
+        format!("track {track} of {}'s {film} {kind} ({year})", album.artist)
     };
     let mut origin = if w.film.fav { format!("{film} is one of your Favourite Films") } else { format!("{film} is one of your highest-affinity films") };
     if let Some(r) = &rating {
@@ -446,13 +448,14 @@ mod tests {
         assert!(v.iter().find(|f| f.tmdb == 2).unwrap().a > v.iter().find(|f| f.tmdb == 1).unwrap().a);
     }
 
+    /// Films with one album each (artist, flag "c" score / "v" various / "o" other) holding all the candidates.
     fn names_json(films: &[(u32, &str, &str, &[(&str, u8, u16, &str, &[u16])])]) -> String {
         let mut m = serde_json::Map::new();
         for (id, artist, flag, cands) in films {
-            let cs: Vec<serde_json::Value> = cands.iter().map(|(n, c, t, k, codes)| serde_json::json!([n, c, t, k, "", codes])).collect();
-            m.insert(id.to_string(), serde_json::json!([artist, flag, cs]));
+            let cs: Vec<serde_json::Value> = cands.iter().map(|(n, c, t, k, codes)| serde_json::json!([n, c, t, k, "", codes, 0])).collect();
+            m.insert(id.to_string(), serde_json::json!([[[artist, flag]], cs]));
         }
-        serde_json::json!({"v": 1, "names": m}).to_string()
+        serde_json::json!({"v": 2, "names": m}).to_string()
     }
 
     #[test]
@@ -531,6 +534,27 @@ mod tests {
         assert!(p.why.contains("\"hunter\" fits your Hora Rush ability; fit rank 1 of 3."), "{}", p.why);
         let slots: Vec<String> = ["WOUNDED HUNTER", "A", "2000", "11", "Hora Rush", "Nine Nine", "4.5", "hunter", "1", "3"].map(String::from).to_vec();
         assert!(slots_ok(&p.why.replace(['「', '」'], " "), &slots));
+    }
+
+    #[test]
+    fn the_why_line_takes_artist_and_kind_from_the_candidates_own_album() {
+        // 12 Years a Slave: LETTER WRITING is on Hans Zimmer's score (album 0), FREIGHT TRAIN on the songs album by various artists (album 1)
+        let names = |winner: &str| {
+            let cool = |n: &str| if n == winner { 90 } else { 10 };
+            serde_json::json!({"v": 2, "names": {"1": [[["Hans Zimmer", "c"], ["Various Artists", "v"]], [
+                ["LETTER WRITING", cool("LETTER WRITING"), 17, "v", "", [], 0], ["FREIGHT TRAIN", cool("FREIGHT TRAIN"), 3, "v", "", [], 1], ["FILLER", 10, 4, "v", "", [], 1]]]}}).to_string()
+        };
+        let ex = export(&[(0, 4.0)], &[0]);
+        let mut lk = table();
+        lk.load_names(&names("LETTER WRITING")).unwrap();
+        let p = pick(&ex, &lk, 1, "u").unwrap();
+        assert_eq!(p.name, "LETTER WRITING");
+        assert!(p.why.contains("track 17 of Hans Zimmer's A score (2000)"), "{}", p.why);
+        lk.load_names(&names("FREIGHT TRAIN")).unwrap();
+        let p = pick(&ex, &lk, 1, "u").unwrap();
+        assert_eq!(p.name, "FREIGHT TRAIN");
+        assert!(p.why.contains("track 3 of the A soundtrack (2000)"), "{}", p.why);
+        assert!(!p.why.contains("Hans Zimmer") && !p.why.contains("A score"), "not credited to the other album's artist: {}", p.why);
     }
 
     #[test]

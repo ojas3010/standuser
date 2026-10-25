@@ -76,23 +76,43 @@ pub struct NameCand {
     pub src: String,
     /// Lexicon matches: template * 16 + word index * 2 + (1 for a core word, 0 for a WordNet ring word).
     pub codes: Vec<u16>,
+    /// Index into the film's `albums`: the album this track is on.
+    pub album: usize,
 }
 
+/// One soundtrack album a film's candidates come from.
 #[derive(Debug, Clone, PartialEq)]
-pub struct FilmNames {
+pub struct Album {
+    /// The album's artist credit ("" when none was kept).
     pub artist: String,
     /// The album credits the film's composer (a score) rather than a songs album or various artists.
     pub score: bool,
+}
+
+/// A film's albums (a film can have a score, a songs album and a various-artists album) and the candidates of all of them.
+#[derive(Debug, Clone, PartialEq)]
+pub struct FilmNames {
+    pub albums: Vec<Album>,
     pub cands: Vec<NameCand>,
 }
 
-type NameRow = (String, String, Vec<(String, u8, u16, String, String, Vec<u16>)>);
+/// The names file format: [[[artist, flag], ...], [[name, cool, track, kind, src, codes, album], ...]] per TMDB id.
+type NameRow = (Vec<(String, String)>, Vec<(String, u8, u16, String, String, Vec<u16>, usize)>);
+
+#[derive(Deserialize)]
+struct NamesHead {
+    #[serde(default)]
+    v: u32,
+}
 
 #[derive(Deserialize)]
 struct NamesFile {
     #[serde(default)]
     names: HashMap<String, NameRow>,
 }
+
+/// The version of the names file this build reads.
+pub const NAMES_FORMAT: u32 = 2;
 
 #[derive(Debug, Clone, Default)]
 pub struct Lookup {
@@ -164,15 +184,26 @@ impl Lookup {
 
     /// Add the name candidates of names.json (a separate file; the film table's format is unchanged).
     pub fn load_names(&mut self, json: &str) -> Result<(), String> {
+        // the version first, so that a file in another format says so instead of failing on its shape
+        let head: NamesHead = serde_json::from_str(json).map_err(|e| format!("bad names file: {e}"))?;
+        if head.v != NAMES_FORMAT {
+            return Err(format!("bad names file: format {} (this build reads {NAMES_FORMAT})", head.v));
+        }
         let f: NamesFile = serde_json::from_str(json).map_err(|e| format!("bad names file: {e}"))?;
-        for (k, (artist, flag, cands)) in f.names {
+        let mut loaded = vec![];
+        for (k, (albums, cands)) in f.names {
             let Ok(id) = k.parse::<u32>() else { continue };
+            if let Some(c) = cands.iter().find(|c| c.6 >= albums.len()) {
+                return Err(format!("bad names file: {} of film {id} points at album {} of {}", c.0, c.6, albums.len()));
+            }
+            let albums = albums.into_iter().map(|(artist, flag)| Album { artist, score: flag == "c" }).collect();
             let cands = cands
                 .into_iter()
-                .map(|(name, cool, track, kind, src, codes)| NameCand { name, cool, track, kind: kind.chars().next().unwrap_or('v'), src, codes })
+                .map(|(name, cool, track, kind, src, codes, album)| NameCand { name, cool, track, kind: kind.chars().next().unwrap_or('v'), src, codes, album })
                 .collect();
-            self.names.insert(id, FilmNames { artist, score: flag == "c", cands });
+            loaded.push((id, FilmNames { albums, cands }));
         }
+        self.names.extend(loaded);
         Ok(())
     }
 
@@ -232,13 +263,18 @@ mod tests {
     fn names_load_separately_from_the_table() {
         let mut l = Lookup::from_json(r#"{"v":1,"films":[]}"#).unwrap();
         assert!(l.names.is_empty());
-        l.load_names(r#"{"v":1,"meta":{},"names":{"7840":["A B","c",[["WOUNDED HUNTER",88,11,"v","",[33,48]],["WALKING","74",2,"c","x / y",[]]]]}}"#).unwrap_err();
-        l.load_names(r#"{"v":1,"meta":{},"names":{"7840":["A B","c",[["WOUNDED HUNTER",88,11,"v","",[33,48]],["WALKING",74,2,"c","x / y",[]]]],"x":["","o",[]]}}"#).unwrap();
+        l.load_names(r#"{"v":2,"meta":{},"names":{"7840":[[["A B","c"]],[["WOUNDED HUNTER",88,11,"v","",[33,48],0],["WALKING","74",2,"c","x / y",[],0]]]}}"#).unwrap_err();
+        l.load_names(r#"{"v":2,"meta":{},"names":{"7840":[[["A B","c"],["Various Artists","v"]],[["WOUNDED HUNTER",88,11,"v","",[33,48],0],["WALKING",74,2,"c","x / y",[],1]]],"x":[[],[]]}}"#).unwrap();
         let n = &l.names[&7840];
-        assert!(n.score && n.artist == "A B" && n.cands.len() == 2);
-        assert_eq!(n.cands[1], NameCand { name: "WALKING".into(), cool: 74, track: 2, kind: 'c', src: "x / y".into(), codes: vec![] });
+        assert_eq!(n.albums, vec![Album { artist: "A B".into(), score: true }, Album { artist: "Various Artists".into(), score: false }]);
+        assert_eq!(n.cands.len(), 2);
+        assert_eq!(n.cands[1], NameCand { name: "WALKING".into(), cool: 74, track: 2, kind: 'c', src: "x / y".into(), codes: vec![], album: 1 });
         assert_eq!(l.names.len(), 1, "a non-numeric id is skipped");
         assert!(l.load_names("not json").is_err());
+        let old = r#"{"v":1,"names":{"7840":["A B","c",[["WALKING",74,2,"c","",[]]]]}}"#;
+        assert!(l.load_names(old).unwrap_err().contains("format 1"), "the old one-artist format is refused");
+        let dangling = r#"{"v":2,"names":{"7840":[[["A B","c"]],[["WALKING",74,2,"c","",[],1]]]}}"#;
+        assert!(l.load_names(dangling).unwrap_err().contains("album 1 of 1"), "an album index with no album is refused");
     }
 
     #[test]

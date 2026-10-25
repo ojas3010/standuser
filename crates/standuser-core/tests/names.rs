@@ -136,3 +136,16 @@ fn synthetic_user_7_no_longer_wins_racial_profiling_and_no_seeded_user_gets_a_bl
         }
     }
 }
+
+#[test]
+fn twelve_years_a_slave_credits_letter_writing_to_zimmers_score_and_freight_train_to_the_songs_album() {
+    let lk = real();
+    let f = &lk.names[&76203];
+    let album = |name: &str| &f.albums[f.cands.iter().find(|c| c.name == name).unwrap_or_else(|| panic!("{name} is shipped")).album];
+    let (lw, ft) = (album("LETTER WRITING"), album("FREIGHT TRAIN"));
+    assert!(lw.artist == "Hans Zimmer" && lw.score, "{lw:?}");
+    assert!(ft.artist != "Hans Zimmer" && !ft.score, "{ft:?}");
+    // films with candidates from several albums are real: 398 of the shipped films
+    assert!(lk.names.values().filter(|n| n.cands.iter().map(|c| c.album).collect::<std::collections::HashSet<_>>().len() > 1).count() > 300);
+    assert!(lk.names.values().all(|n| n.cands.iter().all(|c| c.album < n.albums.len())));
+}

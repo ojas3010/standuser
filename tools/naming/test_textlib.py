@@ -276,5 +276,5 @@ def test_the_phrase_file_is_lower_case_ascii_and_has_no_duplicates():
 def test_no_shipped_candidate_name_matches_the_blocklist():
     import json
     names = json.load(open(os.path.join(t.REPO, "crates", "standuser-core", "data", "names.json"), encoding="utf-8"))["names"]
-    bad = sorted({c[0] for v in names.values() for c in v[2] if t.is_sensitive(c[0])})
+    bad = sorted({c[0] for v in names.values() for c in v[1] if t.is_sensitive(c[0])})
     assert bad == []

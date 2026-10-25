@@ -24,7 +24,7 @@ def main():
     ap.add_argument("--out", default=L.RING_DROP)
     a = ap.parse_args()
     lex = json.load(open(os.path.join(t.HERE, "data", "lexicons.json"), encoding="utf-8"))
-    cands = [c[0] for v in json.load(open(a.names, encoding="utf-8"))["names"].values() for c in v[2]]
+    cands = [c[0] for v in json.load(open(a.names, encoding="utf-8"))["names"].values() for c in v[1]]
     n = len(cands)
     cnt = Counter()
     for name in cands:
