@@ -4,6 +4,7 @@ use standuser_core::svg::{card_svg, CardData, Theme};
 fn main() {
     let d = CardData {
         name: "THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES".into(),
+        why: "Why 「THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES」: tail of \"A Very Long Source Track Title That Goes On And On\", track 12 of Кириллица's 한국어 제목 score (1999); the film is one of your Favourite Films (4.5★). \"homage\" fits your Wind Reading ability; fit rank 1 of 40 and then some more words to overflow.".into(),
         user: "a_very_long_letterboxd_username_for_testing_layout_limits".into(),
         type_jp: "遠隔自動操縦型".into(),
         type_en: "Automatic, Far-Distance Autopilot".into(),

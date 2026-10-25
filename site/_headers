@@ -6,3 +6,5 @@
   Cache-Control: public, max-age=3600
 /films.json
   Cache-Control: public, max-age=3600
+/names.json
+  Cache-Control: public, max-age=3600

@@ -35,7 +35,7 @@ try {
   const bytes = new Uint8Array(await (await fetch('synth.zip')).arrayBuffer());
   const seen = () => performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname).filter((n) => n !== '/synth.zip' && n !== '/favicon.ico');
   // the page is booted when it has loaded the table and the wasm and its status line is empty again
-  await until('the page to boot', () => seen().includes('/films.json') && seen().includes('/pkg/standuser_bg.wasm') && statusEl().textContent === '');
+  await until('the page to boot', () => seen().includes('/films.json') && seen().includes('/names.json') && seen().includes('/pkg/standuser_bg.wasm') && statusEl().textContent === '');
   const before = seen();
   const result = document.getElementById('result');
   const input = document.getElementById('file');
@@ -53,7 +53,7 @@ try {
   const after = seen();
   const added = after.filter((n) => !before.includes(n));
   out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''), '0');
-  out('page resources', [...new Set(after)].sort().join(' '), '/app.js /films.json /pkg/standuser.js /pkg/standuser_bg.wasm /selftest.js /style.css /tmdb.svg');
+  out('page resources', [...new Set(after)].sort().join(' '), '/app.js /films.json /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /selftest.js /style.css /tmdb.svg');
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
   out('rows', rows.length, 6);
@@ -75,6 +75,11 @@ try {
     const b = new Uint8Array(await href);
     const head = [...b.slice(0, 8)].map((x) => x.toString(16)).join(' ');
     out('download ' + name, b.length + ' bytes, head=' + head, (v) => b.length > 10000 && head === heads[name]);
+    if (name === 'stand.json') {
+      const a = JSON.parse(new TextDecoder().decode(b));
+      out('name route', a.name.route, 'titles');
+      out('name has a why line on the card data', a.card.why.startsWith('Why 「' + a.name.name + '」'), true);
+    }
   }
   // malformed input: an error message for a corrupt file, a card for a file with a bad date and a NaN rating, and the page keeps working
   await feed('bad.zip', 'bad.zip');

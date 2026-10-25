@@ -18,7 +18,7 @@
   <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
     <input id="file" type="file" accept=".zip,application/zip" hidden>
     <p><strong>Drop letterboxd-…-utc.zip here</strong><br>or <button id="pick" type="button">choose the file</button></p>
-    <p class="small">Letterboxd → Settings → Data → Export your data. The ZIP is read in this tab. Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and one column of <code>profile.csv</code> (Date Joined) are used.</p>
+    <p class="small">Letterboxd → Settings → Data → Export your data. The ZIP is read in this tab. Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and two columns of <code>profile.csv</code> (Date Joined and Favorite Films) are used; nothing else in <code>profile.csv</code> is read.</p>
   </section>
 
   <section class="opts">
@@ -51,7 +51,7 @@
   <footer>
     <p class="tmdb"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener"><img src="tmdb.svg" alt="TMDB" width="110" height="14"></a></p>
     <p class="small">This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p>
-    <p class="small">Fan project, not affiliated with Letterboxd or the JoJo's Bizarre Adventure rights holders. Ratings data: Letterboxd. Grades marked * are provisional.</p>
+    <p class="small">Fan project, not affiliated with Letterboxd or the JoJo's Bizarre Adventure rights holders. Ratings data: Letterboxd. Soundtrack data from MusicBrainz. Grades marked * are provisional.</p>
   </footer>
 </main>
 <script type="module" src="app.js"></script>

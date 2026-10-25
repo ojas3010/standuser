@@ -5,6 +5,7 @@ use std::path::PathBuf;
 use std::process::ExitCode;
 
 const TABLE: &str = include_str!("../../standuser-core/data/films.json");
+const NAMES: &str = include_str!("../../standuser-core/data/names.json");
 
 fn usage() -> ExitCode {
     eprintln!(
@@ -12,6 +13,8 @@ fn usage() -> ExitCode {
          options:\n  \
          --out <dir>        where to write card.svg, card.png and stand.json (default: current directory)\n  \
          --table <file>     film lookup table JSON (default: the one built into this binary)\n  \
+         --names <file>     name candidates JSON (names.json; default: the one built into this binary)\n  \
+         --name-table       print only the five best name candidates (S, Cool, F, A, source track) and the first-track name\n  \
          --theme <t>        light | dark (png); the svg is always light with a dark-mode override (default: light)\n  \
          --joined <date>    YYYY-MM-DD, when the zip has no profile.csv\n  \
          --username <name>  override the username\n  \
@@ -29,6 +32,7 @@ fn main() -> ExitCode {
     let mut args = std::env::args().skip(1);
     let mut input: Option<String> = None;
     let (mut out, mut table, mut theme, mut joined, mut user, mut json) = (PathBuf::from("."), None::<String>, "light".to_string(), None::<String>, None::<String>, false);
+    let (mut names, mut name_table) = (None::<String>, false);
     while let Some(a) = args.next() {
         // every option that takes a value must get one; a bad command line stops here with exit code 2
         macro_rules! value {
@@ -42,6 +46,8 @@ fn main() -> ExitCode {
         match a.as_str() {
             "--out" => out = PathBuf::from(value!()),
             "--table" => table = Some(value!()),
+            "--names" => names = Some(value!()),
+            "--name-table" => name_table = true,
             "--theme" => {
                 theme = value!();
                 if theme != "light" && theme != "dark" {
@@ -102,13 +108,27 @@ fn main() -> ExitCode {
         },
         None => TABLE.to_string(),
     };
-    let lk = match Lookup::from_json(&table_json) {
+    let mut lk = match Lookup::from_json(&table_json) {
         Ok(l) => l,
         Err(e) => {
             eprintln!("{e}");
             return ExitCode::from(1);
         }
     };
+    let names_json = match names {
+        Some(p) => match std::fs::read_to_string(&p) {
+            Ok(t) => t,
+            Err(e) => {
+                eprintln!("cannot read {p}: {e}");
+                return ExitCode::from(1);
+            }
+        },
+        None => NAMES.to_string(),
+    };
+    if let Err(e) = lk.load_names(&names_json) {
+        eprintln!("{e}");
+        return ExitCode::from(1);
+    }
     let today = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).ok().map(|d| (d.as_secs() / 86400) as i64);
     let a = analysis::analyze_at(&ex, &lk, today);
 
@@ -131,7 +151,9 @@ fn main() -> ExitCode {
         return ExitCode::from(1);
     }
 
-    if json {
+    if name_table {
+        print_name_table(&a);
+    } else if json {
         println!("{}", serde_json::to_string_pretty(&a).unwrap());
     } else {
         let g: Vec<String> = a.card.grades.iter().zip(&a.card.prov).map(|(l, p)| format!("{l}{}", if *p { "*" } else { "" })).collect();
@@ -145,6 +167,21 @@ fn main() -> ExitCode {
         println!("wrote {}, {}, {}", out.join("card.svg").display(), out.join("card.png").display(), out.join("stand.json").display());
     }
     ExitCode::SUCCESS
+}
+
+fn print_name_table(a: &analysis::Analysis) {
+    let n = &a.name;
+    println!("route: {}   name: 「{}」", n.route, n.name);
+    if n.top.is_empty() {
+        return;
+    }
+    println!("{:>2}  {:<26} {:>6} {:>5} {:>4} {:>5}  {}", "#", "name", "S", "Cool", "F", "A", "source track");
+    for (i, t) in n.top.iter().enumerate() {
+        println!("{:>2}{} {:<26} {:>6.4} {:>5.2} {:>4.1} {:>5.3}  track {} of {} ({})", i + 1, if t.picked { "*" } else { " " }, t.name, t.s, t.cool, t.f, t.a, t.track, t.film, t.year);
+    }
+    if let Some(f) = &n.first_track {
+        println!("first-track rule: 「{}」 (track {} of {})", f.name, f.track, f.film);
+    }
 }
 
 fn render_png(svg: &str) -> Result<Vec<u8>, String> {

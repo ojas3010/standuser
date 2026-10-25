@@ -13,7 +13,7 @@ pub const H: f64 = 1350.0;
 pub const JP: [&str; 6] = ["破壊力", "スピード", "射程距離", "持続力", "精密動作性", "成長性"];
 pub const EN: [&str; 6] = ["Destructive Power", "Speed", "Range", "Stamina", "Precision", "Potential"];
 /// The small print at the bottom of the card.
-pub const FOOTER: &str = "* provisional  ·  Fan work, not affiliated. Ratings: Letterboxd. Film data: TMDB (not endorsed or certified by TMDB).";
+pub const FOOTER: &str = "* provisional  ·  Fan work, not affiliated. Ratings: Letterboxd. Film data: TMDB (not endorsed or certified by TMDB). Soundtrack data from MusicBrainz.";
 /// Under the type name: it is a reading of the stats, not a canon fact.
 pub const TYPE_NOTE: &str = "archetype by stats · about 60% agreement with canon";
 /// Added for the weakest type rule (Far-Distance Autopilot, AUC 0.59).
@@ -33,6 +33,9 @@ pub enum Theme {
 pub struct CardData {
     /// English Stand name, upper case, without 「」.
     pub name: String,
+    /// One line saying where the name came from, built from computed slots only; empty draws nothing.
+    #[serde(default)]
+    pub why: String,
     pub user: String,
     pub type_jp: String,
     pub type_en: String,
@@ -112,6 +115,9 @@ impl Ctx {
     }
 }
 
+const WHY_SIZE: f64 = 14.0;
+const WHY_WIDTH: f64 = 940.0;
+
 /// The type note is 14 px and at most this wide: at 15 px with a 400 px limit its end touched the medallion's rim.
 const NOTE_SIZE: f64 = 14.0;
 const NOTE_WIDTH: f64 = 380.0;
@@ -144,7 +150,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         c.text("ゴ", W - 66.0, 372.0 + i * 118.0, 92.0, Sans, "gold", "middle", 6.0 - i * 3.0, 0.0, Some(0.22));
     }
     // header
-    c.text("【STAND NAME】", 70.0, 92.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
+    c.text("【STAND NAME】", 70.0, 84.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     if d.badge {
         c.els.push("<rect x=\"770\" y=\"64\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-red\" stroke-width=\"2.5\"/>".into());
         c.text("PROVISIONAL DATA", 890.0, 91.0, 19.0, Sans, "red", "middle", 0.0, 1.5, None);
@@ -162,7 +168,13 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
         name = format!("「{}…」", inner.iter().collect::<String>().trim_end());
     }
-    c.text(&name, 70.0, 188.0, nsz, Serif, "ink", "start", 0.0, 2.0, None);
+    c.text(&name, 70.0, 176.0, nsz, Serif, "ink", "start", 0.0, 2.0, None);
+    // the why line: two lines of 14 px under the name, cut with an ellipsis rather than overflowing
+    let why = c.sans.wrap(&d.why, WHY_SIZE, WHY_WIDTH);
+    for (i, ln) in why.iter().take(2).enumerate() {
+        let ln = if i == 1 && why.len() > 2 { c.sans.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() };
+        c.text(&ln, 70.0, 199.0 + i as f64 * 16.0, WHY_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
+    }
     c.text("【STAND MASTER】", 70.0, 238.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     let user = c.sans.fit(&d.user, 34.0, 470.0);
     c.text(&format!("本体 ― {user}"), 350.0, 240.0, 34.0, Sans, "ink", "start", 0.0, 0.0, None);
@@ -309,6 +321,7 @@ mod tests {
     pub fn sample() -> CardData {
         CardData {
             name: "DIRTY WEATHER".into(),
+            why: "Why 「DIRTY WEATHER」: verbatim: \"DIRTY WEATHER\", track 3 of Some Band's Lighthouse score (2019); Lighthouse is one of your Favourite Films (4.5★). \"weather\" fits your Wind Reading ability; fit rank 1 of 40.".into(),
             user: "jas3344".into(),
             type_jp: "近距離パワー型".into(),
             type_en: "Close-Range Power".into(),

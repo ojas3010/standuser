@@ -1,9 +1,11 @@
-// standuser site: export.zip in, card out, all in the browser. No network use after the page and film table load.
+// standuser site: export.zip in, card out, all in the browser. No network use after the page, the film table and the name candidates load.
 import init, { run } from './pkg/standuser.js';
 
 const $ = (id) => document.getElementById(id);
+const drop = $('drop');
 const statusEl = $('status');
 let table = null;
+let names = '';
 let last = null; // { svgs, analysis }
 
 const setStatus = (msg, error = false) => {
@@ -13,12 +15,27 @@ const setStatus = (msg, error = false) => {
 
 async function boot() {
   setStatus('Loading…');
+  drop.classList.add('loading');
+  drop.setAttribute('aria-busy', 'true');
   try {
-    await init();
-    table = await (await fetch('films.json')).text();
-    setStatus('');
+    // the wasm, the film table and the name candidates load in parallel; the drop zone stays inactive until all three are in
+    const text = async (url) => {
+      const r = await fetch(url);
+      if (!r.ok) throw new Error(`${url}: ${r.status}`);
+      return r.text();
+    };
+    const [, t, n] = await Promise.all([init(), text('films.json'), text('names.json').catch((e) => e)]);
+    table = t;
+    if (n instanceof Error) setStatus(`The name candidates did not load (${n.message}); names will come from your composers.`);
+    else {
+      names = n;
+      setStatus('');
+    }
   } catch (e) {
     setStatus(`Could not load the page's data: ${e.message}`, true);
+  } finally {
+    drop.classList.remove('loading');
+    drop.removeAttribute('aria-busy');
   }
 }
 const ready = boot();
@@ -30,7 +47,7 @@ function chosenTheme(kind) {
 }
 
 function exec(bytes, name) {
-  const out = JSON.parse(run(bytes, name, table, $('joined').value || '', $('username').value.trim(), new Date().toISOString().slice(0, 10)));
+  const out = JSON.parse(run(bytes, name, table, names, $('joined').value || '', $('username').value.trim(), new Date().toISOString().slice(0, 10)));
   if (out.error) throw new Error(out.error);
   return out;
 }
@@ -111,7 +128,6 @@ $('dl-png').addEventListener('click', async () => {
 });
 $('dl-json').addEventListener('click', () => last && download('stand.json', new Blob([JSON.stringify(last.analysis, null, 2)], { type: 'application/json' })));
 
-const drop = $('drop');
 $('pick').addEventListener('click', (e) => { e.stopPropagation(); $('file').click(); });
 drop.addEventListener('click', () => $('file').click());
 drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });

@@ -11,7 +11,8 @@ trap 'kill $SRV 2>/dev/null || true; rm -rf "$W"' EXIT
 cp -r site/. "$W/"
 FIX=crates/standuser-core/tests/fixtures/synth
 cp "$FIX/letterboxd-synthuser-2026-06-30-12-00-utc.zip" "$W/synth.zip"
-cp "$FIX/table.json" "$W/films.json"   # the page is tested against the synthetic table
+cp "$FIX/table.json" "$W/films.json"   # the page is tested against the synthetic table and its synthetic name candidates
+cp "$FIX/names.json" "$W/names.json"
 # malformed input the page must survive: a corrupt file, and a valid zip with a non-ASCII date and a NaN rating
 python3 - "$W" <<'PY'
 import sys, zipfile

@@ -29,3 +29,5 @@ th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line
 footer { margin-top: 40px; }
 .tmdb { margin: 0 0 6px; line-height: 0; }
 .tmdb img { height: 14px; width: auto; opacity: .85; }
+
+#drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
