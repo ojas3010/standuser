@@ -37,8 +37,7 @@ fn synthetic_export_gets_a_title_name_with_a_why_line_on_the_card() {
 fn seeded_real_table_users_get_deterministic_valid_names_and_clean_why_lines() {
     let lk = real();
     let users = synth_users::users(40, &lk);
-    let mut titles = 0;
-    let mut differs = 0;
+    let (mut titles, mut differs, mut fits, mut no_fit) = (0, 0, 0, 0);
     for (ex, t) in &users {
         let user = ex.username.clone().unwrap();
         let Some(p) = pool::pick(ex, &lk, *t, &user) else { continue };
@@ -53,23 +52,57 @@ fn seeded_real_table_users_get_deterministic_valid_names_and_clean_why_lines() {
         // the full why line, not the bare fallback: the place, the origin and one cited reason
         assert!(p.why.starts_with(&format!("Why 「{}」: ", p.name)), "{}", p.why);
         assert!(p.why.contains("; ") && p.why.ends_with('.'), "{}", p.why);
-        assert!(["fit rank", "Its Cool score", "in your pool by affinity"].iter().any(|r| p.why.contains(r)), "no cited reason: {}", p.why);
+        // the cited reason: the matched word when the name fits the ability, else the favourite or the pool rank; never Cool
+        let w = p.top.iter().find(|s| s.picked).unwrap();
+        assert!(!p.why.contains("Cool"), "{}", p.why);
+        if w.f > 0.0 {
+            fits += 1;
+            let verb = if w.f >= 1.0 { "fits" } else { "is close to" };
+            assert!(p.why.ends_with(&format!("\"{}\" {verb} your {} ability.", w.matched.as_deref().unwrap(), standuser_core::ability::template_by_id(*t).name)), "{}", p.why);
+        } else {
+            no_fit += 1;
+            assert!(p.why.contains("one of your Favourite Films") || p.why.contains("films in your pool by affinity"), "no cited reason: {}", p.why);
+            assert!(!p.why.contains("ability"), "{}", p.why);
+        }
         if p.first_track.as_ref().is_some_and(|f| f.name != p.name) {
             differs += 1;
         }
     }
     assert!(titles >= 35, "most users have a pool: {titles}");
     assert!(differs > 0, "the S winner is not always the first track");
+    assert!(fits > 0 && no_fit > 0, "both reasons are exercised: {fits} fits, {no_fit} without a fit");
+}
+
+/// The distinct names within the tie band of the top S for this history (the band does not depend on the username).
+fn band_names(ex: &parse::Export, lk: &Lookup, t: u8) -> Vec<String> {
+    let p = pool::pick_top(ex, lk, t, "band", 10_000).unwrap();
+    let top_s = p.top[0].s;
+    let mut names: Vec<String> = vec![];
+    for s in p.top.iter().filter(|s| s.s >= top_s - pool::TIE_BAND - 1e-9) {
+        if !names.contains(&s.name) {
+            names.push(s.name.clone());
+        }
+    }
+    names
 }
 
 #[test]
 fn different_usernames_do_not_all_get_the_same_name_from_the_same_history() {
     let lk = real();
-    let (ex, t) = synth_users::users(1, &lk).remove(0);
-    let names: std::collections::HashSet<String> = (0..60).filter_map(|i| pool::pick(&ex, &lk, t, &format!("user-{i}")).map(|p| p.name)).collect();
-    assert!(names.len() >= 1);
-    // the pick can only move within 0.03 of the top S, so it is a handful of names at most
-    assert!(names.len() <= 12, "{names:?}");
+    // set up a history whose tie band holds at least 2 names (one seeded user is enough, and the search must find one)
+    let (ex, t, band) = synth_users::users(40, &lk)
+        .into_iter()
+        .map(|(ex, t)| {
+            let b = band_names(&ex, &lk, t);
+            (ex, t, b)
+        })
+        .find(|(_, _, b)| b.len() >= 2)
+        .expect("a seeded user with a band of at least 2 names");
+    let picks: std::collections::HashSet<String> = (0..60).filter_map(|i| pool::pick(&ex, &lk, t, &format!("user-{i}")).map(|p| p.name)).collect();
+    // the pick can only move within 0.03 of the top S, so it is one of the band's names
+    assert!(picks.iter().all(|n| band.contains(n)), "{picks:?} outside the band {band:?}");
+    println!("band of {} names; 60 usernames picked {} of them", band.len(), picks.len());
+    assert!(picks.len() >= 2, "60 usernames must not all get one name from a band of {}: {picks:?}", band.len());
 }
 
 #[test]
@@ -135,4 +168,44 @@ fn synthetic_user_7_no_longer_wins_racial_profiling_and_no_seeded_user_gets_a_bl
             println!("user 7 now wins {} (track {} of {})", a.name.name, a.name.top.iter().find(|t| t.picked).map(|t| t.track).unwrap_or(0), a.name.top.iter().find(|t| t.picked).map(|t| t.film.as_str()).unwrap_or(""));
         }
     }
+}
+
+#[test]
+fn twelve_years_a_slave_credits_letter_writing_to_zimmers_score_and_freight_train_to_the_songs_album() {
+    let lk = real();
+    let f = &lk.names[&76203];
+    let album = |name: &str| &f.albums[f.cands.iter().find(|c| c.name == name).unwrap_or_else(|| panic!("{name} is shipped")).album];
+    let (lw, ft) = (album("LETTER WRITING"), album("FREIGHT TRAIN"));
+    assert!(lw.artist == "Hans Zimmer" && lw.score, "{lw:?}");
+    assert!(ft.artist != "Hans Zimmer" && !ft.score, "{ft:?}");
+    // films with candidates from several albums are real: 398 of the shipped films
+    assert!(lk.names.values().filter(|n| n.cands.iter().map(|c| c.album).collect::<std::collections::HashSet<_>>().len() > 1).count() > 300);
+    assert!(lk.names.values().all(|n| n.cands.iter().all(|c| c.album < n.albums.len())));
+}
+
+#[test]
+fn stand_json_keeps_the_per_film_favourite_flag_and_no_count_of_favourites_read() {
+    let lk = real();
+    // two seeded users: one with favourites in the export, one without
+    let (ex, _) = synth_users::users(1, &lk).remove(0);
+    assert!(!ex.favorites.is_empty(), "setup: the seeded user has favourites");
+    let mut none = ex.clone();
+    none.favorites.clear();
+    for e in [&ex, &none] {
+        let mut e = e.clone();
+        e.joined = standuser_core::dates::parse_date("2022-01-01");
+        e.as_of = standuser_core::dates::parse_date("2026-10-19");
+        let json = serde_json::to_value(analysis::analyze(&e, &lk)).unwrap();
+        assert!(!json.to_string().contains("favorites_read"), "no count of favourites read in stand.json");
+        let top = json["name"]["top"].as_array().unwrap();
+        assert!(!top.is_empty() && top.iter().all(|t| t["fav"].is_boolean()), "every listed name keeps its film's favourite flag");
+    }
+    let fav_flags = |e: &parse::Export| {
+        let mut e = e.clone();
+        e.joined = standuser_core::dates::parse_date("2022-01-01");
+        e.as_of = standuser_core::dates::parse_date("2026-10-19");
+        analysis::analyze(&e, &lk).name.top.iter().filter(|t| t.fav).count()
+    };
+    assert_eq!(fav_flags(&none), 0, "no favourites, no flag");
+    assert!(synth_users::users(40, &lk).iter().any(|(e, _)| fav_flags(e) > 0), "a listed name from a favourite film carries the flag");
 }

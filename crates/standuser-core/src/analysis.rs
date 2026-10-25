@@ -22,8 +22,6 @@ pub struct Coverage {
     pub eligible: usize,
     /// Watched films the film table does not know; every stat that needs film data skips them.
     pub not_in_table: usize,
-    /// Favourite films read from profile.csv (their codes only).
-    pub favorites_read: usize,
     /// Per stat: graded on N of M films, against the spec's minimum.
     pub per_stat: Vec<crate::stats::StatCoverage>,
     /// Build date of the film table, and its age when the caller gave today's date.
@@ -179,7 +177,6 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         rated_missing: st.facts.n_rated_missing,
         eligible: st.facts.n_elig,
         not_in_table: st.facts.n_watched - st.facts.n_watched_in_table,
-        favorites_read: ex.favorites.len(),
         per_stat: st.coverage.clone(),
         table_built: lk.built.map(iso),
         table_age_days: age,

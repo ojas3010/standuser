@@ -1,33 +1,33 @@
 {
- "rule": "a: no ring links through WordNet-definition top-up core words; b: drop ring lemmas whose share of shipped candidates is above the 90th percentile over all (template, lemma) pairs",
- "shipped_candidates": 28235,
+ "rule": "a: no ring links through WordNet-definition top-up core words; b: drop ring lemmas whose share of the candidates table is above the 90th percentile over all (template, lemma) pairs",
+ "candidates": 90972,
  "pairs_after_a": 3990,
- "p90_share": 0.0010270940322295024,
+ "p90_share": 0.0005166424834014861,
  "sizes": {
   "1": {
    "before": 336,
    "after_a": 157,
-   "after_b": 139
+   "after_b": 138
   },
   "2": {
    "before": 171,
    "after_a": 171,
-   "after_b": 162
+   "after_b": 159
   },
   "3": {
    "before": 240,
    "after_a": 240,
-   "after_b": 213
+   "after_b": 212
   },
   "4": {
    "before": 288,
    "after_a": 256,
-   "after_b": 211
+   "after_b": 210
   },
   "5": {
    "before": 272,
    "after_a": 272,
-   "after_b": 251
+   "after_b": 250
   },
   "6": {
    "before": 207,
@@ -37,27 +37,27 @@
   "7": {
    "before": 216,
    "after_a": 216,
-   "after_b": 203
+   "after_b": 202
   },
   "8": {
    "before": 509,
    "after_a": 509,
-   "after_b": 445
+   "after_b": 439
   },
   "9": {
    "before": 145,
    "after_a": 145,
-   "after_b": 127
+   "after_b": 124
   },
   "10": {
    "before": 106,
    "after_a": 87,
-   "after_b": 73
+   "after_b": 77
   },
   "11": {
    "before": 152,
    "after_a": 152,
-   "after_b": 129
+   "after_b": 131
   },
   "12": {
    "before": 324,
@@ -67,22 +67,22 @@
   "13": {
    "before": 214,
    "after_a": 214,
-   "after_b": 196
+   "after_b": 197
   },
   "14": {
    "before": 268,
    "after_a": 202,
-   "after_b": 177
+   "after_b": 178
   },
   "15": {
    "before": 173,
    "after_a": 173,
-   "after_b": 161
+   "after_b": 156
   },
   "16": {
    "before": 188,
    "after_a": 188,
-   "after_b": 169
+   "after_b": 168
   },
   "17": {
    "before": 747,
@@ -97,7 +97,6 @@
    "cut",
    "earth",
    "feel",
-   "finger",
    "ground",
    "head",
    "hit",
@@ -107,23 +106,30 @@
    "mind",
    "moon",
    "move",
+   "part",
    "roll",
-   "strike",
+   "rule",
+   "snake",
    "wall"
   ],
   "2": [
    "better",
+   "bite",
    "boat",
    "break",
    "cut",
    "hit",
    "hurt",
    "ill",
+   "knife",
+   "pull",
    "shoot",
    "turn"
   ],
   "3": [
    "arm",
+   "bag",
+   "bank",
    "believe",
    "bomb",
    "cut",
@@ -132,6 +138,7 @@
    "fight",
    "find",
    "fire",
+   "force",
    "go",
    "ground",
    "hit",
@@ -140,16 +147,14 @@
    "look",
    "make",
    "move",
-   "push",
-   "raid",
+   "race",
    "shadow",
    "shoot",
    "storm",
-   "strike",
    "take",
    "tear",
    "travel",
-   "wound"
+   "trust"
   ],
   "4": [
    "arm",
@@ -158,14 +163,16 @@
    "bear",
    "blow",
    "build",
+   "camp",
    "change",
    "come",
+   "decision",
    "drive",
    "fall",
    "find",
-   "float",
    "fly",
    "follow",
+   "foot",
    "ghost",
    "go",
    "ground",
@@ -173,14 +180,12 @@
    "hit",
    "journey",
    "jump",
-   "lead",
-   "lift",
    "make",
    "man",
    "pass",
    "people",
    "play",
-   "push",
+   "race",
    "return",
    "ride",
    "rise",
@@ -188,12 +193,13 @@
    "room",
    "run",
    "shoot",
+   "step",
    "swim",
-   "swing",
    "tear",
    "travel",
    "turn",
    "walk",
+   "wheel",
    "wind",
    "wing",
    "world"
@@ -201,14 +207,15 @@
   "5": [
    "act",
    "be",
+   "beast",
    "beat",
    "blow",
+   "camp",
    "cross",
    "fall",
-   "float",
+   "force",
    "go",
    "hot",
-   "knock",
    "move",
    "old",
    "people",
@@ -229,7 +236,6 @@
    "build",
    "deal",
    "drive",
-   "finger",
    "give",
    "head",
    "human",
@@ -238,24 +244,26 @@
    "man",
    "meet",
    "pass",
+   "piece",
    "ring",
    "show",
-   "sneak",
    "take",
    "touch",
    "track",
+   "trust",
    "turn",
    "walk"
   ],
   "7": [
    "end",
-   "freeze",
+   "foot",
    "go",
+   "hole",
    "land",
    "march",
    "move",
    "return",
-   "sneak",
+   "step",
    "stop",
    "story",
    "take",
@@ -263,23 +271,26 @@
    "wing"
   ],
   "8": [
+   "aftermath",
    "back",
    "bed",
    "blood",
    "blow",
+   "business",
    "catch",
    "change",
    "come",
    "dead",
+   "decision",
    "door",
    "dress",
    "drive",
    "earth",
    "end",
    "fall",
-   "float",
    "fly",
    "follow",
+   "gate",
    "get",
    "ghost",
    "go",
@@ -290,19 +301,18 @@
    "journey",
    "jump",
    "land",
-   "lead",
    "lie",
-   "lift",
    "lose",
    "make",
    "man",
    "mind",
    "moon",
    "park",
+   "part",
    "pass",
    "play",
-   "push",
-   "put",
+   "pool",
+   "race",
    "return",
    "ride",
    "rise",
@@ -310,13 +320,16 @@
    "run",
    "set",
    "ship",
+   "sign",
+   "snake",
    "somebody",
    "someone",
    "soul",
+   "space",
    "station",
+   "step",
    "stop",
    "swim",
-   "swing",
    "take",
    "train",
    "travel",
@@ -324,6 +337,7 @@
    "wake",
    "walk",
    "wall",
+   "wheel",
    "wind",
    "wing",
    "world"
@@ -331,16 +345,19 @@
   "9": [
    "act",
    "arm",
+   "bar",
    "boat",
-   "breathe",
    "build",
    "change",
    "check",
+   "foot",
    "hand",
    "line",
    "man",
+   "mark",
    "move",
    "place",
+   "pull",
    "ride",
    "run",
    "take",
@@ -352,26 +369,21 @@
    "be",
    "change",
    "come",
-   "feed",
    "feel",
-   "finger",
    "help",
    "hit",
    "kiss",
    "lie",
    "play",
-   "strike",
-   "turn",
-   "work"
+   "turn"
   ],
   "11": [
+   "aftermath",
    "be",
    "bomb",
    "change",
-   "clean",
    "come",
    "die",
-   "empty",
    "fall",
    "fight",
    "fire",
@@ -381,26 +393,26 @@
    "kill",
    "pass",
    "people",
-   "raid",
    "run",
+   "space",
    "stay",
    "storm",
-   "strike",
    "wake",
    "white"
   ],
   "12": [
    "blow",
    "change",
-   "discover",
    "find",
    "go",
-   "kick",
    "see",
+   "snake",
    "spy",
-   "travel"
+   "travel",
+   "wave"
   ],
   "13": [
+   "aftermath",
    "believe",
    "brother",
    "call",
@@ -413,12 +425,10 @@
    "somebody",
    "someone",
    "soul",
-   "strike",
    "think",
    "touch",
    "trouble",
-   "wake",
-   "work"
+   "wake"
   ],
   "14": [
    "act",
@@ -431,20 +441,19 @@
    "father",
    "fire",
    "follow",
-   "freeze",
    "get",
    "give",
    "ground",
    "make",
    "mother",
+   "piece",
    "play",
-   "prepare",
    "rock",
    "start",
+   "stone",
    "storm",
-   "strike",
+   "strange",
    "track",
-   "work",
    "write"
   ],
   "15": [
@@ -452,20 +461,24 @@
    "go",
    "here",
    "home",
+   "jungle",
    "let",
    "line",
+   "lord",
    "move",
+   "news",
    "old",
+   "part",
    "pass",
    "rise",
    "secret",
+   "space",
    "travel"
   ],
   "16": [
    "attack",
    "break",
    "change",
-   "clean",
    "control",
    "dead",
    "end",
@@ -476,8 +489,10 @@
    "hot",
    "know",
    "move",
+   "nice",
+   "race",
    "shoot",
-   "slow",
+   "sound",
    "tear",
    "travel",
    "wild"
@@ -487,8 +502,8 @@
    "best",
    "black",
    "build",
+   "case",
    "child",
-   "double",
    "fish",
    "friend",
    "hope",

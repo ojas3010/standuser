@@ -85,7 +85,7 @@ def test_tail_rule_reproduces_the_three_function_word_canon_truncations():
 def test_tail_skips_function_word_starts_and_non_noun_ends():
     assert t.tail_span("Two Words") is None  # not longer than the tail
     assert t.tail_span("Walking Along Quickly") is None  # 'quickly' is not a noun
-    assert t.tail_span("Run for the") is None  # ends in a function word
+    assert t.tail_span("Go Run for the") is None  # 4 words, so a tail is tried; "Run for the" ends in a function word (WordNet does not know "the")
 
 
 def test_auxiliaries_modals_and_conjunctions_are_function_words():
@@ -111,6 +111,15 @@ def test_is_noun_treats_unknown_capitalised_words_as_proper_nouns():
     assert t.is_noun("Zzyzxville")
     assert not t.is_noun("quickly")
     assert not t.is_noun("1-5")
+
+
+@needs_wordnet
+def test_no_function_word_is_a_noun_whatever_its_case_or_punctuation():
+    # WordNet knows some of them as nouns (will, may, mine, one, us) and not others at all (the, of), and "unknown" counts as a noun
+    for w in sorted(t.FUNCTION_WORDS):
+        assert not t.is_noun(w), w
+        assert not t.is_noun(w.capitalize() + ","), w
+    assert t.is_noun("Willow") and t.is_noun("Mayhem") and t.is_noun("Oneness")  # a function word inside a longer word is fine
 
 
 # ---------------------------------------------------------------- stage 6 filters
@@ -139,8 +148,17 @@ def test_possessive_theme_exception_needs_a_proper_noun_that_is_not_the_film():
 
 
 def test_non_ascii_ratio():
-    assert t.stage6("Ça Ira Ça Ira", canon=False, film=False, profane=False) is None  # accents fold; letters stay ASCII-class
-    assert t.stage6("チョコレイト Disco", canon=False, film=False, profane=False) == "non-ascii"
+    # stage 6 sees the folded stage 5 output, so that is what is tested: accents are gone before the ratio is taken
+    assert t.stage5("Ça Ira Ça Ira") == [("Ca Ira Ca Ira", "v")]
+    assert t.stage5("Éééé Ééé") == [("Eeee Eee", "v")]
+    for title in ("Ça Ira Ça Ira", "Éééé Ééé"):
+        for text, _ in t.stage5(title):
+            assert t.stage6(text, canon=False, film=False, profane=False) is None, text
+    # the unfolded text of the second title would fail the ratio (all its letters are accented): folding is what lets it through
+    assert t.stage6("Éééé Ééé", canon=False, film=False, profane=False) == "non-ascii"
+    # a script that does not fold stays non-ASCII after stage 5 and is rejected by stage 6
+    assert t.stage5("チョコレイト Disco") == [("チョコレイト Disco", "v")]
+    assert [t.stage6(text, canon=False, film=False, profane=False) for text, _ in t.stage5("チョコレイト Disco")] == ["non-ascii"]
 
 
 @needs_ldnoobw
@@ -237,15 +255,61 @@ def test_candidates_for_album_filters_dedupes_and_numbers_tracks():
     tracks = ["Main Title", "Stranded", "Heaven's Door", "Track 4", "Dirty Weather (Reprise)", "Dirty Weather", "Lighthouse Keeper"]
     got = t.candidates_for_album(tracks, ["Lighthouse"])
     names = [c["name"] for c in got]
-    assert names == ["STRANDED", "DIRTY WEATHER"]  # generic, canon, number, cue-word and film-title candidates are gone
-    # the bracket on track 5 is stripped before stage 6, so the earliest track keeps the name and the plain repeat on 6 is dropped
-    assert [c["track"] for c in got] == [2, 5]
-    assert [c["kind"] for c in got] == ["v", "s"]
+    assert names == ["STRANDED", "DIRTY WEATHER"]  # generic, canon, number, film-title and bracketed-reprise candidates are gone
+    # track 5 "(Reprise)" is rejected as a cue, so the plain title on track 6 is the one that stays
+    assert [c["track"] for c in got] == [2, 6]
+    assert [c["kind"] for c in got] == ["v", "v"]
+
+
+# ---------------------------------------------------------------- hyphens
+def test_u2010_and_u2011_become_ascii_hyphens_and_nothing_else_changes():
+    assert t.ascii_hyphens("Jean\u2010Michel Bernard") == "Jean-Michel Bernard"
+    assert t.ascii_hyphens("Lin\u2011Manuel \u2013 Miranda \u00e9") == "Lin-Manuel \u2013 Miranda \u00e9"
+    assert t.ascii_hyphens("plain-ascii") == "plain-ascii"
+
+
+@needs_wordnet
+@needs_ldnoobw
+def test_the_source_title_of_a_candidate_has_ascii_hyphens():
+    got = t.candidates_for_album(["Rock\u2010a\u2010Bye Baby Lullaby (Slow)", "Stranded"], ["Source Code"])
+    assert [(c["name"], c["src"]) for c in got] == [("ROCK-A-BYE BABY LULLABY", "Rock-a-Bye Baby Lullaby (Slow)"), ("STRANDED", "Stranded")]
+
+
+# ---------------------------------------------------------------- cue words
+@needs_wordnet
+@needs_ldnoobw
+def test_a_reprise_cue_is_rejected_as_a_cue_word():
+    for title in ("Dirty Weather Reprise", "Reprise", "Dirty Weather - Reprise Theme", "The Reprises of Rain"):
+        assert t.stage6(title, canon=False, film=False, profane=False) == "cue-word", title
+    rejects = []
+    got = t.candidates_for_album(["Dirty Weather Reprise", "Stranded", "Reprise"], ["Source Code"], rejects=rejects)
+    assert [c["name"] for c in got] == ["STRANDED"]
+    assert rejects == ["cue-word", "cue-word"]
+
+
+def test_a_bracketed_cue_word_rejects_the_candidate_but_other_brackets_do_not():
+    rejects = []
+    assert t.stage5("Main Theme (Reprise)", rejects) == [] and rejects == ["cue-word"]
+    rejects = []
+    assert t.stage5("Dirty Weather (reprise)", rejects) == [] and rejects == ["cue-word"]
+    assert t.stage5("Dirty Weather [Suite]") == []
+    # brackets without a cue word are stripped as before, and the candidate is kept
+    rejects = []
+    assert t.stage5("Voodoo Child (Slight Return)", rejects) == [("Voodoo Child", "s")] and rejects == []
+    assert t.stage5("Rain [Live] (Remastered 2011)") == [("Rain", "s")]
+    # in a merged cue sheet only the piece whose bracket holds the cue word goes
+    rejects = []
+    assert t.stage5("Dirty Weather (Reprise) / Stranded", rejects) == [("Stranded", "c")] and rejects == ["cue-word"]
+    # through the album driver the reason is counted, and "Main Theme (Reprise)" does not come back as a plain "Main Theme"
+    rejects = []
+    got = t.candidates_for_album(["Main Theme (Reprise)", "Stranded", "Dirty Weather (Reprise)"], ["Source Code"], rejects=rejects)
+    assert [c["name"] for c in got] == ["STRANDED"]
+    assert rejects == ["cue-word", "cue-word"]
 
 
 # ---------------------------------------------------------------- sensitive phrases
 def test_racial_profiling_is_blocked_whatever_its_punctuation_or_case():
-    for x in ("Racial Profiling", "RACIAL PROFILING", "racial-profiling!", "Racial  Profiling (Reprise)"):
+    for x in ("Racial Profiling", "RACIAL PROFILING", "racial-profiling!", "Racial  Profiling (Live)"):
         assert t.stage6(t.strip_title(x)[0][0] if "(" in x else x, canon=False, film=False, profane=False) == "sensitive", x
 
 
@@ -261,7 +325,7 @@ def test_the_blocklist_matches_whole_phrases_only():
 @needs_ldnoobw
 def test_a_blocked_title_never_becomes_a_candidate_of_its_album():
     rejects = []
-    got = t.candidates_for_album(["Racial Profiling", "Stranded", "Racial Profiling (Reprise)"], ["Source Code"], rejects=rejects)
+    got = t.candidates_for_album(["Racial Profiling", "Stranded", "Racial Profiling (Live)"], ["Source Code"], rejects=rejects)
     assert [c["name"] for c in got] == ["STRANDED"]
     assert rejects.count("sensitive") == 2, rejects
 
@@ -276,5 +340,5 @@ def test_the_phrase_file_is_lower_case_ascii_and_has_no_duplicates():
 def test_no_shipped_candidate_name_matches_the_blocklist():
     import json
     names = json.load(open(os.path.join(t.REPO, "crates", "standuser-core", "data", "names.json"), encoding="utf-8"))["names"]
-    bad = sorted({c[0] for v in names.values() for c in v[2] if t.is_sensitive(c[0])})
+    bad = sorted({c[0] for v in names.values() for c in v[1] if t.is_sensitive(c[0])})
     assert bad == []

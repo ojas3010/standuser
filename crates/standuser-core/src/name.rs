@@ -335,7 +335,7 @@ mod tests {
         let ex = watched(&[("A", 2000), ("B", 2001), ("C", 2002), ("D", 2003)]);
         // 1. a watched film has track-title candidates: the title route
         let mut lk = lk3();
-        lk.load_names(r#"{"v":1,"names":{"1":["Some Band","o",[["WOUNDED HUNTER",70,3,"v","",[]],["STRANDED",60,5,"v","",[]]]]}}"#).unwrap();
+        lk.load_names(r#"{"v":2,"names":{"1":[[["Some Band","o"]],[["WOUNDED HUNTER",70,3,"v","",[],0],["STRANDED",60,5,"v","",[],0]]]}}"#).unwrap();
         let n = name_stand(&ex, &lk, Some(&sig()), Some(12));
         assert_eq!(n.route, "titles", "{n:?}");
         assert!(n.name == "WOUNDED HUNTER" || n.name == "STRANDED");
@@ -343,7 +343,7 @@ mod tests {
         assert!(!n.top.is_empty() && n.top.iter().filter(|t| t.picked).count() == 1);
         // 2. names exist, but none for this user's films: the composer route
         let mut lk = lk3();
-        lk.load_names(r#"{"v":1,"names":{"99":["x","o",[["NOT YOURS",70,3,"v","",[]]]]}}"#).unwrap();
+        lk.load_names(r#"{"v":2,"names":{"99":[[["x","o"]],[["NOT YOURS",70,3,"v","",[],0]]]}}"#).unwrap();
         let n = name_stand(&ex, &lk, Some(&sig()), Some(12));
         assert_eq!((n.route.as_str(), n.name.as_str()), ("composer", "ANTONIN DVORAK"), "{n:?}");
         assert!(n.top.is_empty());
