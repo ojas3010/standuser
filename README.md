@@ -49,7 +49,7 @@ Grades marked `*` on the card are provisional. See [Limits](#limits) for what is
 - **Static site**: plain HTML, CSS and JavaScript (ES modules). No bundler, no Node.
 - **Cloudflare Pages**: static hosting of the `site/` folder. No functions, no build step in the dashboard.
 - **Python 3** (build-time tooling only, never at run time): the data collector (`tools/collect`, with `curl_cffi`, `beautifulsoup4`, `lxml`), the table builder, the font subsetter (`fonttools`) and the golden-test reference (`numpy`).
-- **Data**: your Letterboxd export; Letterboxd public film pages (rating histograms); TMDB API (countries, directors, composers, runtimes); the JoJo Wiki Stand Stats table (canon charts); Noto Sans JP and Noto Serif JP (SIL OFL) for the outlined text.
+- **Data**: your Letterboxd export; Letterboxd public film pages (rating histograms); TMDB API (countries, directors, composers, runtimes); the JoJo Wiki Stand Stats table (canon charts); Noto Sans JP, Noto Sans KR, Noto Sans SC, Noto Sans and Noto Serif JP (SIL OFL) for the outlined card text; Overpass (SIL OFL, self-hosted woff2) for the page.
 
 ## Execution steps
 
@@ -142,7 +142,7 @@ The choices behind these are written down in [docs/DECISIONS.md](docs/DECISIONS.
 - **Cut-points.** Power, Precision, Range and Potential are cut on pooled Letterboxd users restricted to the films in the table (`tools/calibrate.py`); Speed and Stamina use MovieTweetings cuts and stay provisional until real dated Letterboxd exports exist. Potential is graded on a volume-matched measure against users with a similar number of films. See [docs/DECISIONS.md](docs/DECISIONS.md) for the evidence.
 - **Film coverage.** Every stat needs film data from the built-in table except Speed and Stamina, which read only your viewing dates. A film missing from the table is skipped by every stat that needs film data. On the pooled Letterboxd users the table holds a median of 96% of a user's rated films (10th percentile 81%); that is favourable by construction, since the table is the pool's most-rated films. Each card cell says "graded on N of M films" (for Speed and Stamina, "N of M dated watches", bulk-import days excluded), and a stat shows `?` when N is below the spec's minimum (Power 20 rated films, Precision 50, Range 50 with countries, Potential 40 with directors, Speed and Stamina 12 events). If more than half of your rated films are missing, Power and Precision show `?`.
 - **Names.** Track titles come from MusicBrainz core data, reduced offline to the best 6 candidates per film (28,148 candidates for 5,064 films, `names.json`, 480 KiB gzipped); films outside it, or users with none of those films, get a composer or Tarot name. Cool, the "evocative" score, is a documented heuristic: on the 15-Stand canon test split it cannot be told apart from the first-track rule (`docs/DECISIONS.md`), so the human review of the top-5 lists is the acceptance gate. The names come from the film's soundtrack album as MusicBrainz lists it, which for a few films is a different album or a compilation.
-- **Text.** The card font covers Basic Latin and Latin-1 completely, 30 of the 128 Latin Extended-A letters, most Greek and Cyrillic basics (48 of 56 and 66 of 96), all hiragana and katakana, and only the kanji on the card itself. A film title or username with a character outside that is drawn with □ in its place. Stand names are folded to plain capitals (Dvořák becomes DVORAK) and a composer whose name has no ASCII form is skipped, so a name never has a hole in it.
+- **Text.** The card's sans covers Basic Latin, Latin-1 and Latin Extended-A completely, 51 of 56 Greek letters, all Cyrillic basics, all hiragana and katakana, the kanji on the card, and every character of every artist credit in `names.json` (Japanese, Korean and Chinese names, Latin Extended letters, Greek with tonos; `tools/make_fonts.py` reads the credits, a test fails if one is missing). The serif is display only (the Stand name and the 【】 labels). A film title or username with a character outside that is drawn with □ in its place. Stand names are folded to plain capitals (Dvořák becomes DVORAK) and a composer whose name has no ASCII form is skipped, so a name never has a hole in it.
 - Browser testing: `tools/site_test/run.sh` drives the real page in headless Chrome (file input, card, stats table with coverage, PNG/SVG/JSON downloads, theme change) and checks that no network request is made while an export is processed. The Cloudflare Pages deployment itself has not been exercised from this repository.
 
 ## Layout
@@ -151,10 +151,10 @@ The choices behind these are written down in [docs/DECISIONS.md](docs/DECISIONS.
 crates/standuser-core   the library (parse … svg) and the golden test
 crates/standuser-cli    development CLI: standuser export.zip -> card.svg, card.png
 crates/standuser-wasm   the website's engine (wasm-bindgen entry point)
-site/                   the static site, deployed as is (index.html, app.js, style.css, pkg/, films.json, _headers)
+site/                   the static site, deployed as is (index.html, app.js, accent.js, style.css, fonts/, pkg/, films.json, names.json, _headers)
 tools/collect           data collector (Letterboxd pages + TMDB) and its tests
 tools/golden            Python reference, prototypes and fixture generators
-tools/site_test         headless-browser test of the page
+tools/site_test         headless-browser test of the page; screenshots.py and design_check.py (Playwright) check docs/DESIGN.md
 tools/*.py              table, font and calibration-table builders
 ```
 

@@ -15,8 +15,10 @@ WIDTHS = {"desktop": (1280, 900), "phone": (390, 844)}
 
 
 def serve():
-    h = functools.partial(http.server.SimpleHTTPRequestHandler, directory=str(ROOT / "site"))
-    h.log_message = lambda *a: None
+    class Quiet(http.server.SimpleHTTPRequestHandler):
+        def log_message(self, *a):
+            pass
+    h = functools.partial(Quiet, directory=str(ROOT / "site"))
     srv = http.server.ThreadingHTTPServer(("127.0.0.1", 0), h)
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     return srv
