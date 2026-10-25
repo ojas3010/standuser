@@ -49,13 +49,14 @@ Measured with `python tools/site_test/design_check.py` (Playwright, headless Chr
 
 | Rule or item | Result | Evidence |
 |---|---|---|
-| S3 why line has its own row near the signature film, at body size | pass | two rows at 18 px (the evidence lines' size) under the signature line; unit tests keep every bottom row apart for 1 to 3 ability and 1 to 2 weakness lines |
+| S3 why line has its own rows near the signature film, at body size, in full | pass | up to 3 rows at 20 px (the signature line's size), no "…"; tests: the 10 synthetic users, and the longest why `names.json` can produce (pool.rs); the lower half is laid out from the bottom (`svg::layout`) and a test covers every 1 to 3 ability, 1 to 2 weakness and 1 to 3 why rows |
 | S3 PROVISIONAL DATA badge is not red | pass | outline and text in the muted ink; test `the_badge_is_not_red` |
 | S3 type mix: serif only for the Stand name and the 【】 labels | pass | evidence lines, signature, ability box in sans; serif.ttf holds only Basic Latin, Latin-1, punctuation and the brackets (35 KB) |
 | S3 footer readable, one credit line, TMDB disclaimer on the site | pass | one line at 16 px (was 12.5 px, three clauses); disclaimer in the site footer |
 | S3 glyphs: 40 artist credits no longer draw boxes, names not folded or dropped | pass | test `every_artist_credit_in_names_json_is_drawable`; rendered 久石譲, 달파란 & 장영규, 谭盾, Ευανθία, Bregović, Milićević |
 | S3 grade C legend (人間並 vs 人間と同じ) | skipped | by instruction: to be checked against a Part 5 volume |
 | R6 centre kept clear, one sculpted object, right angles | pass | the card is the only image; no ornament on the page; every box is square |
+| S3 chrome: the privacy line is in the drop zone | pass | names watched.csv, ratings.csv, diary.csv and the two columns of profile.csv (Date Joined, Favorite Films); asserted in `tools/site_test/selftest.js` |
 | R2 accent visibly shifts once at the reveal | pass | wordmark, Download PNG and the table rule change from ink to the accent together |
 
-Notes: the copy uses the real numbers, 9,787 films and 34,523 users, not the example figures in DESIGN.md (9,842 and 34,525). The card's ability box uses the one bold weight of the sans, since only weight 700 is embedded.
+Notes: a why line longer than 3 rows (about 5% of the worst-case combinations: a long film title quoted twice, a long artist, a medley's whole track list as the source) drops its rating, then the quoted source, then the film title in the link, then the artist, in that order, until it fits; only a line that is still too long would be cut with "…", and none in `names.json` is. The copy uses the real numbers, 9,787 films and 34,523 users, not the example figures in DESIGN.md (9,842 and 34,525). The card's ability box uses the one bold weight of the sans, since only weight 700 is embedded.
