@@ -54,3 +54,12 @@ def test_l_is_one_for_core_half_for_ring_zero_otherwise():
     assert sc.l_values(ring_word)[0] == 0.5
     assert sc.l_values("Xylophone Quartz")[0] == 0.0
     assert len(sc.l_values("Anything")) == 17
+
+
+@needs_wordnet
+def test_matches_report_the_word_index_and_core_versus_ring():
+    lx = [{**x, "ring": L.ring_of([c["lemma"] for c in x["core"]])} for x in lex()]
+    sc = L.Scorer(lx)
+    assert sc.matches("BIG BOMBS")[0] == (1.0, 1)
+    assert sc.matches("XYLOPHONE QUARTZ")[0] == (0.0, -1)
+    assert [m[0] for m in sc.matches("BIG BOMBS")] == sc.l_values("BIG BOMBS")

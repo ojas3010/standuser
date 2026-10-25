@@ -150,6 +150,20 @@ class Scorer:
     def lemmas(self, text):
         return {lemma(w) for w in re.findall(r"[a-z]+", t.fold_ascii(text).lower()) if w not in STOP and len(w) >= 2}
 
+    def matches(self, name):
+        """Per template: (L, index of the first matching word of `name`), (0.0, -1) when nothing matches."""
+        words = [w for w in re.findall(r"[a-z]+", t.fold_ascii(name).lower())]
+        lem = [None if (w in STOP or len(w) < 2) else lemma(w) for w in words]
+        out = []
+        for c, r in zip(self.core, self.ring):
+            hit = next((i for i, x in enumerate(lem) if x in c), None)
+            if hit is not None:
+                out.append((1.0, hit))
+                continue
+            hit = next((i for i, x in enumerate(lem) if x in r), None)
+            out.append((0.5, hit) if hit is not None else (0.0, -1))
+        return out
+
     def l_values(self, text):
         ls = self.lemmas(text)
         return [1.0 if ls & c else (0.5 if ls & r else 0.0) for c, r in zip(self.core, self.ring)]
