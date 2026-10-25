@@ -3,47 +3,48 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>standuser: your Letterboxd Stand card</title>
 <meta name="description" content="Drop your Letterboxd export ZIP and get a JoJo Stand card. It runs in your browser.">
+<link rel="icon" href="data:,">
+<link rel="preload" href="fonts/overpass.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
 <main>
   <header>
-    <p class="kicker">【STAND USER】</p>
-    <h1>standuser</h1>
-    <p class="lede">Drop your Letterboxd export ZIP. Get a JoJo-style Stand card: six stats, a type, an ability, the nearest canon Stand.</p>
+    <h1 class="mark">standuser</h1>
+    <p class="lede">Drop your Letterboxd export. Get a JoJo-style Stand card: six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
   </header>
 
   <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
     <input id="file" type="file" accept=".zip,application/zip" hidden>
-    <p><strong>Drop letterboxd-…-utc.zip here</strong><br>or <button id="pick" type="button">choose the file</button></p>
-    <p class="small">Letterboxd → Settings → Data → Export your data. The ZIP is read in this tab. Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and two columns of <code>profile.csv</code> (Date Joined and Favorite Films) are used; nothing else in <code>profile.csv</code> is read.</p>
+    <p class="drop-title">Drop letterboxd-…-utc.zip here</p>
+    <p>or <button id="pick" type="button" class="quiet">choose the file</button></p>
+    <p class="small">Get it at Letterboxd, Settings, Data, Export your data. The ZIP is read in this tab and never uploaded; the page makes no requests after it loads.</p>
   </section>
-
-  <section class="opts">
-    <p class="small">Everything runs in this tab: your export is never uploaded, and the page makes no requests after it loads. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
-    <label>Card theme
-      <select id="theme"><option value="auto">follow my system</option><option value="light">light</option><option value="dark">dark</option></select>
-    </label>
-    <details>
-      <summary>Advanced</summary>
-      <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
-      <label>Join date <input id="joined" type="date"></label>
-      <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
-    </details>
-  </section>
+  <details class="opts">
+    <summary>Advanced</summary>
+    <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
+    <label>Join date <input id="joined" type="date"></label>
+    <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
+  </details>
 
   <p id="status" role="status" aria-live="polite"></p>
 
   <section id="result" hidden>
     <div class="actions">
-      <button id="dl-png" type="button">Download PNG</button>
-      <button id="dl-svg" type="button">Download SVG</button>
-      <button id="dl-json" type="button">Download stats (JSON)</button>
+      <button id="dl-png" type="button" class="primary">Download PNG</button>
+      <button id="dl-svg" type="button" class="quiet">Download SVG</button>
+      <button id="dl-json" type="button" class="quiet">Download stats (JSON)</button>
+      <label class="theme">Card theme
+        <select id="theme"><option value="auto">follow my system</option><option value="light">light</option><option value="dark">dark</option></select>
+      </label>
     </div>
     <img id="card" alt="Your Stand card" width="1080" height="1350">
+
     <h2>How the card was built</h2>
+    <p class="small">Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and two columns of <code>profile.csv</code> (Date Joined and Favorite Films) are used; nothing else in <code>profile.csv</code> is read. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
     <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Graded on</th><th>Status</th></tr></thead><tbody></tbody></table>
     <ul id="notes"></ul>
   </section>
@@ -51,7 +52,7 @@
   <footer>
     <p class="tmdb"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener"><img src="tmdb.svg" alt="TMDB" width="110" height="14"></a></p>
     <p class="small">This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p>
-    <p class="small">Fan project, not affiliated with Letterboxd or the JoJo's Bizarre Adventure rights holders. Ratings data: Letterboxd. Soundtrack data from MusicBrainz. Grades marked * are provisional.</p>
+    <p class="small">Fan project, not affiliated with Letterboxd or the JoJo's Bizarre Adventure rights holders. Ratings data: Letterboxd. Film data: TMDB. Soundtrack data from MusicBrainz. Grades marked * are provisional.</p>
   </footer>
 </main>
 <script type="module" src="app.js"></script>

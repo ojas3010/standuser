@@ -1,33 +1,89 @@
-:root {
-  --bg: #fbf8f0; --ink: #1c0b01; --mute: #5c5048; --gold: #9a7b00; --red: #c8200e; --card: #ffffff; --line: #e6dfcf;
+/* Page chrome: quiet, flat, warm. Only the card carries the JoJo identity.
+   No gradients, glows or shadows. One accent, keyed to the user's card (accent.js); before a card exists it is the ink colour. */
+@font-face {
+  font-family: Overpass;
+  src: url(fonts/overpass.woff2) format("woff2");
+  font-weight: 400 800;
+  font-display: swap;
 }
+:root {
+  --ground: #ece7dc; --ground2: #f4f0e7; --ink: #1c0b01; --mute: #55493f; --line: #c9c1b0; --alert: #b3200f;
+  --accent: var(--ink);
+}
+:root[data-accent] { --accent: var(--accent-light); }
 @media (prefers-color-scheme: dark) {
-  :root { --bg: #101014; --ink: #f4f1ea; --mute: #b9b3a8; --gold: #d8b93a; --red: #ff6a55; --card: #1b1b21; --line: #2c2c34; }
+  :root { --ground: #1d1b17; --ground2: #26231e; --ink: #f2eee6; --mute: #b5aea2; --line: #3d3932; --alert: #ff7b66; }
+  :root[data-accent] { --accent: var(--accent-dark); }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-main { max-width: 720px; margin: 0 auto; padding: 24px 16px 48px; }
-.kicker { margin: 0; color: var(--mute); letter-spacing: .12em; font-size: .85rem; }
-h1 { margin: .1em 0 .2em; font-size: 2.4rem; letter-spacing: .04em; }
-h2 { margin-top: 2em; font-size: 1.1rem; }
-.lede { color: var(--mute); margin-top: 0; }
-#drop { border: 2px dashed var(--gold); border-radius: 6px; padding: 28px 20px; text-align: center; background: var(--card); cursor: pointer; }
-#drop.over, #drop:focus-visible { outline: 3px solid var(--red); outline-offset: 2px; }
-.small { color: var(--mute); font-size: .85rem; }
-.opts { margin: 18px 0; }
-.opts label { display: block; margin: .5em 0; }
-input[type=text], input[type=date], select { font: inherit; padding: 4px 6px; border: 1px solid var(--line); border-radius: 4px; background: var(--card); color: var(--ink); }
-button { font: inherit; padding: 6px 12px; border: 2px solid var(--ink); border-radius: 4px; background: var(--card); color: var(--ink); cursor: pointer; }
-button:hover, button:focus-visible { border-color: var(--red); }
-#pick { padding: 2px 8px; }
-#status { min-height: 1.5em; color: var(--mute); }
-#status.error { color: var(--red); font-weight: 600; }
-.actions { display: flex; flex-wrap: wrap; gap: 8px; margin: 12px 0; }
-#card { display: block; width: 100%; height: auto; border: 1px solid var(--line); border-radius: 4px; }
-table { width: 100%; border-collapse: collapse; font-size: .92rem; }
-th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
-footer { margin-top: 40px; }
-.tmdb { margin: 0 0 6px; line-height: 0; }
-.tmdb img { height: 14px; width: auto; opacity: .85; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Overpass, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+main { max-width: 720px; margin: 0 auto; padding: 40px 16px 64px; }
 
+/* the wordmark: the page's one tilt */
+.mark { display: inline-block; margin: 8px 0 12px; font-weight: 800; font-size: clamp(2.6rem, 11vw, 4rem); line-height: 1; letter-spacing: -.01em; transform: rotate(-4deg); transform-origin: 0 100%; color: var(--accent); transition: color 250ms ease-out; }
+.lede { margin: 0 0 32px; max-width: 34em; color: var(--mute); }
+h2 { margin: 48px 0 8px; font-size: 1.25rem; font-weight: 700; }
+.small { color: var(--mute); font-size: .875rem; }
+code { font-size: .9em; }
+
+/* stage */
+#drop { padding: 32px 24px; border: 2px dashed var(--mute); background: var(--ground2); cursor: pointer; }
+#drop p { margin: 0 0 8px; }
+#drop .drop-title { font-size: 1.375rem; font-weight: 700; }
+#drop .small { margin: 16px 0 0; max-width: 40em; }
+#drop.over { border-style: solid; border-color: var(--accent); background: var(--ground); }   /* instant: #drop has no transition */
+#drop:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
+.opts { margin: 16px 0 0; }
+.opts summary { cursor: pointer; }
+.opts label { display: block; margin: 12px 0; }
+#status { min-height: 1.5em; margin: 16px 0 0; color: var(--mute); }
+#status.error { color: var(--alert); font-weight: 600; }
+
+input[type=text], input[type=date], select { height: 40px; margin-left: 8px; padding: 0 8px; font: inherit; color: var(--ink); background: var(--ground2); border: 2px solid var(--line); border-radius: 0; }
+
+/* buttons: Download PNG is the one filled button; the others are quiet text buttons of the same height and radius */
+button { height: 40px; padding: 0 16px; font: 600 1rem/1 Overpass, system-ui, sans-serif; border: 2px solid transparent; border-radius: 0; cursor: pointer; transition: transform 120ms ease-out; }
+button:active { transform: scale(.97); }
+.primary { background: var(--accent); color: var(--ground); border-color: var(--accent); transition: transform 120ms ease-out, background-color 250ms ease-out, border-color 250ms ease-out; }
+.quiet { background: transparent; color: var(--ink); }
+.quiet:hover { text-decoration: underline; text-underline-offset: 4px; }
+.primary:hover { background: var(--ink); border-color: var(--ink); }
+#pick { height: 32px; padding: 0 8px; margin-left: -8px; }
+
+/* subject */
+#result { margin-top: 40px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }
+.actions .theme { margin-left: auto; font-size: .875rem; color: var(--mute); }
+.actions select { height: 40px; }
+#card { display: block; width: 100%; height: auto; }
+#card.land { animation: land 200ms ease-out; }
+@keyframes land { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
+
+/* method */
+table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
+th, td { text-align: left; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-weight: 600; border-bottom: 2px solid var(--accent); transition: border-color 250ms ease-out; }
+#notes { margin: 16px 0 0; padding-left: 20px; color: var(--mute); font-size: .9375rem; }
+footer { margin-top: 56px; padding-top: 16px; border-top: 1px solid var(--line); }
+.tmdb { margin: 0 0 8px; line-height: 0; }
+.tmdb img { height: 14px; width: auto; }
+footer .small { margin: 0 0 8px; max-width: 40em; }
+
+@media (max-width: 560px) {
+  main { padding-top: 24px; }
+  #drop { padding: 24px 16px; }
+  .actions .theme { margin-left: 0; width: 100%; }
+  /* one row per stat: name, grade and value on a line, then what it was graded on, then its status */
+  table, tbody { display: block; }
+  thead { display: none; }
+  tr { display: grid; grid-template-columns: 1fr auto auto; gap: 0 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  td { padding: 0; border: 0; }
+  td:nth-child(1) { font-weight: 600; }
+  td:nth-child(2), td:nth-child(3) { text-align: right; }
+  td:nth-child(4), td:nth-child(5) { grid-column: 1 / -1; color: var(--mute); font-size: .875rem; }
+  tbody { border-top: 2px solid var(--accent); transition: border-color 250ms ease-out; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

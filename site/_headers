@@ -8,3 +8,5 @@
   Cache-Control: public, max-age=3600
 /names.json
   Cache-Control: public, max-age=3600
+/fonts/*
+  Cache-Control: public, max-age=31536000, immutable
