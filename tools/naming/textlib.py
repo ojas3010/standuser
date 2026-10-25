@@ -22,7 +22,9 @@ MAX_WORDS = 5
 FUNCTION_WORDS = set("""a an the of in on at by for from with without to into onto over under about after before between through during
 against among around behind beyond down up off out near upon within toward towards across along like than per via
 i me my mine myself you your yours he him his she her hers it its we us our ours they them their theirs this that these those
-who whom whose which what another one and or but nor so if as when while because""".split())
+who whom whose which what another one and or but nor so if as when while because
+be am is are was were been being have has had having do does did doing done
+can could will would shall should may might must""".split())
 
 
 # ---------------------------------------------------------------- WordNet

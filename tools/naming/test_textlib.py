@@ -88,6 +88,23 @@ def test_tail_skips_function_word_starts_and_non_noun_ends():
     assert t.tail_span("Run for the") is None  # ends in a function word
 
 
+def test_auxiliaries_modals_and_conjunctions_are_function_words():
+    for w in "be am is are was were been being have has had having do does did doing done can could will would shall should may might must and or but nor".split():
+        assert w in t.FUNCTION_WORDS, w
+
+
+@needs_wordnet
+def test_a_tail_never_starts_with_an_auxiliary_a_modal_or_a_conjunction():
+    # "Were His Friend" was the tail of "He Thought You Were His Friend": 'were' is an auxiliary, 'his' a pronoun, so no tail starts well
+    assert t.tail_span("He Thought You Were His Friend") is None
+    assert t.tail_span("We Could Never Be Silent Heroes") == "Silent Heroes"
+    assert t.tail_span("Nothing Can Stop Falling Rain") == "Falling Rain"
+    assert t.tail_span("Time Will Tell Old Stories") == "Old Stories"
+    assert t.tail_span("Wait but Silent Mountain Echoes") == "Mountain Echoes"
+    assert t.tail_span("Rise and Fall of Empires and Kings") == "Empires and Kings"  # the 2-word tail "and Kings" starts with a conjunction
+    assert t.stage5("He Thought You Were His Friend") == []
+
+
 @needs_wordnet
 def test_is_noun_treats_unknown_capitalised_words_as_proper_nouns():
     assert t.is_noun("Door")
