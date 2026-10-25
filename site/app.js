@@ -1,5 +1,6 @@
 // standuser site: export.zip in, card out, all in the browser. No network use after the page, the film table and the name candidates load.
 import init, { run } from './pkg/standuser.js';
+import { ACCENTS, accentKey } from './accent.js';
 
 const $ = (id) => document.getElementById(id);
 const drop = $('drop');
@@ -62,10 +63,38 @@ async function handle(file) {
     const out = exec(bytes, file.name);
     last = { svgs: out.svgs, analysis: out.analysis };
     show(out.analysis, out.svgs[$('theme').value]);
+    reveal(out.analysis);
     setStatus('');
   } catch (e) {
     setStatus(e.message, true);
   }
+}
+
+// The one colour event. The card lands (opacity 0 and scale 0.98 to 1, 200 ms, ease-out), holds, then the page's accent shifts once
+// from the ink colour to the one keyed to the user's signature stat (a 250 ms colour transition in style.css). With reduced motion
+// there is no landing and no hold: the card and the accent are simply there.
+const LAND_MS = 200;
+const HOLD_MS = 700;
+let accentTimer = 0;
+function reveal(a) {
+  const img = $('card');
+  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  clearTimeout(accentTimer);
+  img.classList.remove('land');
+  if (!still) {
+    void img.offsetWidth; // restart the animation for a second file
+    img.classList.add('land');
+  }
+  const key = accentKey(a);
+  const shift = () => {
+    const root = document.documentElement;
+    if (!key) return root.removeAttribute('data-accent');
+    root.style.setProperty('--accent-light', ACCENTS[key].light);
+    root.style.setProperty('--accent-dark', ACCENTS[key].dark);
+    root.dataset.accent = key;
+  };
+  if (still) shift();
+  else accentTimer = setTimeout(shift, LAND_MS + HOLD_MS);
 }
 
 function show(a, svg) {
