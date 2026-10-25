@@ -4,7 +4,7 @@
 //! browsers, GitHub READMEs and PNG renderers. Fixes gen_card.py line 121, where text lost its `f-` prefix.
 
 use crate::font::{font, Font, FontKind};
-use crate::palette::{self, Pal, FILL_OPACITY};
+use crate::palette::{self, Pal};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;
 
@@ -70,6 +70,8 @@ fn css(p: &Pal) -> String {
     for (k, v) in [("bg", p.bg), ("ink", p.ink), ("mute", p.mute), ("paper", p.paper), ("acc", p.acc), ("pair", p.pair)] {
         let _ = write!(s, ".f-{k}{{fill:{v}}}.s-{k}{{stroke:{v}}}");
     }
+    // the radar's tint is a property of the theme, so a dark-mode override changes it too
+    let _ = write!(s, ".radar{{fill-opacity:{}}}", p.fill_opacity);
     s
 }
 
@@ -179,6 +181,70 @@ fn note_lines(f: &Font, note: &str) -> Vec<String> {
     lines
 }
 
+/// The ゴゴゴ along both sides are the SFX of the scene: the accent at this opacity, level.
+pub const GOGOGO_OPACITY: f64 = 0.22;
+/// The Stand name's one tilt, in degrees as SVG's rotate() takes them: negative is counter-clockwise, so the name climbs to the right,
+/// like the slant of a Part logo. Nothing else on the card is rotated.
+pub const NAME_TILT: f64 = -5.0;
+/// The header box the tilted name stays inside: from the left margin to the right margin; its left end stays below the 【STAND NAME】
+/// label, anywhere else it stays this far from the top frame, and it ends above the 【STAND MASTER】 row.
+pub const NAME_X0: f64 = 70.0;
+pub const NAME_X1: f64 = W - 70.0;
+pub const NAME_TOP_AT_LEFT: f64 = 100.0;
+pub const NAME_TOP: f64 = 54.0;
+pub const NAME_BOTTOM: f64 = 190.0;
+pub const NAME_MAX_SIZE: f64 = 80.0;
+pub const NAME_MIN_SIZE: f64 = 34.0;
+
+/// Where the name goes: the text in 「」, its size, and the baseline start (x, y) it is rotated about, plus the corners of the tilted box.
+pub struct NamePlace {
+    pub text: String,
+    pub size: f64,
+    pub x: f64,
+    pub y: f64,
+    pub corners: [(f64, f64); 4],
+}
+
+fn name_box(f: &Font, text: &str, size: f64) -> NamePlace {
+    let w = f.width(text, size, 2.0);
+    let (up, down) = f.ink_extent(text, size);
+    let th = NAME_TILT.to_radians();
+    let rot = |(x, y): (f64, f64)| (x * th.cos() - y * th.sin(), x * th.sin() + y * th.cos());
+    let raw = [rot((0.0, -up)), rot((w, -up)), rot((w, down)), rot((0.0, down))];
+    let (min_x, max_y) = (raw.iter().map(|p| p.0).fold(f64::MAX, f64::min), raw.iter().map(|p| p.1).fold(f64::MIN, f64::max));
+    // as far left and as low as the box allows: that leaves the most room for the right end to climb
+    let (x, y) = (NAME_X0 - min_x, NAME_BOTTOM - max_y);
+    NamePlace { text: text.to_string(), size, x, y, corners: raw.map(|(px, py)| (px + x, py + y)) }
+}
+
+fn name_fits(p: &NamePlace) -> bool {
+    let c = &p.corners;
+    c.iter().all(|q| q.0 >= NAME_X0 - 0.01 && q.0 <= NAME_X1 && q.1 >= NAME_TOP && q.1 <= NAME_BOTTOM + 0.01) && c[0].1 >= NAME_TOP_AT_LEFT
+}
+
+/// The largest size from NAME_MAX_SIZE down to NAME_MIN_SIZE at which the tilted name fits the header. Only a name that does not fit
+/// even at the smallest size is cut, with an ellipsis; none in names.json is (a test checks every one).
+pub fn place_name(f: &Font, name: &str) -> NamePlace {
+    let text = format!("「{name}」");
+    let mut size = NAME_MAX_SIZE;
+    while size >= NAME_MIN_SIZE {
+        let p = name_box(f, &text, size);
+        if name_fits(&p) {
+            return p;
+        }
+        size -= 1.0;
+    }
+    let mut inner: Vec<char> = name.chars().collect();
+    loop {
+        let cut = format!("「{}…」", inner.iter().collect::<String>().trim_end());
+        let p = name_box(f, &cut, NAME_MIN_SIZE);
+        if inner.is_empty() || name_fits(&p) {
+            return p;
+        }
+        inner.pop();
+    }
+}
+
 pub fn card_svg(d: &CardData, theme: Theme) -> String {
     use FontKind::{Sans, Serif};
     let mut c = Ctx { sans: font(Sans), serif: font(Serif), els: vec![] };
@@ -191,30 +257,20 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     c.els.push(format!("<rect x=\"34\" y=\"34\" width=\"{}\" height=\"{}\" rx=\"3\" class=\"s-acc\" fill=\"none\" stroke-width=\"1.5\"/>", W - 68.0, H - 68.0));
     for i in 0..4 {
         let i = i as f64;
-        c.text("ゴ", 66.0, 372.0 + i * 118.0, 92.0, Sans, "acc", "middle", -6.0 + i * 3.0, 0.0, Some(0.22));
-        c.text("ゴ", W - 66.0, 372.0 + i * 118.0, 92.0, Sans, "acc", "middle", 6.0 - i * 3.0, 0.0, Some(0.22));
+        c.text("ゴ", 66.0, 372.0 + i * 118.0, 92.0, Sans, "acc", "middle", 0.0, 0.0, Some(GOGOGO_OPACITY));
+        c.text("ゴ", W - 66.0, 372.0 + i * 118.0, 92.0, Sans, "acc", "middle", 0.0, 0.0, Some(GOGOGO_OPACITY));
     }
     // header
     c.text("【STAND NAME】", 70.0, 84.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     if d.badge {
         // neutral, not the accent of the grades: the badge is a note, not a mark
-        c.els.push("<rect x=\"770\" y=\"64\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-mute\" stroke-width=\"2\"/>".into());
-        c.text("PROVISIONAL DATA", 890.0, 91.0, 19.0, Sans, "mute", "middle", 0.0, 1.5, None);
+        // on the type row, on the right: the top right is where the name climbs to
+        c.els.push("<rect x=\"770\" y=\"226\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-mute\" stroke-width=\"2\"/>".into());
+        c.text("PROVISIONAL DATA", 890.0, 253.0, 19.0, Sans, "mute", "middle", 0.0, 1.5, None);
     }
-    // shrink to 44 px, then cut with an ellipsis so the name never leaves the frame
-    let mut name = format!("「{}」", d.name);
-    let mut nsz = 78.0;
-    while c.serif.width(&name, nsz, 2.0) > 940.0 && nsz > 44.0 {
-        nsz -= 2.0;
-    }
-    if c.serif.width(&name, nsz, 2.0) > 940.0 {
-        let mut inner: Vec<char> = d.name.chars().collect();
-        while !inner.is_empty() && c.serif.width(&format!("「{}…」", inner.iter().collect::<String>().trim_end()), nsz, 2.0) > 940.0 {
-            inner.pop();
-        }
-        name = format!("「{}…」", inner.iter().collect::<String>().trim_end());
-    }
-    c.text(&name, 70.0, 168.0, nsz, Serif, "ink", "start", 0.0, 2.0, None);
+    // the Stand name: the card's one diagonal, largest size that keeps its tilted box in the header
+    let np = place_name(&c.serif, &d.name);
+    c.text(&np.text, np.x, np.y, np.size, Serif, "ink", "start", NAME_TILT, 2.0, None);
     c.text("【STAND MASTER】", 70.0, 238.0 - UP, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     let user = c.sans.fit(&d.user, 34.0, 470.0);
     c.text(&format!("本体 ― {user}"), 350.0, 240.0 - UP, 34.0, Sans, "ink", "start", 0.0, 0.0, None);
@@ -243,7 +299,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         })
         .collect();
     let poly: Vec<String> = pts.iter().map(|(x, y)| format!("{x:.1},{y:.1}")).collect();
-    c.els.push(format!("<polygon points=\"{}\" class=\"f-pair\" fill-opacity=\"{FILL_OPACITY}\"/>", poly.join(" ")));
+    c.els.push(format!("<polygon points=\"{}\" class=\"f-pair radar\"/>", poly.join(" ")));
     for i in 0..6 {
         if d.unknown[i] {
             for j in [(i + 5) % 6, (i + 1) % 6] {
@@ -271,14 +327,18 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
     }
     // labels on the medallion annulus and the grade letters in the accent
-    let rot: [f64; 6] = [0.0, 60.0, -60.0, 0.0, 60.0, -60.0];
+    // the top and bottom labels sit on the annulus; the four side labels are level too (nothing but the name tilts), so they stand
+    // just outside the medallion, on the side away from the centre
     let (r_lab, r_let) = (224.0 * k, 183.0 * k);
     for i in 0..6 {
         let a = (i as f64 * 60.0).to_radians();
-        let (lx, ly) = (cx + r_lab * a.sin(), cy - r_lab * a.cos());
-        let th = rot[i].to_radians();
-        let (bx, by) = (lx + 0.36 * 24.0 * (-th.sin()), ly + 0.36 * 24.0 * th.cos());
-        c.text(JP[i], bx, by, 24.0, Sans, "ink", "middle", rot[i], 0.0, None);
+        if i % 3 == 0 {
+            c.text(JP[i], cx + r_lab * a.sin(), cy - r_lab * a.cos() + 0.36 * 24.0, 24.0, Sans, "ink", "middle", 0.0, 0.0, None);
+        } else {
+            let r_out = 268.0 * k + 16.0;
+            let left = a.sin() < 0.0;
+            c.text(JP[i], cx + r_out * a.sin(), cy - r_out * a.cos() + 0.36 * 24.0, 24.0, Sans, "ink", if left { "end" } else { "start" }, 0.0, 0.0, None);
+        }
         let g = d.grades[i].as_str();
         let (gx, gy) = (cx + r_let * a.sin(), cy - r_let * a.cos());
         let sz = if g == "完成" { 24.0 } else { 40.0 };
@@ -465,11 +525,72 @@ mod tests {
     fn very_long_names_are_cut_inside_the_frame() {
         let mut d = sample();
         d.name = "THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE".into();
-        let s = card_svg(&d, Theme::Light);
-        assert!(s.contains("class=\"f-ink\""));
-        // the same rule the renderer uses: at 44 px the cut name is at most 940 px wide
         let f = font(FontKind::Serif);
-        assert!(f.width(&format!("「{}」", d.name), 44.0, 2.0) > 940.0, "the test name must need cutting");
+        // the whole name does not fit the header even at the smallest size, so it is cut with an ellipsis and then does fit
+        assert!(!name_fits(&name_box(&f, &format!("「{}」", d.name), NAME_MIN_SIZE)));
+        let p = place_name(&f, &d.name);
+        assert!(p.text.ends_with("…」") && p.size == NAME_MIN_SIZE && name_fits(&p), "{} at {}", p.text, p.size);
+        assert!(card_svg(&d, Theme::Light).contains("class=\"f-ink\""));
+    }
+
+    #[test]
+    fn every_name_in_names_json_fits_the_tilted_header_uncut() {
+        let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
+        let f = font(FontKind::Serif);
+        let mut all: Vec<(f64, String)> = vec![];
+        for v in names["names"].as_object().unwrap().values() {
+            for cand in v[1].as_array().unwrap() {
+                let n = cand[0].as_str().unwrap().to_string();
+                // the card draws the name in upper case, as names.json stores it; a fit at the smallest size is what "never clips" needs
+                let b = name_box(&f, &format!("「{n}」"), NAME_MIN_SIZE);
+                assert!(name_fits(&b), "{n:?} does not fit the header even at {NAME_MIN_SIZE} px");
+                all.push((f.width(&n, NAME_MIN_SIZE, 2.0), n));
+            }
+        }
+        assert!(all.len() > 20000);
+        // the widest ones get their real size: never cut, never below the floor, and every corner of the tilted box inside the header
+        all.sort_by(|a, b| b.0.total_cmp(&a.0));
+        for (_, n) in all.iter().take(100) {
+            let p = place_name(&f, n);
+            assert!(p.text == format!("「{n}」") && p.size >= NAME_MIN_SIZE && name_fits(&p), "{n}: {} at {}", p.text, p.size);
+        }
+        println!("the widest name in names.json, {:?}, is drawn at {} px", all[0].1, place_name(&f, &all[0].1).size);
+    }
+
+    #[test]
+    fn the_name_is_the_one_tilt_and_the_fills_are_flat() {
+        for theme in [Theme::Light, Theme::Dark, Theme::Auto] {
+            let mut d = sample();
+            for key in [None, Some("PWR"), Some("SPD"), Some("RNG"), Some("STA"), Some("PRC"), Some("DEV")] {
+                d.accent = key.map(String::from);
+                let s = card_svg(&d, theme);
+                assert_eq!(s.matches("rotate(").count(), 1, "exactly one rotated element");
+                assert_eq!(s.matches("transform=").count(), 1);
+                let at = s.find("transform=").unwrap();
+                let el = &s[s[..at].rfind("<path").unwrap()..at + s[at..].find("/>").unwrap()];
+                assert!(el.contains("class=\"f-ink\"") && el.contains(&format!("rotate({NAME_TILT} ")), "{}", &el[el.len().saturating_sub(80)..]);
+                for banned in ["Gradient", "<pattern", "<filter", "filter:", "shadow", "<image", "<mask", "blur"] {
+                    assert!(!s.contains(banned), "{banned}");
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn the_card_takes_the_users_pair() {
+        let mut d = sample();
+        d.accent = Some("PRC".into());
+        let s = card_svg(&d, Theme::Light);
+        let (acc, pair) = (palette::light(Some("PRC")), palette::light(Some("PRC")).pair);
+        assert!(s.contains(&format!(".f-acc{{fill:{}}}", acc.acc)) && s.contains(&format!(".f-pair{{fill:{pair}}}")));
+        // the radar is a flat tint of the complement: no pattern and no gradient, and the old gold and red are gone
+        assert!(s.contains("<polygon") && s.contains("class=\"f-pair radar\""));
+        for gone in ["gold", "f-red", "#9A7B00", "#C8200E", "tone"] {
+            assert!(!s.contains(gone), "{gone}");
+        }
+        // a different signature gives a different card
+        d.accent = Some("DEV".into());
+        assert_ne!(card_svg(&d, Theme::Light), s);
     }
 
     #[test]

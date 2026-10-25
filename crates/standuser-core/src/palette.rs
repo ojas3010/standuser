@@ -33,35 +33,35 @@ pub struct Pal {
     pub paper: &'static str,
     /// The user's accent: rings, grade letters, the 能力 label, the ゴゴゴ.
     pub acc: &'static str,
-    /// The accent's complement: the radar fill.
+    /// The accent's complement: the radar fill. It is the complement's brighter value (the dark-ground one) on both cards, because the
+    /// scale letters lie over the fill and the light card's own values are dark shades that turn muddy under a tint.
     pub pair: &'static str,
+    /// How much of the pair colour the radar fill takes: the most that keeps the ink scale letters over it above 4.5:1.
+    pub fill_opacity: f64,
 }
 
 /// With no signature (nothing was graded) the card is brick and ink.
-const NEUTRAL_LIGHT: (&str, &str) = ("#8a3b2a", "#6b5b52");
-const NEUTRAL_DARK: (&str, &str) = ("#f0a58f", "#b9a59b");
+const NEUTRAL_LIGHT: (&str, &str) = ("#8a3b2a", "#d8a58f");
+const NEUTRAL_DARK: (&str, &str) = ("#f0a58f", "#d8a58f");
 
 pub fn light(key: Option<&str>) -> Pal {
     let (acc, pair) = colours(key, true);
-    Pal { bg: "#f0e1d7", ink: "#2a140c", mute: "#5e4337", paper: "#f8eee7", acc, pair }
+    Pal { bg: "#f0e1d7", ink: "#2a140c", mute: "#5e4337", paper: "#f8eee7", acc, pair, fill_opacity: 0.6 }
 }
 
 pub fn dark(key: Option<&str>) -> Pal {
     let (acc, pair) = colours(key, false);
-    Pal { bg: "#4f281f", ink: "#f6ede4", mute: "#d8c4b6", paper: "#3f1f18", acc, pair }
+    Pal { bg: "#4f281f", ink: "#f6ede4", mute: "#d8c4b6", paper: "#3f1f18", acc, pair, fill_opacity: 0.35 }
 }
 
 fn colours(key: Option<&str>, light: bool) -> (&'static str, &'static str) {
     let pick = |i: usize| if light { ACCENTS[i].1 } else { ACCENTS[i].2 };
     match key.and_then(|k| ACCENTS.iter().position(|(a, _, _)| *a == k)) {
-        Some(i) => (pick(i), pick((i + 3) % 6)),
+        Some(i) => (pick(i), ACCENTS[(i + 3) % 6].2),
         None if light => NEUTRAL_LIGHT,
         None => NEUTRAL_DARK,
     }
 }
-
-/// Fill opacity of the radar polygon: a flat tint of the complement, light enough that the scale letters over it stay readable.
-pub const FILL_OPACITY: f64 = 0.35;
 
 #[cfg(test)]
 mod tests {
@@ -80,8 +80,9 @@ mod tests {
     #[test]
     fn the_pair_is_the_opposite_axis() {
         for (key, other) in [("PWR", "STA"), ("SPD", "PRC"), ("RNG", "DEV"), ("STA", "PWR"), ("PRC", "SPD"), ("DEV", "RNG")] {
-            assert_eq!(light(Some(key)).pair, light(Some(other)).acc, "{key}");
-            assert_eq!(dark(Some(key)).pair, dark(Some(other)).acc, "{key}");
+            let bright = ACCENTS.iter().find(|a| a.0 == other).unwrap().2;
+            assert_eq!((light(Some(key)).pair, dark(Some(key)).pair), (bright, bright), "{key}");
+            assert_eq!(dark(Some(key)).acc, ACCENTS.iter().find(|a| a.0 == key).unwrap().2);
         }
     }
 

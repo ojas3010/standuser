@@ -88,6 +88,18 @@ impl Font {
         s.chars().map(|c| self.adv(c, size) + ls).sum::<f64>() - ls
     }
 
+    /// How far the ink of `s` reaches above and below the baseline at `size`: (highest, deepest), both positive.
+    pub fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        let (mut up, mut down) = (0.0f64, 0.0f64);
+        for c in s.chars() {
+            if let Some(b) = self.glyph(c).and_then(|g| self.face.glyph_bounding_box(g)) {
+                up = up.max(b.y_max as f64);
+                down = down.max(-(b.y_min as f64));
+            }
+        }
+        (up * size / self.upm, down * size / self.upm)
+    }
+
     /// SVG path data for `s` with its baseline starting at (x, y).
     pub fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
         let sc = size / self.upm;
