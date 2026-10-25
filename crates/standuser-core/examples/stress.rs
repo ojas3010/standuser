@@ -27,6 +27,7 @@ fn main() {
         nearest: vec!["Star Platinum: The World".into(), "Dirty Deeds Done Dirt Cheap".into(), "Killer Queen (JoJolion)".into()],
         signature: "Signature film: Borat: Cultural Learnings of America for Make Benefit Glorious Nation of Kazakhstan (2006), 5.0★ against the crowd's 3.67★ (+1.33), 864,600 ratings.".into(),
         badge: true,
+        accent: Some("SPD".into()),
     };
     print!("{}", card_svg(&d, if std::env::args().any(|a| a == "dark") { Theme::Dark } else { Theme::Light }));
 }

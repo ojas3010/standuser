@@ -4,6 +4,7 @@
 //! browsers, GitHub READMEs and PNG renderers. Fixes gen_card.py line 121, where text lost its `f-` prefix.
 
 use crate::font::{font, Font, FontKind};
+use crate::palette::{self, Pal, FILL_OPACITY};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;
 
@@ -59,26 +60,14 @@ pub struct CardData {
     pub nearest: Vec<String>,
     pub signature: String,
     pub badge: bool,
+    /// "PWR".."DEV": the signature stat's accent (palette.rs); none draws the neutral brick and ink.
+    #[serde(default)]
+    pub accent: Option<String>,
 }
-
-struct Pal {
-    bg: &'static str,
-    ink: &'static str,
-    mute: &'static str,
-    gold: &'static str,
-    red: &'static str,
-    fill: &'static str,
-    ring: &'static str,
-    card: &'static str,
-    faint: &'static str,
-}
-
-const LIGHT: Pal = Pal { bg: "#FBF8F0", ink: "#1C0B01", mute: "#5C5048", gold: "#9A7B00", red: "#C8200E", fill: "#89C3DE", ring: "#6B5D5A", card: "#FFFFFF", faint: "#E6DFCF" };
-const DARK: Pal = Pal { bg: "#101014", ink: "#F4F1EA", mute: "#B9B3A8", gold: "#D8B93A", red: "#FF6A55", fill: "#5FA8D3", ring: "#C9C6C0", card: "#1B1B21", faint: "#2C2C34" };
 
 fn css(p: &Pal) -> String {
     let mut s = String::new();
-    for (k, v) in [("bg", p.bg), ("ink", p.ink), ("mute", p.mute), ("gold", p.gold), ("red", p.red), ("fill", p.fill), ("ring", p.ring), ("card", p.card), ("faint", p.faint)] {
+    for (k, v) in [("bg", p.bg), ("ink", p.ink), ("mute", p.mute), ("paper", p.paper), ("acc", p.acc), ("pair", p.pair)] {
         let _ = write!(s, ".f-{k}{{fill:{v}}}.s-{k}{{stroke:{v}}}");
     }
     s
@@ -199,16 +188,16 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     // background and paper frame
     c.els.push(format!("<rect width=\"{W}\" height=\"{H}\" class=\"f-bg\"/>"));
     c.els.push(format!("<rect x=\"24\" y=\"24\" width=\"{}\" height=\"{}\" rx=\"6\" class=\"s-ink\" fill=\"none\" stroke-width=\"3\"/>", W - 48.0, H - 48.0));
-    c.els.push(format!("<rect x=\"34\" y=\"34\" width=\"{}\" height=\"{}\" rx=\"3\" class=\"s-gold\" fill=\"none\" stroke-width=\"1.5\"/>", W - 68.0, H - 68.0));
+    c.els.push(format!("<rect x=\"34\" y=\"34\" width=\"{}\" height=\"{}\" rx=\"3\" class=\"s-acc\" fill=\"none\" stroke-width=\"1.5\"/>", W - 68.0, H - 68.0));
     for i in 0..4 {
         let i = i as f64;
-        c.text("ゴ", 66.0, 372.0 + i * 118.0, 92.0, Sans, "gold", "middle", -6.0 + i * 3.0, 0.0, Some(0.22));
-        c.text("ゴ", W - 66.0, 372.0 + i * 118.0, 92.0, Sans, "gold", "middle", 6.0 - i * 3.0, 0.0, Some(0.22));
+        c.text("ゴ", 66.0, 372.0 + i * 118.0, 92.0, Sans, "acc", "middle", -6.0 + i * 3.0, 0.0, Some(0.22));
+        c.text("ゴ", W - 66.0, 372.0 + i * 118.0, 92.0, Sans, "acc", "middle", 6.0 - i * 3.0, 0.0, Some(0.22));
     }
     // header
     c.text("【STAND NAME】", 70.0, 84.0, 22.0, Serif, "mute", "start", 0.0, 2.0, None);
     if d.badge {
-        // neutral, not the red of the grades: the badge is a note, not a mark
+        // neutral, not the accent of the grades: the badge is a note, not a mark
         c.els.push("<rect x=\"770\" y=\"64\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-mute\" stroke-width=\"2\"/>".into());
         c.text("PROVISIONAL DATA", 890.0, 91.0, 19.0, Sans, "mute", "middle", 0.0, 1.5, None);
     }
@@ -236,16 +225,15 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
 
     // medallion
     let (ro, ri) = (268.0 * k, 250.0 * k);
-    c.els.push(format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"{ro:.1}\" fill=\"none\" class=\"s-gold\" stroke-width=\"3\"/>"));
-    c.els.push(format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"{:.1}\" fill=\"none\" class=\"s-gold\" stroke-width=\"2\"/>", ri - 1.0));
+    c.els.push(format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"{ro:.1}\" fill=\"none\" class=\"s-acc\" stroke-width=\"3\"/>"));
+    c.els.push(format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"{:.1}\" fill=\"none\" class=\"s-acc\" stroke-width=\"2\"/>", ri - 1.0));
     let mut ticks = String::new();
     for i in 0..144 {
         let a = (i as f64 * 2.5).to_radians();
         let _ = write!(ticks, "M{:.1} {:.1}L{:.1} {:.1}", cx + ri * a.sin(), cy - ri * a.cos(), cx + (ro - 3.0) * a.sin(), cy - (ro - 3.0) * a.cos());
     }
-    c.els.push(format!("<path d=\"{ticks}\" class=\"s-gold\" stroke-width=\"4.5\" fill=\"none\"/>"));
-    c.els.push("<defs><pattern id=\"tone\" width=\"5\" height=\"5\" patternUnits=\"userSpaceOnUse\" patternTransform=\"rotate(45)\"><rect width=\"5\" height=\"5\" class=\"f-fill\" opacity=\".55\"/><circle cx=\"2.5\" cy=\"2.5\" r=\"1.45\" class=\"f-fill\"/></pattern></defs>".into());
-    c.els.push(format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"{r_chart}\" fill=\"none\" class=\"s-ring\" stroke-width=\"2.2\"/>"));
+    c.els.push(format!("<path d=\"{ticks}\" class=\"s-acc\" stroke-width=\"4.5\" fill=\"none\"/>"));
+    c.els.push(format!("<circle cx=\"{cx}\" cy=\"{cy}\" r=\"{r_chart}\" fill=\"none\" class=\"s-acc\" stroke-width=\"2.2\"/>"));
     // value polygon
     let pts: Vec<(f64, f64)> = (0..6)
         .map(|i| {
@@ -254,12 +242,12 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
             (cx + r * a.sin(), cy - r * a.cos())
         })
         .collect();
-    let poly: Vec<String> = pts.iter().map(|(x, y)| format!("{x:.1} {y:.1}")).collect();
-    c.els.push(format!("<path d=\"M{}Z\" fill=\"url(#tone)\"/>", poly.join("L")));
+    let poly: Vec<String> = pts.iter().map(|(x, y)| format!("{x:.1},{y:.1}")).collect();
+    c.els.push(format!("<polygon points=\"{}\" class=\"f-pair\" fill-opacity=\"{FILL_OPACITY}\"/>", poly.join(" ")));
     for i in 0..6 {
         if d.unknown[i] {
             for j in [(i + 5) % 6, (i + 1) % 6] {
-                c.els.push(format!("<path d=\"M{:.1} {:.1}L{:.1} {:.1}\" class=\"s-ring\" stroke-width=\"2\" stroke-dasharray=\"6 5\" fill=\"none\"/>", pts[i].0, pts[i].1, pts[j].0, pts[j].1));
+                c.els.push(format!("<path d=\"M{:.1} {:.1}L{:.1} {:.1}\" class=\"s-acc\" stroke-width=\"2\" stroke-dasharray=\"6 5\" fill=\"none\"/>", pts[i].0, pts[i].1, pts[j].0, pts[j].1));
             }
         }
     }
@@ -275,14 +263,14 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
     }
     for (kk, l) in "EDCBA".chars().enumerate() {
-        c.text(&l.to_string(), cx + 11.0, cy - r_chart * (kk + 1) as f64 / 6.0 + 6.0, 16.0, Sans, "mute", "start", 0.0, 0.0, None);
+        c.text(&l.to_string(), cx + 11.0, cy - r_chart * (kk + 1) as f64 / 6.0 + 6.0, 16.0, Sans, "ink", "start", 0.0, 0.0, None);
     }
     for i in 0..6 {
         if d.unknown[i] {
-            c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"7\" class=\"f-bg s-ring\" stroke-width=\"2.5\"/>", pts[i].0, pts[i].1));
+            c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"7\" class=\"f-bg s-acc\" stroke-width=\"2.5\"/>", pts[i].0, pts[i].1));
         }
     }
-    // labels on the medallion annulus and red grade letters
+    // labels on the medallion annulus and the grade letters in the accent
     let rot: [f64; 6] = [0.0, 60.0, -60.0, 0.0, 60.0, -60.0];
     let (r_lab, r_let) = (224.0 * k, 183.0 * k);
     for i in 0..6 {
@@ -294,7 +282,7 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         let g = d.grades[i].as_str();
         let (gx, gy) = (cx + r_let * a.sin(), cy - r_let * a.cos());
         let sz = if g == "完成" { 24.0 } else { 40.0 };
-        c.text(g, gx, gy + if sz == 40.0 { 14.0 } else { 8.0 }, sz, Sans, "red", "middle", 0.0, 0.0, None);
+        c.text(g, gx, gy + if sz == 40.0 { 14.0 } else { 8.0 }, sz, Sans, "acc", "middle", 0.0, 0.0, None);
     }
 
     // legend, rule, six stat cells (2 columns x 3 rows)
@@ -324,8 +312,8 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     }
 
     // ability and weakness box, in the card's sans (serif is for the Stand name and the 【】 labels only)
-    c.els.push(format!("<rect x=\"70\" y=\"{top}\" width=\"{}\" height=\"{hbox}\" rx=\"2\" class=\"f-card s-ink\" stroke-width=\"2\"/>", W - 140.0));
-    c.text("能力―", 88.0, top + 30.0, 22.0, Sans, "red", "start", 0.0, 0.0, None);
+    c.els.push(format!("<rect x=\"70\" y=\"{top}\" width=\"{}\" height=\"{hbox}\" rx=\"2\" class=\"f-paper s-ink\" stroke-width=\"2\"/>", W - 140.0));
+    c.text("能力―", 88.0, top + 30.0, 22.0, Sans, "acc", "start", 0.0, 0.0, None);
     for (i, ln) in ab.iter().take(3).enumerate() {
         let ln = if i == 2 && ab.len() > 3 { c.sans.fit(&format!("{ln} …"), ABILITY_SIZE, TEXT_WIDTH) } else { ln.clone() };
         c.text(&ln, 170.0, top + 30.0 + i as f64 * ABILITY_PITCH, ABILITY_SIZE, Sans, "ink", "start", 0.0, 0.0, None);
@@ -348,10 +336,11 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     c.text(FOOTER, 70.0, FOOT_Y, 16.0, Sans, "mute", "start", 0.0, 0.0, None);
 
     // assemble
+    let key = d.accent.as_deref();
     let (base, extra) = match theme {
-        Theme::Light => (css(&LIGHT), String::new()),
-        Theme::Dark => (css(&DARK), String::new()),
-        Theme::Auto => (css(&LIGHT), format!("@media (prefers-color-scheme:dark){{{}}}", css(&DARK))),
+        Theme::Light => (css(&palette::light(key)), String::new()),
+        Theme::Dark => (css(&palette::dark(key)), String::new()),
+        Theme::Auto => (css(&palette::light(key)), format!("@media (prefers-color-scheme:dark){{{}}}", css(&palette::dark(key)))),
     };
     let title = format!("Stand card for {}: {}, {} type", d.user, d.name, d.type_en);
     // the same asterisks the card shows, so a screen reader hears which grades are provisional
@@ -392,6 +381,7 @@ mod tests {
             nearest: vec!["D4C Love Train".into(), "Dolly Dagger".into(), "The World".into()],
             signature: "Signature film: Synthetic Film One (2008), 1.0★ against the crowd's 3.54★".into(),
             badge: true,
+            accent: Some("PRC".into()),
         }
     }
 
@@ -400,8 +390,8 @@ mod tests {
         // Regression: gen_card.py line 121 emitted class="{cls}" so text lost its fill colour.
         let s = card_svg(&sample(), Theme::Auto);
         assert!(s.contains("class=\"f-ink\""));
-        assert!(s.contains("class=\"f-red\""));
-        for bad in ["class=\"ink\"", "class=\"red\"", "class=\"mute\"", "class=\"gold\""] {
+        assert!(s.contains("class=\"f-acc\""));
+        for bad in ["class=\"ink\"", "class=\"acc\"", "class=\"mute\"", "class=\"gold\""] {
             assert!(!s.contains(bad), "{bad}");
         }
         assert!(s.contains("prefers-color-scheme:dark"));
@@ -427,7 +417,7 @@ mod tests {
         let l = card_svg(&sample(), Theme::Light);
         assert!(!l.contains("prefers-color-scheme"));
         let dk = card_svg(&sample(), Theme::Dark);
-        assert!(dk.contains("#101014"));
+        assert!(dk.contains(palette::dark(None).bg) && !dk.contains(palette::light(None).bg));
         assert!(l.starts_with("<svg") && l.ends_with("</svg>"));
         assert!(l.len() < 900_000, "{}", l.len());
     }
@@ -468,7 +458,7 @@ mod tests {
         let s = card_svg(&sample(), Theme::Light);
         let badge = &s[s.find("<rect x=\"770\"").unwrap()..];
         let badge = &badge[..badge.find("/>").unwrap()];
-        assert!(badge.contains("s-mute") && !badge.contains("s-red"), "{badge}");
+        assert!(badge.contains("s-mute") && !badge.contains("s-acc"), "{badge}");
     }
 
     #[test]

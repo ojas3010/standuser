@@ -49,7 +49,7 @@ mod tests {
         let table = std::fs::read_to_string(d.join("table.json")).unwrap();
         let out: serde_json::Value = serde_json::from_str(&run_inner(&zip, "letterboxd-synthuser-2026-06-30-12-00-utc.zip", &table, "", "", "", "")).unwrap();
         assert_eq!(out["analysis"]["username"], "synthuser");
-        assert!(out["svgs"]["dark"].as_str().unwrap().contains("#101014"));
+        assert!(out["svgs"]["dark"].as_str().unwrap().contains(standuser_core::palette::dark(None).bg));
         assert!(out["svgs"]["auto"].as_str().unwrap().contains("prefers-color-scheme"));
         // errors come back as JSON, not a panic
         let bad: serde_json::Value = serde_json::from_str(&run_inner(b"not a zip", "x.zip", &table, "", "", "", "")).unwrap();

@@ -169,6 +169,7 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         nearest: if nearest.is_empty() { vec!["needs 4 graded stats".into()] } else { nearest.iter().map(|m| m.name.clone()).collect() },
         signature: ab.film.clone().unwrap_or_else(|| "Signature film: not enough crowd data".into()),
         badge: any_prov,
+        accent: ab.signature.as_ref().and_then(|s| crate::palette::accent_key(&s.stat, s.top.as_deref())),
     };
     let coverage = Coverage {
         watched: st.facts.n_watched,
