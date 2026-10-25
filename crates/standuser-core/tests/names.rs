@@ -37,8 +37,7 @@ fn synthetic_export_gets_a_title_name_with_a_why_line_on_the_card() {
 fn seeded_real_table_users_get_deterministic_valid_names_and_clean_why_lines() {
     let lk = real();
     let users = synth_users::users(40, &lk);
-    let mut titles = 0;
-    let mut differs = 0;
+    let (mut titles, mut differs, mut fits, mut no_fit) = (0, 0, 0, 0);
     for (ex, t) in &users {
         let user = ex.username.clone().unwrap();
         let Some(p) = pool::pick(ex, &lk, *t, &user) else { continue };
@@ -53,13 +52,25 @@ fn seeded_real_table_users_get_deterministic_valid_names_and_clean_why_lines() {
         // the full why line, not the bare fallback: the place, the origin and one cited reason
         assert!(p.why.starts_with(&format!("Why 「{}」: ", p.name)), "{}", p.why);
         assert!(p.why.contains("; ") && p.why.ends_with('.'), "{}", p.why);
-        assert!(["fit rank", "Its Cool score", "in your pool by affinity"].iter().any(|r| p.why.contains(r)), "no cited reason: {}", p.why);
+        // the cited reason: the matched word when the name fits the ability, else the favourite or the pool rank; never Cool
+        let w = p.top.iter().find(|s| s.picked).unwrap();
+        assert!(!p.why.contains("Cool"), "{}", p.why);
+        if w.f > 0.0 {
+            fits += 1;
+            let verb = if w.f >= 1.0 { "fits" } else { "is close to" };
+            assert!(p.why.ends_with(&format!("\"{}\" {verb} your {} ability.", w.matched.as_deref().unwrap(), standuser_core::ability::template_by_id(*t).name)), "{}", p.why);
+        } else {
+            no_fit += 1;
+            assert!(p.why.contains("one of your Favourite Films") || p.why.contains("films in your pool by affinity"), "no cited reason: {}", p.why);
+            assert!(!p.why.contains("ability"), "{}", p.why);
+        }
         if p.first_track.as_ref().is_some_and(|f| f.name != p.name) {
             differs += 1;
         }
     }
     assert!(titles >= 35, "most users have a pool: {titles}");
     assert!(differs > 0, "the S winner is not always the first track");
+    assert!(fits > 0 && no_fit > 0, "both reasons are exercised: {fits} fits, {no_fit} without a fit");
 }
 
 /// The distinct names within the tie band of the top S for this history (the band does not depend on the username).

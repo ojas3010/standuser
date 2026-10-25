@@ -269,7 +269,7 @@ pub fn pick_top(ex: &Export, lk: &Lookup, template: u8, username: &str, n: usize
         .min_by_key(|r| (r.cand.track, r.cand.name.clone()))
         .map(|r| FirstTrack { name: r.cand.name.clone(), film: r.film.title.clone(), track: r.cand.track });
     let w = &rows[win];
-    let why = why_line(w, &rows.iter().map(|r| (r.s, r.cool, r.f, r.film.tmdb, r.film.a)).collect::<Vec<_>>(), pool.len(), template);
+    let why = why_line(w, &pool, template);
     Some(Picked { name: w.cand.name.clone(), why, top, first_track, pool_films: pool.len(), pool_cands: rows.len(), median_cool: med })
 }
 
@@ -278,8 +278,21 @@ fn r5(x: f64) -> f64 {
 }
 
 // ---------------------------------------------------------------- why line
-/// Words of the why template itself; every other number or capitalised word must come from a slot.
-const TEMPLATE_WORDS: [&str; 5] = ["Why", "Favourite", "Films", "Cool", "Its"];
+// The line is rendered from these templates; every {slot} is filled from a computed value, so the only digits and capitalised words
+// of the output are in a slot or in the template words below.
+const T_HEAD: &str = "Why 「{name}」: {how} \"{src}\", ";
+const T_PLACE_ARTIST: &str = "track {track} of {artist_poss} {film} {kind} ({year})";
+const T_PLACE_PLAIN: &str = "track {track} of the {film} {kind} ({year})";
+const T_LINK_FAV: &str = "; {film} is one of your Favourite Films";
+const T_LINK_TOP: &str = "; {film} ranks {rank} of {pool_films} films in your pool by affinity";
+const T_RATING: &str = " ({rating}★)";
+const T_FIT_CORE: &str = ". \"{word}\" fits your {ability} ability.";
+const T_FIT_RING: &str = ". \"{word}\" is close to your {ability} ability.";
+const T_END: &str = ".";
+const T_BARE: &str = "Why 「{name}」: track {track} of the {film} {kind} ({year}).";
+
+/// Words of the templates themselves; every other number or capitalised word must come from a slot.
+const TEMPLATE_WORDS: [&str; 3] = ["Why", "Favourite", "Films"];
 
 fn trim_tok(t: &str) -> &str {
     let t = t.trim_matches(|c: char| !c.is_alphanumeric());
@@ -300,8 +313,35 @@ pub fn slots_ok(text: &str, slots: &[String]) -> bool {
     })
 }
 
-fn why_line(w: &Row, all: &[(f64, f64, f64, u32, f64)], pool_films: usize, template: u8) -> String {
-    let ability = template_by_id(template).name;
+/// Fill the `{slot}` placeholders of `template`; None when a placeholder has no slot.
+fn render(template: &str, slots: &[(&str, String)]) -> Option<String> {
+    let mut out = String::with_capacity(template.len() + 32);
+    let mut rest = template;
+    while let Some(open) = rest.find('{') {
+        out.push_str(&rest[..open]);
+        let close = open + rest[open..].find('}')?;
+        out.push_str(&slots.iter().find(|(k, _)| *k == &rest[open + 1..close])?.1);
+        rest = &rest[close + 1..];
+    }
+    out.push_str(rest);
+    Some(out)
+}
+
+/// The possessive of an album artist: "Hans Zimmer's", "Pixies'", and "The B-52's" as it stands.
+fn possessive(artist: &str) -> String {
+    if artist.ends_with("'s") || artist.ends_with("’s") {
+        artist.to_string()
+    } else if artist.ends_with('s') || artist.ends_with('S') {
+        format!("{artist}'")
+    } else {
+        format!("{artist}'s")
+    }
+}
+
+/// The why line (docs/DECISIONS.md, "Why line"): how the name was cut, the track and album, then one cited reason. When the name
+/// fits the ability (F > 0) the reason is the matched word; otherwise it is the film's link to the user, a favourite or its rank in
+/// the pool. Cool is never cited.
+fn why_line(w: &Row, pool: &[&UserFilm], template: u8) -> String {
     let name = &w.cand.name;
     let film = &w.film.title;
     let src = if w.cand.src.is_empty() { name.clone() } else { w.cand.src.clone() };
@@ -311,57 +351,51 @@ fn why_line(w: &Row, all: &[(f64, f64, f64, u32, f64)], pool_films: usize, templ
         's' => "trimmed from",
         _ => "verbatim:",
     };
-    // the artist and the score / soundtrack flag are those of the candidate's own album: a film can have several
+    // the artist and the score / soundtrack word are those of the candidate's own album: a film can have several
     let album = &w.names.albums[w.cand.album];
     let kind = if album.score { "score" } else { "soundtrack" };
-    let year = w.film.year.to_string();
-    let track = w.cand.track.to_string();
-    let rating = w.film.rating.map(|r| format!("{r:.1}"));
-    let mut slots: Vec<String> = vec![name.clone(), src.clone(), film.clone(), year.clone(), track.clone(), ability.to_string()];
-    let place = if album.artist.is_empty() || album.artist == "Various Artists" {
-        format!("track {track} of the {film} {kind} ({year})")
-    } else {
-        slots.push(album.artist.clone());
-        format!("track {track} of {}'s {film} {kind} ({year})", album.artist)
-    };
-    let mut origin = if w.film.fav { format!("{film} is one of your Favourite Films") } else { format!("{film} is one of your highest-affinity films") };
-    if let Some(r) = &rating {
-        origin.push_str(&format!(" ({r}★)"));
-        slots.push(r.clone());
+    let mut slots: Vec<(&str, String)> = vec![
+        ("name", name.clone()),
+        ("how", how.to_string()),
+        ("src", src),
+        ("track", w.cand.track.to_string()),
+        ("film", film.clone()),
+        ("kind", kind.to_string()),
+        ("year", w.film.year.to_string()),
+    ];
+    let named = !album.artist.is_empty() && album.artist != "Various Artists";
+    if named {
+        slots.push(("artist_poss", possessive(&album.artist)));
     }
-    // the cited reason is the largest term of S
-    let terms = [W_COOL * w.cool, W_FIT * w.f, W_AFF * w.film.a];
-    let top = if terms[0] >= terms[1] && terms[0] >= terms[2] { 0 } else if terms[1] >= terms[2] { 1 } else { 2 };
-    let n = all.len();
-    let reason = match top {
-        1 => {
-            let rank = 1 + all.iter().filter(|r| r.2 > w.f).count();
-            let word = w.word.and_then(|i| name_words(&w.cand.name).get(i).map(|x| x.to_lowercase())).unwrap_or_default();
-            let verb = if w.f >= 1.0 { "fits" } else { "is close to" };
-            slots.extend([rank.to_string(), n.to_string(), word.clone()]);
-            format!("\"{word}\" {verb} your {ability} ability; fit rank {rank} of {n}.")
-        }
-        0 => {
-            let rank = 1 + all.iter().filter(|r| r.1 > w.cool).count();
-            let c = format!("{:.2}", w.cool);
-            slots.extend([rank.to_string(), n.to_string(), c.clone()]);
-            format!("Its Cool score of {c} ranks {rank} of {n} in your pool.")
-        }
-        _ => {
-            let mut films: Vec<(u32, f64)> = all.iter().map(|r| (r.3, r.4)).collect();
-            films.sort_by(|a, b| a.0.cmp(&b.0));
-            films.dedup_by_key(|x| x.0);
-            let rank = 1 + films.iter().filter(|x| x.1 > w.film.a).count();
-            slots.extend([rank.to_string(), pool_films.to_string()]);
-            format!("{film} ranks {rank} of {pool_films} films in your pool by affinity.")
-        }
-    };
-    let text = format!("Why 「{name}」: {how} \"{src}\", {place}; {origin}. {reason}");
-    if slots_ok(&text.replace('「', " ").replace('」', " "), &slots) {
-        text
+    let mut parts: Vec<&str> = vec![T_HEAD, if named { T_PLACE_ARTIST } else { T_PLACE_PLAIN }];
+    if w.film.fav {
+        parts.push(T_LINK_FAV);
     } else {
-        // a slot the dictionary does not hold (should not happen): fall back to the bare facts
-        format!("Why 「{name}」: track {track} of the {film} {kind} ({year}).")
+        // the rank of the film among the pool's films by affinity (films with equal A share a rank)
+        let rank = 1 + pool.iter().filter(|f| f.a > w.film.a).count();
+        slots.push(("rank", rank.to_string()));
+        slots.push(("pool_films", pool.len().to_string()));
+        parts.push(T_LINK_TOP);
+    }
+    if let Some(r) = w.film.rating {
+        slots.push(("rating", format!("{r:.1}")));
+        parts.push(T_RATING);
+    }
+    let word = if w.f > 0.0 { w.word.and_then(|i| name_words(&w.cand.name).get(i).map(|x| x.to_lowercase())) } else { None };
+    match word {
+        Some(word) => {
+            slots.push(("word", word));
+            slots.push(("ability", template_by_id(template).name.to_string()));
+            parts.push(if w.f >= 1.0 { T_FIT_CORE } else { T_FIT_RING });
+        }
+        None => parts.push(T_END),
+    }
+    let values: Vec<String> = slots.iter().map(|(_, v)| v.clone()).collect();
+    let text = parts.iter().map(|t| render(t, &slots)).collect::<Option<String>>();
+    match text {
+        Some(text) if slots_ok(&text.replace('「', " ").replace('」', " "), &values) => text,
+        // a rendering the slot check rejects (should not happen): fall back to the bare facts
+        _ => render(T_BARE, &slots).unwrap_or_default(),
     }
 }
 
@@ -547,7 +581,7 @@ mod tests {
     }
 
     #[test]
-    fn why_line_cites_the_largest_term_and_only_slot_values() {
+    fn a_name_that_fits_cites_the_matched_word_and_only_slot_values() {
         let mut lk = table();
         lk.load_names(&names_json(&[(1, "Nine Nine", "c", &[("WOUNDED HUNTER", 20, 11, "v", &[(3 << 4) | (1 << 1) | 1]), ("FILLER ONE", 20, 2, "v", &[]), ("FILLER TWO", 20, 3, "v", &[])])])).unwrap();
         let ex = export(&[(0, 4.5)], &[0]);
@@ -555,49 +589,66 @@ mod tests {
         assert_eq!(p.name, "WOUNDED HUNTER");
         assert!(p.why.starts_with("Why 「WOUNDED HUNTER」: verbatim:"), "{}", p.why);
         assert!(p.why.contains("track 11 of Nine Nine's A score (2000)"), "{}", p.why);
-        assert!(p.why.contains("one of your Favourite Films (4.5★)"), "{}", p.why);
-        assert!(p.why.contains("\"hunter\" fits your Hora Rush ability; fit rank 1 of 3."), "{}", p.why);
-        let slots: Vec<String> = ["WOUNDED HUNTER", "A", "2000", "11", "Hora Rush", "Nine Nine", "4.5", "hunter", "1", "3"].map(String::from).to_vec();
+        assert!(p.why.ends_with("one of your Favourite Films (4.5★). \"hunter\" fits your Hora Rush ability."), "{}", p.why);
+        let slots: Vec<String> = ["WOUNDED HUNTER", "A", "2000", "11", "Hora Rush", "Nine Nine's", "4.5", "hunter"].map(String::from).to_vec();
         assert!(slots_ok(&p.why.replace(['「', '」'], " "), &slots));
     }
 
     #[test]
-    fn the_why_line_takes_artist_and_kind_from_the_candidates_own_album() {
-        // 12 Years a Slave: LETTER WRITING is on Hans Zimmer's score (album 0), FREIGHT TRAIN on the songs album by various artists (album 1)
-        let names = |winner: &str| {
-            let cool = |n: &str| if n == winner { 90 } else { 10 };
-            serde_json::json!({"v": 2, "names": {"1": [[["Hans Zimmer", "c"], ["Various Artists", "v"]], [
-                ["LETTER WRITING", cool("LETTER WRITING"), 17, "v", "", [], 0], ["FREIGHT TRAIN", cool("FREIGHT TRAIN"), 3, "v", "", [], 1], ["FILLER", 10, 4, "v", "", [], 1]]]}}).to_string()
-        };
-        let ex = export(&[(0, 4.0)], &[0]);
+    fn a_ring_word_is_close_to_the_ability_and_a_core_word_fits() {
         let mut lk = table();
-        lk.load_names(&names("LETTER WRITING")).unwrap();
-        let p = pick(&ex, &lk, 1, "u").unwrap();
-        assert_eq!(p.name, "LETTER WRITING");
-        assert!(p.why.contains("track 17 of Hans Zimmer's A score (2000)"), "{}", p.why);
-        lk.load_names(&names("FREIGHT TRAIN")).unwrap();
-        let p = pick(&ex, &lk, 1, "u").unwrap();
-        assert_eq!(p.name, "FREIGHT TRAIN");
-        assert!(p.why.contains("track 3 of the A soundtrack (2000)"), "{}", p.why);
-        assert!(!p.why.contains("Hans Zimmer") && !p.why.contains("A score"), "not credited to the other album's artist: {}", p.why);
+        let cands = |code: u16| names_json(&[(1, "", "o", &[("WOUNDED HUNTER", 60, 2, "v", &[code]), ("PAD ONE", 10, 3, "v", &[]), ("PAD TWO", 10, 4, "v", &[])])]);
+        lk.load_names(&cands((3 << 4) | (1 << 1))).unwrap();
+        let p = pick(&export(&[(0, 4.0)], &[0]), &lk, 3, "u").unwrap();
+        assert!(p.why.ends_with("\"hunter\" is close to your Hora Rush ability."), "{}", p.why);
     }
 
     #[test]
-    fn every_reason_branch_passes_its_own_slot_check_and_is_not_the_bare_fallback() {
+    fn without_a_fit_the_why_line_cites_the_favourite_or_the_pool_rank_and_never_cool() {
+        // Cool is the largest term of S here (0.95 against no fit and a small A), and it is not cited
         let mut lk = table();
-        // cool wins: a high-Cool candidate with no fit; affinity wins: low Cool and no fit on a high-A film
         lk.load_names(&names_json(&[(1, "Nine", "c", &[("BRIGHT TRACK", 95, 4, "t", &[]), ("PLAIN TRACK", 90, 2, "c", &[])])])).unwrap();
-        let ex = export(&[(0, 4.5)], &[0]);
-        let p = pick(&ex, &lk, 5, "u").unwrap();
-        assert!(p.why.contains("Its Cool score of 0.9"), "{}", p.why);
+        let p = pick(&export(&[(0, 4.5)], &[0]), &lk, 5, "u").unwrap();
         assert!(p.why.contains("tail of") || p.why.contains("one cue of"), "{}", p.why);
-        assert!(!p.why.ends_with("(2000)."), "not the bare fallback: {}", p.why);
-        // affinity is the largest term when Cool and F are both small
+        assert!(p.why.ends_with("A is one of your Favourite Films (4.5★)."), "a favourite: {}", p.why);
+        // not a favourite: the film's rank among the pool's films by affinity
+        let p = pick(&export(&[(0, 5.0)], &[]), &lk, 5, "u").unwrap();
+        assert!(p.why.ends_with("A ranks 1 of 1 films in your pool by affinity (5.0★)."), "{}", p.why);
+        assert!(p.why.contains("trimmed from") || p.why.contains("verbatim:") || p.why.contains("tail of") || p.why.contains("one cue of"), "{}", p.why);
+        // two films in the pool: the second one's rank is 2 of 2
         let mut lk = table();
-        lk.load_names(&names_json(&[(1, "", "o", &[("QUIET ONE", 2, 1, "s", &[]), ("QUIET TWO", 1, 2, "v", &[])])])).unwrap();
-        let p = pick(&export(&[(0, 5.0)], &[0]), &lk, 5, "u").unwrap();
-        assert!(p.why.contains("ranks 1 of 1 films in your pool by affinity."), "{}", p.why);
-        assert!(p.why.contains("trimmed from") || p.why.contains("verbatim:"), "{}", p.why);
+        lk.load_names(&names_json(&[(1, "", "o", &[("QUIET ONE", 2, 1, "s", &[])]), (2, "", "o", &[("QUIET TWO", 1, 2, "v", &[])])])).unwrap();
+        let ex = export(&[(0, 5.0), (1, 1.0)], &[]);
+        let p = pick(&ex, &lk, 5, "u").unwrap();
+        let rank = if p.name == "QUIET ONE" { "A ranks 1 of 2" } else { "B ranks 2 of 2" };
+        assert!(p.why.contains(rank), "{}", p.why);
+        for p in [pick(&ex, &lk, 5, "u").unwrap(), pick(&export(&[(0, 4.5)], &[0]), &lk, 5, "u").unwrap()] {
+            assert!(!p.why.contains("Cool") && !p.why.contains("ability"), "no fit, no Cool: {}", p.why);
+            assert!(!p.why.ends_with("(2000)."), "not the bare fallback: {}", p.why);
+        }
+    }
+
+    #[test]
+    fn an_artist_with_an_apostrophe_s_passes_the_slot_check_and_keeps_the_full_line() {
+        for (artist, place) in [("The B-52's", "track 3 of The B-52's A soundtrack (2000)"), ("Pixies", "track 3 of Pixies' A soundtrack (2000)"), ("Hans Zimmer", "track 3 of Hans Zimmer's A soundtrack (2000)"), ("Guns N' Roses", "track 3 of Guns N' Roses' A soundtrack (2000)")] {
+            let mut lk = table();
+            lk.load_names(&names_json(&[(1, artist, "o", &[("ROCK LOBSTER", 70, 3, "v", &[]), ("PAD ONE", 10, 4, "v", &[]), ("PAD TWO", 10, 5, "v", &[])])])).unwrap();
+            let p = pick(&export(&[(0, 4.0)], &[0]), &lk, 1, "u").unwrap();
+            assert!(p.why.contains(place), "{}", p.why);
+            assert!(p.why.ends_with("one of your Favourite Films (4.0★)."), "the full line, not the bare fallback: {}", p.why);
+        }
+    }
+
+    #[test]
+    fn possessives_and_templates() {
+        assert_eq!(possessive("Hans Zimmer"), "Hans Zimmer's");
+        assert_eq!(possessive("Pixies"), "Pixies'");
+        assert_eq!(possessive("The B-52's"), "The B-52's");
+        assert_eq!(possessive("The B-52’s"), "The B-52’s");
+        let slots = [("a", "Zed".to_string()), ("b", "{a}".to_string())];
+        assert_eq!(render("x {a} y {b}.", &slots).as_deref(), Some("x Zed y {a}."), "a slot value is not scanned for placeholders");
+        assert_eq!(render("x {missing}", &slots), None);
+        assert_eq!(render("no slots", &slots).as_deref(), Some("no slots"));
     }
 
     #[test]

@@ -321,7 +321,7 @@ mod tests {
     pub fn sample() -> CardData {
         CardData {
             name: "DIRTY WEATHER".into(),
-            why: "Why 「DIRTY WEATHER」: verbatim: \"DIRTY WEATHER\", track 3 of Some Band's Lighthouse score (2019); Lighthouse is one of your Favourite Films (4.5★). \"weather\" fits your Wind Reading ability; fit rank 1 of 40.".into(),
+            why: "Why 「DIRTY WEATHER」: verbatim: \"DIRTY WEATHER\", track 3 of Some Band's Lighthouse score (2019); Lighthouse is one of your Favourite Films (4.5★). \"weather\" fits your Wind Reading ability.".into(),
             user: "jas3344".into(),
             type_jp: "近距離パワー型".into(),
             type_en: "Close-Range Power".into(),
