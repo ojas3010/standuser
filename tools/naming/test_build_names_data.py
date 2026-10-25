@@ -62,6 +62,19 @@ def test_a_word_index_of_8_or_more_is_refused(monkeypatch):
         B.build(rows, {}, MatchAt(8), {}, 1)
 
 
+def test_artist_credits_have_ascii_hyphens(monkeypatch):
+    rows = [row("bekindrewind|2008", "5", "composer", 6, "TRAIN STATION"), row("bekindrewind|2008", "5", "composer", 7, "PAUSE")]
+    films = build(rows, {("bekindrewind|2008", "composer"): "Jean\u2010Michel Bernard"}, monkeypatch)
+    assert films["5"][0] == [["Jean-Michel Bernard", "c"]]
+    assert B.strip(films)["5"][0] == [["Jean-Michel Bernard", "c"]]
+
+
+def test_shipped_artists_and_sources_have_no_u2010_or_u2011():
+    for k, (albums, cands) in shipped()["names"].items():
+        assert not any(set(a[0]) & {"\u2010", "\u2011"} for a in albums), (k, albums)
+        assert not any(set(c[4]) & {"\u2010", "\u2011"} for c in cands), k
+
+
 def test_a_film_with_a_single_album_has_one_album_entry(monkeypatch):
     films = build([row("a|2000", "1", "other", 1, "ONE"), row("a|2000", "1", "other", 2, "THREE")], {("a|2000", "other"): "Some Band"}, monkeypatch)
     assert films["1"][0] == [["Some Band", "o"]]

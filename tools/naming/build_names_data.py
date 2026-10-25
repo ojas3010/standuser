@@ -60,7 +60,7 @@ def build(rows, artists, scorer, df, n):
         flag = FLAG[r["flag"]]
         flags = [a[1] for a in albums]
         if flag not in flags:
-            albums.append([artists.get((r["key"], r["flag"]), ""), flag])
+            albums.append([t.ascii_hyphens(artists.get((r["key"], r["flag"]), "")), flag])
             flags.append(flag)
         cands.append([r["name"], round(100 * C.scale(raw, lo, hi)), int(r["track"]), r["kind"], "" if same else r["src"], codes, flags.index(flag), max([lv for lv, _ in m] or [0])])
     return films, lo, hi

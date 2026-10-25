@@ -261,6 +261,20 @@ def test_candidates_for_album_filters_dedupes_and_numbers_tracks():
     assert [c["kind"] for c in got] == ["v", "s"]
 
 
+# ---------------------------------------------------------------- hyphens
+def test_u2010_and_u2011_become_ascii_hyphens_and_nothing_else_changes():
+    assert t.ascii_hyphens("Jean\u2010Michel Bernard") == "Jean-Michel Bernard"
+    assert t.ascii_hyphens("Lin\u2011Manuel \u2013 Miranda \u00e9") == "Lin-Manuel \u2013 Miranda \u00e9"
+    assert t.ascii_hyphens("plain-ascii") == "plain-ascii"
+
+
+@needs_wordnet
+@needs_ldnoobw
+def test_the_source_title_of_a_candidate_has_ascii_hyphens():
+    got = t.candidates_for_album(["Rock\u2010a\u2010Bye Baby Lullaby (Slow)", "Stranded"], ["Source Code"])
+    assert [(c["name"], c["src"]) for c in got] == [("ROCK-A-BYE BABY LULLABY", "Rock-a-Bye Baby Lullaby (Slow)"), ("STRANDED", "Stranded")]
+
+
 # ---------------------------------------------------------------- cue words
 @needs_wordnet
 @needs_ldnoobw

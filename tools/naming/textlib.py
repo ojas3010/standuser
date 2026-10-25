@@ -74,6 +74,14 @@ def fold_ascii(s):
     return "".join(out)
 
 
+HYPHENS = {"\u2010": "-", "\u2011": "-"}
+
+
+def ascii_hyphens(s):
+    """U+2010 and U+2011 (the hyphens MusicBrainz credits use) as ASCII hyphens, nothing else changed; the card font has no glyph for them."""
+    return "".join(HYPHENS.get(c, c) for c in s)
+
+
 DRAWABLE = re.compile(r"^[A-Z0-9 .'\"\-&,!?]+$")
 
 
@@ -340,7 +348,7 @@ def candidates_for_album(tracks, film_titles=(), canon=True, film=True, rejects=
             if d in seen:
                 continue
             seen.add(d)
-            out.append({"name": d, "text": text, "src": title, "track": i, "kind": kind})
+            out.append({"name": d, "text": text, "src": ascii_hyphens(title), "track": i, "kind": kind})
     return out
 
 

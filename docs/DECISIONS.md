@@ -114,6 +114,8 @@ The naming route follows `docs/naming-spec.md` (nine stages); these agreed chang
 
 - **`stand.json` no longer carries `coverage.favorites_read` (26 Oct review).** The count of favourite films read from `profile.csv` was only a debugging figure; the file keeps the per-film favourite flag (`fav` on each listed name's film), which is what the why line and the report use.
 
+- **U+2010 and U+2011 become ASCII hyphens in artist credits and source titles (26 Oct).** The card font has no glyph for them, so "Jean‐Michel Bernard's" drew a box. `textlib.ascii_hyphens` maps those two characters and nothing else; the builder applies it to every album artist, and the candidates table to every source title. 86 shipped artist credits and 31 source titles had one; the candidate set is unchanged. Other characters outside the font (such as the curly apostrophe or the en dash) are not touched.
+
 ## Privacy
 
 - `profile.csv` is read through an allowlist of two columns, `Date Joined` and `Favorite Films`, in memory; from the favourites cell only the `boxd.it` film codes are kept. Every other column (the e-mail address and the username included) is never decoded, stored, shown or logged, a test puts invalid UTF-8 in the e-mail column to prove it is not decoded, and an unreadable `profile.csv` counts as absent. The username comes from the ZIP file name (or `--username`). The committed fixtures use a synthetic `profile.csv` with an invalid address.
