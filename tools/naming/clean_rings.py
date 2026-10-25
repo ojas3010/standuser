@@ -1,12 +1,15 @@
 """Thin the 17 WordNet rings by two rules, the same for every template (docs/DECISIONS.md, "Ring cleanup").
 
-Usage: python3 -I tools/naming/clean_rings.py [--names crates/standuser-core/data/names.json] [--out tools/naming/data/ring_drop.json]
+Usage: python3 -I tools/naming/clean_rings.py [--candidates local/naming/candidates.csv] [--out tools/naming/data/ring_drop.json]
  (a) Ring links that exist only through a WordNet-definition top-up core word are dropped (lexicons.ring_for).
- (b) For every remaining ring lemma the frequency is the share of the shipped candidates (the names file given) whose name contains
-     the lemma. The pairs (template, lemma) of all templates form one distribution; pairs above its 90th percentile (nearest rank) are dropped.
-Writes the dropped lemmas per template, so build_names_data.py can apply them; run it on the names file as shipped before the change.
+ (b) For every remaining ring lemma the frequency is the share of the candidate rows (the candidates table, composer-name rows left
+     out) whose name contains the lemma. The pairs (template, lemma) of all templates form one distribution; pairs above its 90th
+     percentile (nearest rank) are dropped.
+Writes the dropped lemmas per template, so build_names_data.py can apply them. The count reads only the candidates table and the core
+lexicons, never names.json (which the drop list itself shapes), so a second run writes the same file.
 """
 import argparse
+import csv
 import json
 import math
 import os
@@ -20,11 +23,11 @@ import textlib as t  # noqa: E402
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--names", default=os.path.join(t.REPO, "crates", "standuser-core", "data", "names.json"))
+    ap.add_argument("--candidates", default=os.path.join(t.REPO, "local", "naming", "candidates.csv"))
     ap.add_argument("--out", default=L.RING_DROP)
     a = ap.parse_args()
     lex = json.load(open(os.path.join(t.HERE, "data", "lexicons.json"), encoding="utf-8"))
-    cands = [c[0] for v in json.load(open(a.names, encoding="utf-8"))["names"].values() for c in v[1]]
+    cands = [r["name"] for r in csv.DictReader(open(a.candidates, encoding="utf-8")) if r["flag"] != "artist"]
     n = len(cands)
     cnt = Counter()
     for name in cands:
@@ -43,10 +46,10 @@ def main():
             dropped.setdefault(str(tid), []).append(w)
     for x in lex:
         sizes[x["id"]]["after_b"] = sizes[x["id"]]["after_a"] - len(dropped.get(str(x["id"]), []))
-    json.dump({"rule": "a: no ring links through WordNet-definition top-up core words; b: drop ring lemmas whose share of shipped candidates is above the 90th percentile over all (template, lemma) pairs",
-               "shipped_candidates": n, "pairs_after_a": len(pairs), "p90_share": thr, "sizes": sizes,
+    json.dump({"rule": "a: no ring links through WordNet-definition top-up core words; b: drop ring lemmas whose share of the candidates table is above the 90th percentile over all (template, lemma) pairs",
+               "candidates": n, "pairs_after_a": len(pairs), "p90_share": thr, "sizes": sizes,
                "dropped": {k: sorted(v) for k, v in sorted(dropped.items(), key=lambda kv: int(kv[0]))}}, open(a.out, "w", encoding="utf-8"), indent=1)
-    print(f"{n} shipped candidates; {len(pairs)} ring pairs after rule (a); p90 share {thr:.5f}; rule (b) drops {sum(len(v) for v in dropped.values())} pairs")
+    print(f"{n} candidate rows; {len(pairs)} ring pairs after rule (a); p90 share {thr:.5f}; rule (b) drops {sum(len(v) for v in dropped.values())} pairs")
     print("template: ring before / after (a) / after (a)+(b)")
     for x in lex:
         s = sizes[x["id"]]
