@@ -49,7 +49,12 @@ def build(rows, artists, scorer, df, n):
     films = defaultdict(lambda: [[], []])
     for r in rows:
         raw, m = cache[r["name"]]
-        codes = [ti * 16 + (w if w >= 0 else 0) * 2 + (1 if lv == 1.0 else 0) for ti, (lv, w) in enumerate(m, 1) if lv > 0]
+        codes = []
+        for ti, (lv, w) in enumerate(m, 1):
+            if lv > 0:
+                # a code is template * 16 + word * 2 + core: the word index has 3 bits, and a larger one would change the template
+                assert 0 <= w < 8, f"word index {w} of {r['name']!r} (template {ti}) does not fit a lexicon code"
+                codes.append(ti * 16 + w * 2 + (1 if lv == 1.0 else 0))
         same = t.fold_ascii(r["src"]).upper().split() == r["name"].split()
         albums, cands = films[r["tmdb"]]
         flag = FLAG[r["flag"]]

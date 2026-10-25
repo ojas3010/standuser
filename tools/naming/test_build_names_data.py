@@ -6,6 +6,8 @@ import json
 import os
 import sys
 
+import pytest
+
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import build_names_data as B  # noqa: E402
 import cool as C  # noqa: E402
@@ -17,6 +19,15 @@ NAMES = os.path.join(t.REPO, "crates", "standuser-core", "data", "names.json")
 class NoMatch:
     def matches(self, name):
         return [(0.0, -1)] * 17
+
+
+class MatchAt:
+    """A scorer whose template 3 matches the word at index `word` of any name."""
+    def __init__(self, word):
+        self.word = word
+
+    def matches(self, name):
+        return [(1.0, self.word) if ti == 3 else (0.0, -1) for ti in range(1, 18)]
 
 
 def row(key, tmdb, flag, track, name):
@@ -35,6 +46,20 @@ def test_each_candidate_points_at_the_album_it_came_from(monkeypatch):
     albums, cands = films["76203"]
     assert albums == [["Hans Zimmer", "c"], ["Various Artists", "v"]]
     assert [(c[0], c[6]) for c in cands] == [("LETTER WRITING", 0), ("FREIGHT TRAIN", 1), ("SOLOMON BURNS THE LETTER", 0)]
+
+
+def test_a_lexicon_code_packs_template_word_and_core_bit(monkeypatch):
+    monkeypatch.setattr(C, "features", lambda text, kind, df, n: dict(rarity=len(text) / 40, shape=0.0, conc=0.5, emo=0.5, prior=0.5, proper=0.0))
+    rows = [row("a|2000", "1", "other", 1, "ONE"), row("a|2000", "1", "other", 2, "THREE")]
+    films = B.build(rows, {}, MatchAt(7), {}, 1)[0]
+    assert films["1"][1][0][5] == [3 * 16 + 7 * 2 + 1], "word 7 is the last that fits"
+
+
+def test_a_word_index_of_8_or_more_is_refused(monkeypatch):
+    monkeypatch.setattr(C, "features", lambda text, kind, df, n: dict(rarity=len(text) / 40, shape=0.0, conc=0.5, emo=0.5, prior=0.5, proper=0.0))
+    rows = [row("a|2000", "1", "other", 1, "ONE"), row("a|2000", "1", "other", 2, "THREE")]
+    with pytest.raises(AssertionError, match="word index 8"):
+        B.build(rows, {}, MatchAt(8), {}, 1)
 
 
 def test_a_film_with_a_single_album_has_one_album_entry(monkeypatch):
