@@ -41,3 +41,13 @@ Sources: emilkowal.ski (motion), the ui-skills Scandinavian design skill (restra
 - Glyphs: 40 artist credits draw boxes because the card font subset lacks their glyphs (mostly Japanese, Korean and Chinese names, plus a few Latin Extended letters such as ć and ş). Add those glyphs to the subset. Do not fold or drop the names.
 - Page chrome: Download PNG is the one filled button. SVG and JSON are quiet text buttons with the same height and radius. Remove the bordered container around the card (double frame).
 - Grade C legend: the card says 人間並, JoJo Wiki gives 人間と同じ. Check a Part 5 volume before the AAT.
+
+## 4. Card palette pass
+
+1. The card takes the same per-user palette as the page. Reuse the mapping in site/accent.js from the signature stat, so the page and the card match.
+2. Card ground: muted and warm, mixed like European brick. Not near-black, not pure grey. Give one value for the dark card theme and one for the light card theme.
+3. Radar fill, ring and grade letters take colours from the user's pair. The gold ring is replaced by the palette colour.
+4. Flat fills only. Remove the dot texture in the radar. Ban: gradients, glows, shadows.
+5. The Stand name gets one decisive tilt, like a Part logo. It is the card's one diagonal. Nothing else on the card tilts. The name must not clip at any length in names.json.
+6. ゴゴゴ stays on the card and takes the palette colour at low contrast.
+7. Every text colour on the card passes WCAG AA against the card ground, for all 12 accents and both card themes.
