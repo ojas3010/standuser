@@ -76,8 +76,19 @@ Two choices contradict the written spec ("Letterboxd JoJo Stand stats 2"). Figur
 - **Example film per stat** (the second line of each card cell): Power, the film furthest from the crowd in your direction; Speed, your highest-rated film of the busiest month; Range, your highest-rated film from your least common country; Stamina, your highest-rated film of the last month of your longest streak; Precision, the most-rated film you scored within 0.25 of the crowd; Potential, your highest-rated film by a director you saw only once.
 - **Range draws** use a fixed SplitMix64 stream (seed 5), 20 draws of 50 films, so results are reproducible in Rust, Python and across platforms. Fewer than 50 films with countries gives `?`.
 - **Shorts** (runtime of 40 minutes or less) are ignored for countries, directors and composers; TV entries are dropped by the table builder.
-- **Names (accepted for v1).** Only two kinds of name exist offline: a composer name (the composer with the highest shrunk mean over at least two rated films, else the most frequent composer among watched films, so unrated users still get one; names that cannot be drawn in ASCII or that collide with a canon Stand are skipped) and, only when no composer is usable, the Part 3 colour plus Tarot card. The music-title route (stages 4 to 8) needs tracklists from MusicBrainz or Discogs, which cannot be shipped and are not fetched. No katakana reading is produced.
+- **Names (accepted for v1).** *Superseded by Agreed v1 design (25 Oct), below.* Only two kinds of name exist offline: a composer name (the composer with the highest shrunk mean over at least two rated films, else the most frequent composer among watched films, so unrated users still get one; names that cannot be drawn in ASCII or that collide with a canon Stand are skipped) and, only when no composer is usable, the Part 3 colour plus Tarot card. The music-title route (stages 4 to 8) needs tracklists from MusicBrainz or Discogs, which cannot be shipped and are not fetched. No katakana reading is produced.
 - **Unclassified** is written 未分類 on the card (the spec names the type but gives no Japanese label).
+
+## Agreed v1 design (25 Oct)
+
+The naming route follows `docs/naming-spec.md` (nine stages); these agreed changes override that spec where they conflict. The spec's own section "Changes agreed on 25 Oct 2026" holds the same five points.
+
+- **Soundtrack data is the local MusicBrainz dump** (`~/lb_collect_out/mb_local.jsonl`, built by `tools/mbdump/`), not the stage 4 cascade of API lookups.
+- **Pool.** A(f) = 0.40 favourite + 0.25 own rating percentile + 0.15 own-minus-crowd percentile + 0.10 rewatch percentile + 0.10 composer affinity. The pool is the top 8 films that have candidates.
+- **Names must be evocative.** Cool(n) in [0,1] combines word rarity, phrase shape, concreteness or emotion ratings, a lone-proper-name penalty and a canon word-count prior. It is tuned on the canon album benchmark (`tools/naming/data/canon_albums.json`: 38 of the 41 canon Stands named after a song resolve to an album and tracklist; 3 are listed as unresolved, not guessed).
+- **Score.** S = 0.45 Cool + 0.35 F + 0.20 A, with a lexicon-only F. A candidate below the pool's median Cool cannot win. Among scores within 0.03 of the top, a hash of the username picks.
+- **The Stand assigns its own name.** No user choice is required.
+- **Glasgow Norms** (Scott et al. 2019, Behavior Research Methods 51:1258) supply the concreteness and emotion ratings. The article is CC BY 4.0 (Crossref licence record, Europe PMC `cc by`); the csv supplement carries no licence text of its own, so it is taken to fall under the article's. Attribution is required wherever the ratings are redistributed. The tools read them from `$NAMING_DATA` and ship nothing from them.
 
 ## Privacy
 
