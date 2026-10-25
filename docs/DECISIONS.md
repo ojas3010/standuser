@@ -94,6 +94,8 @@ The naming route follows `docs/naming-spec.md` (nine stages); these agreed chang
 - **Cool weights.** Equal weights over the six features: each is scaled to [0,1], the lone-proper-name penalty is negative, and raw Cool is min-max scaled to [0,1] over the candidates table. The train-tuned set (concreteness alone) is not used: it comes from 9 Stands. No weight set has support in the data, so equal weights are the uninformed default. The equal-weight test-split row is kept in the benchmark output for the record and is not a gate.
 - **Shipped candidates are track titles only.** Composer names are not in the candidate data; the composer route is the first fallback after the pool.
 
+- **Candidate payload: 600 KiB gzipped, a separate file, cuts kept.** The 0.4 MB target was never measured; the first measurement showed that even the two ordered cuts (Cool below the global 40th percentile, then the top 6 candidates per film by Cool + max L) leave 522 KiB. Cutting more content would weaken F, so the budget was raised to 600 KiB instead. The data ships as `names.json` (28,235 candidates for 5,065 films, track titles and artist credits only, no MusicBrainz tags, genres, ratings or annotations); `films.json` keeps its format. The page fetches both files at load, in parallel, before the drop zone is active, and makes no request after a file is dropped.
+
 ## Privacy
 
 - `profile.csv` is read through an allowlist of one column, `Date Joined`, in memory; every other column (the e-mail address and the username included) is never decoded, stored, shown or logged, and an unreadable `profile.csv` counts as absent. The username comes from the ZIP file name (or `--username`). The committed fixtures use a synthetic `profile.csv` with an invalid address.

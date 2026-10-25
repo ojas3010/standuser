@@ -1,9 +1,9 @@
-"""Item 7 payload: the shipped candidate data (`names` in films.json), built from the candidates table.
+"""Item 7 payload: the shipped candidate data, a separate file (crates/standuser-core/data/names.json), built from the candidates table.
 
-Usage: python3 -I tools/naming/build_names_data.py [--films crates/standuser-core/data/films.json] [--candidates local/naming/candidates.csv]
-        [--local ~/lb_collect_out/mb_local.jsonl] [--templates TEMPLATES_JSON] [--out same as --films] [--budget 400000] [--dry]
-Adds {"names": {tmdb_id: [artist, "c"|"v"|"o", [[NAME, cool 0-100, track, kind, source title or "", [codes]], ...]]}, "names_meta": {...}}
-to the film table. A code is template * 16 + word_index * 2 + (1 when the lexicon match is a core word, 0 for a ring word).
+Usage: python3 -I tools/naming/build_names_data.py [--candidates local/naming/candidates.csv]
+        [--local ~/lb_collect_out/mb_local.jsonl] [--out crates/standuser-core/data/names.json] [--budget 614400] [--dry]
+Writes {"v":1,"meta":{...},"names":{tmdb_id: [artist, "c"|"v"|"o", [[NAME, cool 0-100, track, kind, source title or "", [codes]], ...]]}}.
+films.json is untouched. A code is template * 16 + word_index * 2 + (1 when the lexicon match is a core word, 0 for a ring word).
 Cool is the equal-weight raw score (cool.raw_equal) min-max scaled over the candidates table. Composer-name candidates are not
 shipped: the composer route is the first fallback. If the gzipped names exceed the budget, cut in order: (1) candidates below the
 global 40th percentile of Cool, (2) all but the top 6 per film by Cool + max L. Each cut's effect is printed.
@@ -63,12 +63,10 @@ def strip(films, with_artist=True):
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--films", default=os.path.join(t.REPO, "crates", "standuser-core", "data", "films.json"))
     ap.add_argument("--candidates", default=os.path.join(t.REPO, "local", "naming", "candidates.csv"))
     ap.add_argument("--local", default=os.path.join(HOME, "lb_collect_out", "mb_local.jsonl"))
-    ap.add_argument("--templates", required=True)
-    ap.add_argument("--out")
-    ap.add_argument("--budget", type=int, default=400000)
+    ap.add_argument("--out", default=os.path.join(t.REPO, "crates", "standuser-core", "data", "names.json"))
+    ap.add_argument("--budget", type=int, default=614400)
     ap.add_argument("--dry", action="store_true")
     a = ap.parse_args()
 
@@ -81,22 +79,19 @@ def main():
         for fl in ("composer", "various", "other"):
             if rec["local"].get(fl):
                 artists.setdefault(rec["key"], (rec["local"][fl]["artist"], fl))
-    lx = lexicons_with_rings(a.templates)
+    lx = lexicons_with_rings()
     scorer = L.Scorer(lx)
     films, lo, hi = build(rows, artists, scorer, df, n)
     total = sum(len(v[2]) for v in films.values())
     print(f"{total} candidates in {len(films)} films; raw Cool range [{lo:.3f}, {hi:.3f}]")
 
-    base = json.load(open(a.films, encoding="utf-8"))
-    base.pop("names", None), base.pop("names_meta", None)
-    base_gz = gz_size(base)
     report = []
 
     def measure(label, fl, with_artist=True):
         s = strip(fl, with_artist)
-        g = gz_size(dict(base, names=s)) - base_gz
+        g = gz_size({"v": 1, "names": s})
         cnt = sum(len(v[2]) for v in fl.values())
-        print(f"{label}: {cnt} candidates, {len(fl)} films, +{g / 1024:.0f} KiB gzipped on top of the film table")
+        print(f"{label}: {cnt} candidates, {len(fl)} films, +{g / 1024:.0f} KiB gzipped as names.json")
         report.append({"step": label, "candidates": cnt, "films": len(fl), "gz_added": g})
         return s, g
 
@@ -111,20 +106,20 @@ def main():
         cur = {k: v for k, v in cur.items() if v[2]}
         s, g = measure(f"cut 1: Cool below the global 40th percentile ({cut}) dropped", cur)
         if g > a.budget:
-            cur = {k: [v[0], v[1], sorted(v[2], key=lambda c: -(c[1] + 100 * c[6]))[:6]] for k, v in cur.items()}
+            cur = {k: [v[0], v[1], sorted(v[2], key=lambda c: (-(c[1] + 100 * c[6]), c[2], c[0]))[:6]] for k, v in cur.items()}
             s, g = measure("cut 2: top 6 per film by Cool + max L", cur)
     shipped = g <= a.budget
     print("within budget" if shipped else f"STOP: over the {a.budget} byte budget")
     if a.dry or not shipped:
         json.dump(report, open(os.path.join(t.REPO, "local", "naming", "payload_report.json"), "w"), indent=1)
         sys.exit(0 if shipped else 3)
-    out = dict(base, names=s, names_meta={"cool_raw_lo": round(lo, 4), "cool_raw_hi": round(hi, 4), "weights": "equal", "templates": 17,
-                                          "source": "MusicBrainz core data (track titles, artist credits, release dates)"})
-    json.dump(out, open(a.out or a.films, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
+    out = {"v": 1, "meta": {"cool_raw_lo": round(lo, 4), "cool_raw_hi": round(hi, 4), "weights": "equal", "templates": 17, "gz_bytes": g,
+                            "source": "MusicBrainz core data (track titles and artist credits)"}, "names": s}
+    json.dump(out, open(a.out, "w", encoding="utf-8"), ensure_ascii=False, separators=(",", ":"))
     json.dump(report, open(os.path.join(t.REPO, "local", "naming", "payload_report.json"), "w"), indent=1)
 
 
-def lexicons_with_rings(templates_path):
+def lexicons_with_rings():
     core = json.load(open(os.path.join(t.HERE, "data", "lexicons.json"), encoding="utf-8"))
     return [{**x, "ring": L.ring_of([c["lemma"] for c in x["core"]])} for x in core]
 
