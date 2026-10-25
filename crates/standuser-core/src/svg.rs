@@ -115,28 +115,58 @@ impl Ctx {
     }
 }
 
-/// The why line sits in its own two rows under the signature film, at the size of the evidence lines.
-const WHY_SIZE: f64 = 18.0;
-const WHY_WIDTH: f64 = 940.0;
-const WHY_PITCH: f64 = 21.0;
-/// Baselines of the bottom rows, from the top: nearest canon, signature film, the two why rows, the credit line.
-pub const NEAR_Y: f64 = 1216.0;
-pub const SIG_Y: f64 = 1239.0;
-pub const WHY_Y: f64 = 1264.0;
+/// The why line sits in its own rows under the signature film, in full (up to 3 lines) and at the signature line's size.
+pub const WHY_SIZE: f64 = 20.0;
+pub const WHY_WIDTH: f64 = 940.0;
+pub const WHY_MAX_ROWS: usize = 3;
+const WHY_PITCH: f64 = 22.0;
+/// Baseline of the last why row (the rows above it follow at WHY_PITCH) and of the credit line.
+const WHY_LAST_Y: f64 = 1284.0;
 pub const FOOT_Y: f64 = 1304.0;
 /// The block from 【STAND MASTER】 down sits this much higher than the old layout, which freed the header's why rows for them.
 const UP: f64 = 36.0;
-/// Top of the first stat-cell row.
-const CELLS_Y: f64 = 852.0 - UP;
-/// Row pitch of the stat cells: 72 px, or 68 px when the ability box is at its tallest (3 ability lines, 2 weakness lines),
-/// so that the box always ends above the nearest-canon row. Returns (pitch, box top, box height).
-pub fn box_layout(ability_lines: usize, weakness_lines: usize) -> (f64, f64, f64) {
-    let hbox = 22.0 + ability_lines as f64 * ABILITY_PITCH + 8.0 + weakness_lines as f64 * WEAK_PITCH + 12.0;
-    let pitch = if CELLS_Y + 3.0 * 72.0 + 14.0 + hbox + 4.0 <= NEAR_Y - 17.0 { 72.0 } else { 68.0 };
-    (pitch, CELLS_Y + 3.0 * pitch + 14.0, hbox)
+/// Top of the first stat-cell row, and the baseline of the grade legend above it.
+pub const CELLS_Y: f64 = 852.0 - UP - 8.0;
+const LEGEND_Y: f64 = 818.0 - UP - 4.0;
+/// Smallest row pitch of the stat cells: a cell is 61 px tall.
+pub const MIN_PITCH: f64 = 66.0;
+
+/// The card's lower half, which flows from the bottom: the credit line is fixed, the why rows sit above it, then the signature film
+/// and the nearest canon, then the ability box. The stat-cell rows take whatever pitch (72 px down to MIN_PITCH) lets the box end above
+/// the nearest-canon row, so the full why line never costs a cut anywhere.
+pub struct Layout {
+    pub pitch: f64,
+    pub box_top: f64,
+    pub box_h: f64,
+    pub near: f64,
+    pub sig: f64,
+    pub why: f64,
+}
+
+pub fn layout(ability_lines: usize, weakness_lines: usize, why_rows: usize) -> Layout {
+    let (al, wl) = (ability_lines.max(1) as f64, weakness_lines.max(1) as f64);
+    let box_h = 30.0 + (al - 1.0) * ABILITY_PITCH + 28.0 + (wl - 1.0) * WEAK_PITCH + 14.0;
+    let why = WHY_LAST_Y - (why_rows.max(1) as f64 - 1.0) * WHY_PITCH;
+    let sig = why - 24.0;
+    let near = sig - 23.0;
+    let mut pitch = 72.0;
+    while pitch > MIN_PITCH && CELLS_Y + 3.0 * pitch + 14.0 + box_h + 4.0 > near - 17.0 {
+        pitch -= 1.0;
+    }
+    Layout { pitch, box_top: CELLS_Y + 3.0 * pitch + 14.0, box_h, near, sig, why }
+}
+
+/// The why line as drawn: wrapped in full to WHY_WIDTH, at most WHY_MAX_ROWS rows. Only a line longer than that is cut with "…".
+pub fn why_rows(f: &Font, why: &str) -> Vec<String> {
+    let all = f.wrap(why, WHY_SIZE, WHY_WIDTH);
+    all.iter()
+        .take(WHY_MAX_ROWS)
+        .enumerate()
+        .map(|(i, ln)| if i + 1 == WHY_MAX_ROWS && all.len() > WHY_MAX_ROWS { f.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() })
+        .collect()
 }
 const ABILITY_SIZE: f64 = 20.0;
-const ABILITY_PITCH: f64 = 25.0;
+const ABILITY_PITCH: f64 = 24.0;
 const WEAK_SIZE: f64 = 19.0;
 const WEAK_PITCH: f64 = 22.0;
 const TEXT_WIDTH: f64 = 820.0;
@@ -271,11 +301,13 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
     let ab = c.sans.wrap(&d.ability, ABILITY_SIZE, TEXT_WIDTH);
     let wk = c.sans.wrap(&d.weakness, WEAK_SIZE, TEXT_WIDTH);
     let (al, wl) = (ab.len().min(3), wk.len().min(2));
-    let (pitch, top, hbox) = box_layout(al, wl);
+    let why = why_rows(&c.sans, &d.why);
+    let lay = layout(al, wl, why.len());
+    let (pitch, top, hbox) = (lay.pitch, lay.box_top, lay.box_h);
     let y0 = CELLS_Y;
     let legend = LEGEND.iter().map(|(a, b)| format!("{a}―{b}")).collect::<Vec<_>>().join("  ");
-    c.text(&legend, W / 2.0, 818.0 - UP, 20.0, Sans, "mute", "middle", 0.0, 0.0, None);
-    c.els.push(format!("<line x1=\"70\" y1=\"{}\" x2=\"{}\" y2=\"{}\" class=\"s-ink\" stroke-width=\"2\"/>", y0 - 24.0, W - 70.0, y0 - 24.0));
+    c.text(&legend, W / 2.0, LEGEND_Y, 20.0, Sans, "mute", "middle", 0.0, 0.0, None);
+    c.els.push(format!("<line x1=\"70\" y1=\"{}\" x2=\"{}\" y2=\"{}\" class=\"s-ink\" stroke-width=\"2\"/>", y0 - 22.0, W - 70.0, y0 - 22.0));
     for i in 0..6 {
         let (col, row) = (i % 2, i / 2);
         let (x, y) = (70.0 + col as f64 * 470.0, y0 + row as f64 * pitch);
@@ -298,22 +330,20 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         let ln = if i == 2 && ab.len() > 3 { c.sans.fit(&format!("{ln} …"), ABILITY_SIZE, TEXT_WIDTH) } else { ln.clone() };
         c.text(&ln, 170.0, top + 30.0 + i as f64 * ABILITY_PITCH, ABILITY_SIZE, Sans, "ink", "start", 0.0, 0.0, None);
     }
-    let wy = top + 30.0 + (al as f64 - 1.0) * ABILITY_PITCH + 32.0;
+    let wy = top + 30.0 + (al as f64 - 1.0) * ABILITY_PITCH + 28.0;
     c.text("弱点―", 88.0, wy, 20.0, Sans, "mute", "start", 0.0, 0.0, None);
     for (i, ln) in wk.iter().take(2).enumerate() {
         let ln = if i == 1 && wk.len() > 2 { c.sans.fit(&format!("{ln} …"), WEAK_SIZE, TEXT_WIDTH) } else { ln.clone() };
         c.text(&ln, 170.0, wy + i as f64 * WEAK_PITCH, WEAK_SIZE, Sans, "mute", "start", 0.0, 0.0, None);
     }
 
-    // bottom rows: nearest canon, signature film, the why line in two rows, one credit line
+    // bottom rows: nearest canon, signature film, the why line in full, one credit line
     let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), 22.0, 940.0);
-    c.text(&near, 70.0, NEAR_Y, 22.0, Sans, "ink", "start", 0.0, 0.0, None);
+    c.text(&near, 70.0, lay.near, 22.0, Sans, "ink", "start", 0.0, 0.0, None);
     let sig = c.sans.fit_signature(&d.signature, 20.0, 940.0);
-    c.text(&sig, 70.0, SIG_Y, 20.0, Sans, "mute", "start", 0.0, 0.0, None);
-    let why = c.sans.wrap(&d.why, WHY_SIZE, WHY_WIDTH);
-    for (i, ln) in why.iter().take(2).enumerate() {
-        let ln = if i == 1 && why.len() > 2 { c.sans.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() };
-        c.text(&ln, 70.0, WHY_Y + i as f64 * WHY_PITCH, WHY_SIZE, Sans, "ink", "start", 0.0, 0.0, None);
+    c.text(&sig, 70.0, lay.sig, 20.0, Sans, "mute", "start", 0.0, 0.0, None);
+    for (i, ln) in why.iter().enumerate() {
+        c.text(ln, 70.0, lay.why + i as f64 * WHY_PITCH, WHY_SIZE, Sans, "ink", "start", 0.0, 0.0, None);
     }
     c.text(FOOTER, 70.0, FOOT_Y, 16.0, Sans, "mute", "start", 0.0, 0.0, None);
 
@@ -404,16 +434,23 @@ mod tests {
 
     #[test]
     fn bottom_rows_do_not_collide() {
-        // the tallest ability box ends above the nearest-canon row (22 px type, cap height about 17), the rows keep their order,
-        // and the last why row clears the credit line
-        for (al, wl) in [(1, 1), (2, 1), (2, 2), (3, 1), (3, 2)] {
-            let (pitch, top, hbox) = box_layout(al, wl);
-            assert!(top + hbox + 4.0 <= NEAR_Y - 17.0, "{al}+{wl} lines: box ends {}", top + hbox);
-            assert!(pitch >= 68.0 && top > CELLS_Y + 2.0 * pitch + 61.0 + 10.0, "the box touches the last stat row");
+        // for every number of ability (1 to 3), weakness (1 to 2) and why rows (1 to 3): the box ends above the nearest-canon row
+        // (22 px type, cap height about 17), the rows keep their order, the last why row clears the credit line, and the stat
+        // cells keep a pitch that does not let two rows touch
+        for al in 1..=3 {
+            for wl in 1..=2 {
+                for wy in 1..=WHY_MAX_ROWS {
+                    let l = layout(al, wl, wy);
+                    assert!(l.box_top + l.box_h + 4.0 <= l.near - 17.0, "{al}+{wl}+{wy}: box ends {}, nearest canon at {}", l.box_top + l.box_h, l.near);
+                    assert!(l.pitch >= MIN_PITCH && l.box_top > CELLS_Y + 2.0 * l.pitch + 61.0 + 10.0, "the box touches the last stat row");
+                    assert!(l.near + 6.0 < l.sig - 14.0 && l.sig + 5.0 < l.why - 15.0, "rows overlap");
+                    assert!(l.why + (wy as f64 - 1.0) * WHY_PITCH + 5.0 < FOOT_Y - 11.0, "why rows reach the credit line");
+                }
+            }
         }
-        assert!(NEAR_Y + 6.0 < SIG_Y - 14.0 && SIG_Y + 6.0 < WHY_Y - 13.0, "rows overlap");
-        assert!(WHY_Y + WHY_PITCH + 5.0 < FOOT_Y - 11.0, "why rows reach the credit line");
         assert!(FOOT_Y + 4.0 < H - 34.0, "the credit line is outside the inner frame");
+        // the legend clears the medallion ring and the rule clears the legend
+        assert!(LEGEND_Y - 15.0 > CY + 268.0 * 138.0 / 150.0 + 4.0 && LEGEND_Y + 5.0 < CELLS_Y - 22.0);
     }
 
     #[test]
@@ -423,7 +460,7 @@ mod tests {
         assert!(!FOOTER.contains("endorsed"));
         assert!(font(FontKind::Sans).width(FOOTER, 16.0, 0.0) < 940.0);
         // the why row is body size: the same as the evidence lines
-        assert!(WHY_SIZE >= 18.0);
+        assert!(WHY_SIZE >= 20.0);
     }
 
     #[test]
