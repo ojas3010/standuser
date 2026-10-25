@@ -184,7 +184,18 @@ impl Font {
             let words: Vec<&str> = text.split(' ').filter(|w| !w.is_empty()).collect();
             (1..words.len()).rev().map(|n| format!("{head}{}…{tail}", words[..n].join(" "))).find(|c| fits(c))
         };
-        cut(title, prefix, suffix).or_else(|| cut(&line, "", "")).unwrap_or_else(|| self.fit(&line, size, maxw))
+        // a one-word title has no word boundary to cut at: shorten the word itself so that what follows it (the numbers) stays
+        let single_word = |text: &str, head: &str, tail: &str| -> Option<String> {
+            if text.contains(' ') {
+                return None;
+            }
+            let chars: Vec<char> = text.chars().collect();
+            (1..chars.len()).rev().map(|n| format!("{head}{}…{tail}", chars[..n].iter().collect::<String>())).find(|c| fits(c))
+        };
+        cut(title, prefix, suffix)
+            .or_else(|| single_word(title, prefix, suffix))
+            .or_else(|| cut(&line, "", ""))
+            .unwrap_or_else(|| self.fit(&line, size, maxw))
     }
 
     /// Cut `s` to fit `maxw`, ending with an ellipsis.
@@ -281,6 +292,20 @@ mod title_tests {
         assert_eq!(f.fit_signature("Signature film: not enough crowd data", 20.0, 940.0), "Signature film: not enough crowd data");
         let odd = f.fit_signature("Something else entirely: with a colon and a very long tail that goes on and on and on and on and on and on and on and on and on and on", 20.0, 500.0);
         assert_eq!(odd, "Something else entirely", "another shape is a plain film line: the part after the colon goes");
+    }
+
+    #[test]
+    fn a_one_word_signature_title_is_shortened_so_the_numbers_after_it_stay() {
+        let f = serif();
+        // this line was cut after "(-3.55)," by the word-boundary rule, which dropped the rating count
+        let s = "Signature film: themuppetchristmascarol (1992), 0.5★ against the crowd's 4.05★ (-3.55), 388,056 ratings.";
+        assert!(f.width(s, 20.0, 0.0) > 940.0);
+        let r = f.fit_signature(s, 20.0, 940.0);
+        assert!(f.width(&r, 20.0, 0.0) <= 940.0, "{r}");
+        assert!(r.starts_with("Signature film: themuppet") && r.ends_with("… (1992), 0.5★ against the crowd's 4.05★ (-3.55), 388,056 ratings."), "{r}");
+        // a film line with a one-word title keeps its country the same way
+        let r = f.fit_title("Supercalifragilisticexpialidocious (United Arab Emirates)", 18.0, 300.0);
+        assert!(r.ends_with("… (United Arab Emirates)") && f.width(&r, 18.0, 0.0) <= 300.0, "{r}");
     }
 
     #[test]
