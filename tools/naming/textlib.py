@@ -305,13 +305,17 @@ def extra_checks(text):
     return None
 
 
-def candidates_for_album(tracks, film_titles=(), canon=True, film=True):
+def candidates_for_album(tracks, film_titles=(), canon=True, film=True, rejects=None):
     """All surviving candidates of one album: dicts with name (display form), text, src (source title), track (1-based),
-    kind. A name already produced by an earlier track of the album is skipped."""
+    kind. A name already produced by an earlier track of the album is skipped. `rejects`, if a list, receives the reason of
+    every candidate stage 6 or the card checks threw out."""
     seen, out = set(), []
     for i, title in enumerate(tracks, 1):
         for text, kind in stage5(title):
-            if stage6(text, film_titles, canon=canon, film=film) or extra_checks(text):
+            why = stage6(text, film_titles, canon=canon, film=film) or extra_checks(text)
+            if why:
+                if rejects is not None:
+                    rejects.append(why)
                 continue
             d = display_name(text)
             if d in seen:
