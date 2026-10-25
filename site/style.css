@@ -31,6 +31,7 @@ code { font-size: .9em; }
 #drop p { margin: 0 0 8px; }
 #drop .drop-title { font-size: 1.375rem; font-weight: 700; }
 #drop .small { margin: 16px 0 0; max-width: 40em; }
+#drop .small + .small { margin-top: 8px; }
 #drop.over { border-style: solid; border-color: var(--accent); background: var(--ground); }   /* instant: #drop has no transition */
 #drop:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }

@@ -22,6 +22,7 @@
     <p class="drop-title">Drop letterboxd-…-utc.zip here</p>
     <p>or <button id="pick" type="button" class="quiet">choose the file</button></p>
     <p class="small">Get it at Letterboxd, Settings, Data, Export your data. The ZIP is read in this tab and never uploaded; the page makes no requests after it loads.</p>
+    <p class="small privacy">Only <code>watched.csv</code>, <code>ratings.csv</code> and <code>diary.csv</code> are read, plus two columns of <code>profile.csv</code> (Date Joined and Favorite Films). Nothing else in <code>profile.csv</code> is read.</p>
   </section>
   <details class="opts">
     <summary>Advanced</summary>
@@ -44,7 +45,7 @@
     <img id="card" alt="Your Stand card" width="1080" height="1350">
 
     <h2>How the card was built</h2>
-    <p class="small">Only <code>watched.csv</code>, <code>ratings.csv</code>, <code>diary.csv</code> and two columns of <code>profile.csv</code> (Date Joined and Favorite Films) are used; nothing else in <code>profile.csv</code> is read. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
+    <p class="small">Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
     <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Graded on</th><th>Status</th></tr></thead><tbody></tbody></table>
     <ul id="notes"></ul>
   </section>
