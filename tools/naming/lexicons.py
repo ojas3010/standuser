@@ -140,6 +140,20 @@ def build(templates):
     return out
 
 
+NAME_WORD = re.compile(r"[a-z]+(?:'[a-z]+)*")
+
+
+def name_words(name):
+    """The words of a candidate name, lower case: runs of ASCII letters with apostrophes kept inside a word (WOODY'S is one word).
+    The shipped lexicon codes index this list; crates/standuser-core/src/pool.rs name_words splits the same way."""
+    return NAME_WORD.findall(t.fold_ascii(name).lower())
+
+
+def word_lemma(w):
+    """Lemma of a name word: a possessive 's is dropped, any other apostrophe removed."""
+    return lemma(w[:-2] if w.endswith("'s") else w.replace("'", ""))
+
+
 class Scorer:
     """L per template for a candidate: max over its content-word lemmas."""
 
@@ -148,12 +162,11 @@ class Scorer:
         self.ring = [set(lx["ring"]) for lx in lexicons]
 
     def lemmas(self, text):
-        return {lemma(w) for w in re.findall(r"[a-z]+", t.fold_ascii(text).lower()) if w not in STOP and len(w) >= 2}
+        return {word_lemma(w) for w in name_words(text) if w not in STOP and len(w) >= 2}
 
     def matches(self, name):
-        """Per template: (L, index of the first matching word of `name`), (0.0, -1) when nothing matches."""
-        words = [w for w in re.findall(r"[a-z]+", t.fold_ascii(name).lower())]
-        lem = [None if (w in STOP or len(w) < 2) else lemma(w) for w in words]
+        """Per template: (L, index in name_words(name) of the first matching word), (0.0, -1) when nothing matches."""
+        lem = [None if (w in STOP or len(w) < 2) else word_lemma(w) for w in name_words(name)]
         out = []
         for c, r in zip(self.core, self.ring):
             hit = next((i for i, x in enumerate(lem) if x in c), None)

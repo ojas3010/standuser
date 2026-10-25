@@ -71,3 +71,25 @@ fn different_usernames_do_not_all_get_the_same_name_from_the_same_history() {
     // the pick can only move within 0.03 of the top S, so it is a handful of names at most
     assert!(names.len() <= 12, "{names:?}");
 }
+
+#[test]
+fn every_shipped_lexicon_code_points_at_a_word_of_its_name() {
+    let lk = real();
+    let (mut codes, mut woodys) = (0, 0);
+    for f in lk.names.values() {
+        for c in &f.cands {
+            let words = pool::name_words(&c.name);
+            for code in &c.codes {
+                codes += 1;
+                assert!((1..=17).contains(&(code / 16)), "template of code {code} in {}", c.name);
+                let w = ((code / 2) % 8) as usize;
+                assert!(w < words.len(), "{}: word index {w} of {} words (code {code})", c.name, words.len());
+                if c.name.contains('\'') {
+                    woodys += 1;
+                }
+            }
+        }
+    }
+    assert!(codes > 10_000, "{codes}");
+    assert!(woodys > 100, "names with an apostrophe are covered: {woodys}");
+}

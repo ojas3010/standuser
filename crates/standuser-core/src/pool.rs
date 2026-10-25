@@ -114,6 +114,25 @@ pub fn user_films(ex: &Export, lk: &Lookup) -> Vec<UserFilm> {
     v
 }
 
+/// The words of a candidate name, split the way tools/naming/lexicons.py `name_words` splits them: runs of ASCII letters, with an
+/// apostrophe kept inside a word (WOODY'S is one word). The lexicon codes index this list.
+pub fn name_words(name: &str) -> Vec<&str> {
+    let b = name.as_bytes();
+    let (mut out, mut i) = (vec![], 0);
+    while i < b.len() {
+        if !b[i].is_ascii_alphabetic() {
+            i += 1;
+            continue;
+        }
+        let start = i;
+        while i < b.len() && (b[i].is_ascii_alphabetic() || (b[i] == b'\'' && i + 1 < b.len() && b[i + 1].is_ascii_alphabetic())) {
+            i += 1;
+        }
+        out.push(&name[start..i]);
+    }
+    out
+}
+
 /// L(n, t) and the index of the matched word, from the candidate's lexicon codes.
 pub fn fit(c: &NameCand, template: u8) -> (f64, Option<usize>) {
     c.codes
@@ -232,7 +251,7 @@ pub fn pick_top(ex: &Export, lk: &Lookup, template: u8, username: &str, n: usize
             eligible: true,
             picked: i == win,
             fav: r.film.fav,
-            matched: r.word.and_then(|k| r.cand.name.split_whitespace().nth(k)).map(|w| w.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase()),
+            matched: r.word.and_then(|k| name_words(&r.cand.name).get(k).map(|w| w.to_lowercase())),
             fit_kind: if r.f >= 1.0 { "core" } else if r.f > 0.0 { "ring" } else { "" }.to_string(),
         }
     };
@@ -312,7 +331,7 @@ fn why_line(w: &Row, all: &[(f64, f64, f64, u32, f64)], pool_films: usize, templ
     let reason = match top {
         1 => {
             let rank = 1 + all.iter().filter(|r| r.2 > w.f).count();
-            let word = w.word.and_then(|i| w.cand.name.split_whitespace().nth(i)).map(|x| x.trim_matches(|c: char| !c.is_alphanumeric()).to_lowercase()).unwrap_or_default();
+            let word = w.word.and_then(|i| name_words(&w.cand.name).get(i).map(|x| x.to_lowercase())).unwrap_or_default();
             let verb = if w.f >= 1.0 { "fits" } else { "is close to" };
             slots.extend([rank.to_string(), n.to_string(), word.clone()]);
             format!("\"{word}\" {verb} your {ability} ability; fit rank {rank} of {n}.")
@@ -345,6 +364,27 @@ fn why_line(w: &Row, all: &[(f64, f64, f64, u32, f64)], pool_films: usize, templ
 mod tests {
     use super::*;
     use crate::parse::{DiaryEntry, Rating, Watched};
+
+    #[test]
+    fn name_words_keep_apostrophes_inside_a_word_and_split_on_everything_else() {
+        assert_eq!(name_words("WOODY'S GONE"), vec!["WOODY'S", "GONE"]);
+        assert_eq!(name_words("DON'T PANIC!"), vec!["DON'T", "PANIC"]);
+        assert_eq!(name_words("T1000 TERMINATED"), vec!["T", "TERMINATED"]);
+        assert_eq!(name_words("SPIDER-MAN 'ROUND"), vec!["SPIDER", "MAN", "ROUND"]);
+        assert_eq!(name_words("ROCKIN' ON"), vec!["ROCKIN", "ON"], "a trailing apostrophe is not inside a word");
+        assert!(name_words("123 !!").is_empty());
+    }
+
+    #[test]
+    fn the_cited_word_is_the_one_the_code_points_at_even_after_an_apostrophe() {
+        // WOODY'S GONE: word 1 is GONE (core hit for template 3)
+        let mut lk = table();
+        lk.load_names(&names_json(&[(1, "", "o", &[("WOODY'S GONE", 60, 2, "v", &[(3 << 4) | (1 << 1) | 1]), ("PAD ONE", 10, 3, "v", &[]), ("PAD TWO", 10, 4, "v", &[])])])).unwrap();
+        let p = pick(&export(&[(0, 4.0)], &[0]), &lk, 3, "u").unwrap();
+        assert_eq!(p.name, "WOODY'S GONE");
+        assert_eq!(p.top[0].matched.as_deref(), Some("gone"));
+        assert!(p.why.contains("\"gone\" fits your Hora Rush ability"), "{}", p.why);
+    }
 
     #[test]
     fn percentile_is_mid_rank() {
