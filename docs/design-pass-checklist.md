@@ -1,6 +1,6 @@
 # Design pass: checklist against docs/DESIGN.md
 
-Measured with `python tools/site_test/design_check.py` (Playwright, headless Chromium, the synthetic zips in local/review/zips10 only) and by eye on the screenshots. Screenshots are in `local/review/design/before` and `local/review/design/after` (not committed: 44 full-page PNGs, desktop 1280 px and phone 390 px, one idle page and ten dropped zips per width; regenerate with `tools/site_test/screenshots.py <out_dir>`).
+Measured with `python tools/site_test/design_check.py` (Playwright, headless Chromium, the synthetic zips in local/review/zips10 only) and by eye on the screenshots. Screenshots are in `local/review/design/before` and `local/review/design/after` (not committed: 22 full-page PNGs per set: desktop 1280 px and phone 390 px, one idle page and ten dropped zips per width; regenerate with `tools/site_test/screenshots.py <out_dir>`).
 
 ## Measured
 
