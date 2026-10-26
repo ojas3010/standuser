@@ -9,7 +9,7 @@ static SANS: &[u8] = include_bytes!("../data/sans.ttf");
 static NAME: &[u8] = include_bytes!("../data/name.ttf");
 static DISPLAY: &[u8] = include_bytes!("../data/display.ttf");
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FontKind {
     Sans,
     /// The Stand name (Archivo Black): Basic Latin, Latin-1, punctuation and 「」.

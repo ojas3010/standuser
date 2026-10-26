@@ -88,7 +88,6 @@ fn every_fixed_card_label_has_its_glyphs() {
     use standuser_core::{grading, name, svg, types};
     // the manga lettering is drawn in the display font (Dela Gothic One): the stat labels, the legend, the type names and the labels
     let display: Vec<String> = svg::JP.iter().map(|s| s.to_string())
-        .chain(svg::LEGEND.iter().map(|(a, b)| format!("{a}―{b}")))
         .chain(["ゴ", "完成", "∞", "∅", "?", "*", "本体―", "能力―", "弱点―", "A", "B", "C", "D", "E", "【STAND NAME】", "【STAND MASTER】"].map(String::from))
         .chain(svg::JP.iter().flat_map(|j| ["A", "B", "C", "D", "E", "?", "∞", "∅", "完成"].map(|g| format!("{j}―{g}*"))))
         .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.jp().to_string()))
@@ -96,7 +95,7 @@ fn every_fixed_card_label_has_its_glyphs() {
     for s in &display {
         assert_eq!(missing(s, &[FontKind::Display]), "", "display: {s}");
     }
-    let sans_only: Vec<String> = ["PROVISIONAL DATA", "A B C D E", "E D C B A"].map(String::from).into_iter()
+    let sans_only: Vec<String> = ["A B C D E"].map(String::from).into_iter()
         .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.en().to_string()))
         .chain(grading::LABEL.iter().map(|s| s.to_string()))
         .collect();
@@ -112,7 +111,7 @@ fn every_fixed_card_label_has_its_glyphs() {
         assert_eq!(missing(&format!("「{s}」"), &[FontKind::Name]), "", "name font, bracketed: {s}");
     }
     // footer and text templates
-    for s in [svg::FOOTER, svg::TYPE_NOTE, svg::TYPE_NOTE_LOW] {
+    for s in [svg::FOOTER, svg::CREDIT, svg::TYPE_NOTE, svg::TYPE_NOTE_LOW] {
         assert_eq!(missing(s, &[FontKind::Sans]), "", "footer: {s}");
     }
 }

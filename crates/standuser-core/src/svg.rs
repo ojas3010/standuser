@@ -16,13 +16,14 @@ pub const H: f64 = 1350.0;
 
 pub const JP: [&str; 6] = ["破壊力", "スピード", "射程距離", "持続力", "精密動作性", "成長性"];
 pub const EN: [&str; 6] = ["Destructive Power", "Speed", "Range", "Stamina", "Precision", "Potential"];
-/// The one credit line at the bottom of the card. The TMDB disclaimer is on the site.
-pub const FOOTER: &str = "* provisional  ·  Fan work, not affiliated  ·  Data: Letterboxd, TMDB, MusicBrainz";
-/// Under the type name: it is a reading of the stats, not a canon fact.
+/// The one footer line at the bottom of the card; the data credit and the TMDB disclaimer are on the page.
+pub const FOOTER: &str = "standuser.pages.dev · Fan work, not affiliated · * provisional";
+/// The data credit the card used to carry; the page gets it in the analysis JSON (`card.credit`).
+pub const CREDIT: &str = "Data: Letterboxd, TMDB, MusicBrainz";
+/// The archetype caveat: it is a reading of the stats, not a canon fact. Not drawn on the card; the page gets it in `card.type_note`.
 pub const TYPE_NOTE: &str = "archetype by stats · about 60% agreement with canon";
 /// Added for the weakest type rule (Far-Distance Autopilot, AUC 0.59).
 pub const TYPE_NOTE_LOW: &str = "low confidence";
-pub const LEGEND: [(&str, &str); 5] = [("A", "超スゴイ"), ("B", "スゴイ"), ("C", "人間並"), ("D", "ニガテ"), ("E", "超ニガテ")];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "lowercase")]
@@ -33,36 +34,53 @@ pub enum Theme {
     Auto,
 }
 
+/// Everything the analysis says about the card. The card draws only part of it (docs/DESIGN.md section 4): `name`, `user`, `type_jp`,
+/// `type_en`, `grades` with `prov`, `plot` and `unknown`, `ability_name`, `ability_line` and `nearest`. The other fields are no longer drawn
+/// on the card; they travel in the analysis JSON (`analysis.card`), so the page has every one of them.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct CardData {
     /// English Stand name, upper case, without 「」.
     pub name: String,
-    /// One line saying where the name came from, built from computed slots only; empty draws nothing.
+    /// (page only) One line saying where the name came from, built from computed slots only; empty when the name has no such line.
     #[serde(default)]
     pub why: String,
     pub user: String,
     pub type_jp: String,
     pub type_en: String,
-    /// Small line under the type: "archetype by stats · about 60% agreement with canon", plus "low confidence" for Automatic.
+    /// (page only) The archetype caveat: "archetype by stats · about 60% agreement with canon", plus "low confidence" for Automatic.
     #[serde(default)]
     pub type_note: String,
     /// Letters clockwise from the top: Power, Speed, Range, Stamina, Precision, Potential.
     pub grades: Vec<String>,
     /// Polygon radius step per axis (E=1 .. A=5, ∞=6, ∅=0, "?"=3).
     pub plot: Vec<f64>,
+    /// A grade with an asterisk on the card: provisional.
     pub prov: Vec<bool>,
     /// "?" axes get a hollow marker and dashed edges.
     pub unknown: Vec<bool>,
-    /// (metric line, example film) per axis.
+    /// (page only) (metric line, example film) per axis: the stat value line and the film title.
     pub evidence: Vec<(String, String)>,
-    /// "graded on N of M films" per axis (what the stat was computed from).
+    /// (page only) "graded on N of M films" per axis (what the stat was computed from).
     #[serde(default)]
     pub coverage: Vec<String>,
+    /// (page only) The full ability text: "Name. sentence: figures".
     pub ability: String,
+    /// The ability's name, drawn on the card.
+    #[serde(default)]
+    pub ability_name: String,
+    /// The one sentence of at most 20 words drawn under the ability name.
+    #[serde(default)]
+    pub ability_line: String,
+    /// (page only)
     pub weakness: String,
     pub nearest: Vec<String>,
+    /// (page only) The signature film line.
     pub signature: String,
+    /// (page only) Some grade is provisional (the card had a PROVISIONAL DATA pill for it).
     pub badge: bool,
+    /// (page only) The data credit line the card used to carry.
+    #[serde(default)]
+    pub credit: String,
     /// "PWR".."DEV": the signature stat's accent (palette.rs); none draws the neutral brick and ink.
     #[serde(default)]
     pub accent: Option<String>,
@@ -86,11 +104,24 @@ fn n1(v: f64) -> String {
     format!("{v:.1}")
 }
 
+/// One piece of text as drawn: what it says, in which face and size, and the box of its ink (before any rotation).
+#[derive(Debug, Clone)]
+pub struct Run {
+    pub text: String,
+    pub size: f64,
+    pub kind: FontKind,
+    pub outlined: bool,
+    pub rotated: bool,
+    /// Left, top, right and bottom of the ink.
+    pub bbox: [f64; 4],
+}
+
 struct Ctx {
     sans: Font,
     name: Font,
     display: Font,
     els: Vec<String>,
+    runs: Vec<Run>,
 }
 
 impl Ctx {
@@ -112,6 +143,8 @@ impl Ctx {
             _ => x,
         };
         let d = face.path(s, x0, y, size, ls);
+        let (up, down) = face.ink_extent(s, size);
+        self.runs.push(Run { text: s.into(), size, kind, outlined: false, rotated: false, bbox: [x0, y - up, x0 + w, y + down] });
         self.els.push(format!("<path d=\"{d}\" class=\"f-{cls}\"/>"));
     }
 
@@ -126,6 +159,8 @@ impl Ctx {
             _ => x,
         };
         let d = face.path(s, x0, y, size, ls);
+        let (up, down) = face.ink_extent(s, size);
+        self.runs.push(Run { text: s.into(), size, kind, outlined: true, rotated: false, bbox: [x0 - ow / 2.0, y - up - ow / 2.0, x0 + w + ow / 2.0, y + down + ow / 2.0] });
         self.els.push(format!("<path d=\"{d}\" class=\"o\" stroke-width=\"{ow}\"/><path d=\"{d}\" class=\"f-{cls}\"/>"));
     }
 
@@ -136,87 +171,21 @@ impl Ctx {
     }
 }
 
-/// The why line sits in its own rows under the signature film, in full (up to 3 lines) and at the signature line's size.
-pub const WHY_SIZE: f64 = 20.0;
-pub const WHY_WIDTH: f64 = 940.0;
-pub const WHY_MAX_ROWS: usize = 3;
-const WHY_PITCH: f64 = 22.0;
-/// Baseline of the last why row (the rows above it follow at WHY_PITCH) and of the credit line.
-const WHY_LAST_Y: f64 = 1284.0;
-pub const FOOT_Y: f64 = 1304.0;
-/// The block from 【STAND MASTER】 down sits this much higher than the old layout, which freed the header's why rows for them.
-const UP: f64 = 36.0;
-/// Top of the first stat-cell row, and the baseline of the grade legend above it.
-pub const CELLS_Y: f64 = 852.0 - UP - 8.0;
-pub const LEGEND_Y: f64 = 818.0 - UP - 4.0;
-/// Smallest row pitch of the stat cells: a cell is 61 px tall.
-pub const MIN_PITCH: f64 = 66.0;
-
-/// The card's lower half, which flows from the bottom: the credit line is fixed, the why rows sit above it, then the signature film
-/// and the nearest canon, then the ability box. The stat-cell rows take whatever pitch (72 px down to MIN_PITCH) lets the box end above
-/// the nearest-canon row, so the full why line never costs a cut anywhere.
-pub struct Layout {
-    pub pitch: f64,
-    pub box_top: f64,
-    pub box_h: f64,
-    pub near: f64,
-    pub sig: f64,
-    pub why: f64,
-}
-
-pub fn layout(ability_lines: usize, weakness_lines: usize, why_rows: usize) -> Layout {
-    let (al, wl) = (ability_lines.max(1) as f64, weakness_lines.max(1) as f64);
-    let box_h = 30.0 + (al - 1.0) * ABILITY_PITCH + 28.0 + (wl - 1.0) * WEAK_PITCH + 14.0;
-    let why = WHY_LAST_Y - (why_rows.max(1) as f64 - 1.0) * WHY_PITCH;
-    let sig = why - 24.0;
-    let near = sig - 23.0;
-    let mut pitch = 72.0;
-    while pitch > MIN_PITCH && CELLS_Y + 3.0 * pitch + 14.0 + box_h + 4.0 > near - 17.0 {
-        pitch -= 1.0;
-    }
-    Layout { pitch, box_top: CELLS_Y + 3.0 * pitch + 14.0, box_h, near, sig, why }
-}
-
-/// The why line as drawn: wrapped in full to WHY_WIDTH, at most WHY_MAX_ROWS rows. Only a line longer than that is cut with "…".
-pub fn why_rows(f: &Font, why: &str) -> Vec<String> {
-    let all = f.wrap(why, WHY_SIZE, WHY_WIDTH);
-    all.iter()
-        .take(WHY_MAX_ROWS)
-        .enumerate()
-        .map(|(i, ln)| if i + 1 == WHY_MAX_ROWS && all.len() > WHY_MAX_ROWS { f.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() })
-        .collect()
-}
-const ABILITY_SIZE: f64 = 20.0;
-const ABILITY_PITCH: f64 = 24.0;
-const WEAK_SIZE: f64 = 19.0;
-const WEAK_PITCH: f64 = 22.0;
-const TEXT_WIDTH: f64 = 820.0;
-
-/// The type note is 14 px and at most this wide.
-const NOTE_SIZE: f64 = 14.0;
-const NOTE_WIDTH: f64 = 380.0;
-pub const NOTE_Y: f64 = 309.0 - UP;
 /// The chart centre and the hexagon's circumradius (the ∞ ring; a grade E to A is the ring k of 6 for k = 1 to 5).
-pub const CY: f64 = 546.0 - UP;
+pub const CY: f64 = 510.0;
 pub const CHART_R: f64 = 148.0;
 /// The circled grade at each vertex: its radius, how far beyond the vertex its centre is, and the size of the JP label past it.
 const BADGE_R: f64 = 22.0;
 const BADGE_OFF: f64 = 34.0;
 const LABEL_SIZE: f64 = 22.0;
-/// Lowest ink of the chart (the bottom label's baseline and a little below it): the legend must clear this.
-pub const CHART_BOTTOM: f64 = CY + CHART_R + BADGE_OFF + BADGE_R + 8.0 + LABEL_SIZE + 5.0;
 
-/// Pack the note's " · " parts into lines no wider than NOTE_WIDTH, so no part is ever cut.
-fn note_lines(f: &Font, note: &str) -> Vec<String> {
-    let mut lines: Vec<String> = vec![];
-    for part in note.split(" · ").filter(|p| !p.is_empty()) {
-        match lines.last_mut() {
-            Some(last) if f.width(&format!("{last} · {part}"), NOTE_SIZE, 0.0) <= NOTE_WIDTH => *last = format!("{last} · {part}"),
-            _ => lines.push(part.to_string()),
-        }
-    }
-    lines
-}
+/// The ability sentence's size and width, and its most rows.
+const LINE_SIZE: f64 = 26.0;
+const LINE_PITCH: f64 = 34.0;
+const LINE_WIDTH: f64 = 940.0;
+const LINE_MAX_ROWS: usize = 3;
+const NAME_Y: f64 = 880.0;
+pub const FOOT_Y: f64 = 1290.0;
 
 /// The ゴゴゴ along both sides are the SFX of the scene: the card's second colour with the black outline, level, each one smaller than
 /// the last as on the covers; their size (a Dela Gothic One ゴ is one em wide) and the centre of the column.
@@ -306,8 +275,13 @@ fn pts(v: &[(f64, f64)]) -> String {
 }
 
 pub fn card_svg(d: &CardData, theme: Theme) -> String {
+    card_build(d, theme).0
+}
+
+/// The card's SVG and every piece of text on it, as drawn (for the tests that measure the card).
+pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     use FontKind::{Display, Name, Sans};
-    let mut c = Ctx { sans: font(Sans), name: font(Name), display: font(Display), els: vec![] };
+    let mut c = Ctx { sans: font(Sans), name: font(Name), display: font(Display), els: vec![], runs: vec![] };
     let (cx, cy, r_chart) = (540.0, CY, CHART_R);
 
     // ground, and the frame: the panel border in black, a fine line of the ink inside it
@@ -322,38 +296,36 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
         gy += sz * 1.45;
     }
-    // header
-    c.text("【STAND NAME】", 70.0, 84.0, 20.0, Display, "ink", "start", 2.0);
-    if d.badge {
-        // neutral, not the accent: the badge is a note, not a mark
-        // on the right of the note rows, clear of the type name and of the top right, where the name climbs to
-        c.els.push("<rect x=\"770\" y=\"268\" width=\"240\" height=\"40\" rx=\"20\" fill=\"none\" class=\"s-mute\" stroke-width=\"2\"/>".into());
-        c.text("PROVISIONAL DATA", 890.0, 295.0, 19.0, Sans, "mute", "middle", 1.5);
-    }
     // the Stand name: the card's one diagonal, largest size that keeps its tilted box in the header; the outline and the fill share the tilt
     let np = place_name(&c.name, &d.name);
     {
         let dpath = c.name.path(&np.text, np.x, np.y, np.size, NAME_LS);
+        let xs = np.corners.map(|p| p.0);
+        let ys = np.corners.map(|p| p.1);
+        c.runs.push(Run {
+            text: np.text.clone(),
+            size: np.size,
+            kind: Name,
+            outlined: true,
+            rotated: true,
+            bbox: [xs.iter().cloned().fold(f64::MAX, f64::min), ys.iter().cloned().fold(f64::MAX, f64::min), xs.iter().cloned().fold(f64::MIN, f64::max), ys.iter().cloned().fold(f64::MIN, f64::max)],
+        });
         c.els.push(format!(
             "<g transform=\"rotate({} {} {})\"><path d=\"{dpath}\" class=\"o\" stroke-width=\"{NAME_OUTLINE}\"/><path d=\"{dpath}\" class=\"f-paper\"/></g>",
             NAME_TILT, n1(np.x), n1(np.y)
         ));
     }
-    c.text("【STAND MASTER】", 70.0, 238.0 - UP, 20.0, Display, "ink", "start", 2.0);
+    // the Stand master, and the type in Japanese and English
     let label = "本体―";
-    c.text(label, 350.0, 240.0 - UP, 30.0, Display, "ink", "start", 0.0);
+    c.text(label, 70.0, 204.0, 30.0, Display, "ink", "start", 0.0);
     let lw = c.display.width(label, 30.0, 0.0);
     let user = c.sans.fit(&d.user, 34.0, 470.0 - lw - 10.0);
-    c.text(&user, 350.0 + lw + 10.0, 240.0 - UP, 34.0, Sans, "ink", "start", 0.0);
-    c.text(&d.type_jp, 70.0, 288.0 - UP, 26.0, Display, "ink", "start", 0.0);
+    c.text(&user, 70.0 + lw + 10.0, 204.0, 34.0, Sans, "ink", "start", 0.0);
+    c.text(&d.type_jp, 70.0, 252.0, 26.0, Display, "ink", "start", 0.0);
     let tw = c.display.width(&d.type_jp, 26.0, 0.0);
-    c.text(&format!(" · {}", d.type_en), 70.0 + tw, 288.0 - UP, 26.0, Sans, "mute", "start", 0.0);
-    for (i, ln) in note_lines(&c.sans, &d.type_note).iter().enumerate() {
-        c.text(ln, 70.0, NOTE_Y + i as f64 * 16.0, NOTE_SIZE, Sans, "mute", "start", 0.0);
-    }
+    c.text(&format!(" · {}", d.type_en), 70.0 + tw, 252.0, 26.0, Sans, "mute", "start", 0.0);
 
-    // the chart, after the Part 5 tailpiece: a paper hexagon, a ring per grade, three spokes, a dot on each spoke at each ring, the
-    // circled A to E up the top axis
+    // the chart, after the Part 5 tailpiece: a paper hexagon, a ring per grade, three spokes, a dot on each spoke at each ring
     let outer = hex(cx, cy, r_chart);
     c.els.push(format!("<polygon points=\"{}\" class=\"f-paper s-bk r\" stroke-width=\"4\"/>", pts(&outer)));
     for k in 1..=5 {
@@ -385,11 +357,6 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
             c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2.6\" class=\"f-bk\"/>", cx + r * a.sin(), cy - r * a.cos()));
         }
     }
-    for (kk, l) in "EDCBA".chars().enumerate() {
-        let y = cy - r_chart * (kk + 1) as f64 / 6.0;
-        c.els.push(format!("<circle cx=\"{cx}\" cy=\"{y:.1}\" r=\"10\" class=\"f-paper s-bk\" stroke-width=\"1.5\"/>"));
-        c.centred(&l.to_string(), cx, y, 13.0, Display, "bk");
-    }
     for i in 0..6 {
         if d.unknown[i] {
             c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"7\" class=\"f-paper s-bk\" stroke-width=\"2.5\"/>", vals[i].0, vals[i].1));
@@ -402,15 +369,16 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         let a = (i as f64 * 60.0).to_radians();
         let r_b = r_chart + BADGE_OFF;
         let (bx, by) = (cx + r_b * a.sin(), cy - r_b * a.cos());
-        let g = d.grades[i].as_str();
-        if g == "完成" {
+        let g = format!("{}{}", d.grades[i], if d.prov[i] { "*" } else { "" });
+        let g = g.as_str();
+        if d.grades[i] == "完成" {
             c.els.push(format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{}\" height=\"{}\" rx=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>", bx - 31.0, by - BADGE_R, 62.0, 2.0 * BADGE_R));
             c.centred(g, bx, by, 24.0, Display, "bk");
         } else {
             c.els.push(format!("<circle cx=\"{bx:.1}\" cy=\"{by:.1}\" r=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>"));
             c.centred(g, bx, by, 30.0, Display, "bk");
         }
-        let half = if g == "完成" { 31.0 } else { BADGE_R };
+        let half = if d.grades[i] == "完成" { 31.0 } else { BADGE_R };
         match i {
             0 => c.text(JP[i], bx, by - BADGE_R - 8.0, LABEL_SIZE, Display, "ink", "middle", 0.0),
             3 => c.text(JP[i], bx, by + BADGE_R + 8.0 + LABEL_SIZE * 0.8, LABEL_SIZE, Display, "ink", "middle", 0.0),
@@ -423,55 +391,17 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         }
     }
 
-    // legend, rule, six stat cells (2 columns x 3 rows)
-    let ab = c.sans.wrap(&d.ability, ABILITY_SIZE, TEXT_WIDTH);
-    let wk = c.sans.wrap(&d.weakness, WEAK_SIZE, TEXT_WIDTH);
-    let (al, wl) = (ab.len().min(3), wk.len().min(2));
-    let why = why_rows(&c.sans, &d.why);
-    let lay = layout(al, wl, why.len());
-    let (pitch, top, hbox) = (lay.pitch, lay.box_top, lay.box_h);
-    let y0 = CELLS_Y;
-    let legend = LEGEND.iter().map(|(a, b)| format!("{a}―{b}")).collect::<Vec<_>>().join("  ");
-    c.text(&legend, W / 2.0, LEGEND_Y, 18.0, Display, "ink", "middle", 0.0);
-    c.els.push(format!("<line x1=\"70\" y1=\"{}\" x2=\"{}\" y2=\"{}\" class=\"s-ink\" stroke-width=\"3\"/>", y0 - 22.0, W - 70.0, y0 - 22.0));
-    for i in 0..6 {
-        let (col, row) = (i % 2, i / 2);
-        let (x, y) = (70.0 + col as f64 * 470.0, y0 + row as f64 * pitch);
-        let head = format!("{}―{}{}", JP[i], d.grades[i], if d.prov[i] { "*" } else { "" });
-        c.text(&head, x, y + 20.0, 24.0, Display, "ink", "start", 0.0);
-        if let Some(cv) = d.coverage.get(i) {
-            let cv = c.sans.fit(cv, 15.0, 270.0);
-            c.text(&cv, x + 440.0, y + 19.0, 15.0, Sans, "mute", "end", 0.0);
-        }
-        let m = c.sans.fit(&d.evidence[i].0, 18.0, 440.0);
-        c.text(&m, x, y + 42.0, 18.0, Sans, "mute", "start", 0.0);
-        let f = c.sans.fit_title(&d.evidence[i].1, 18.0, 440.0);
-        c.text(&f, x, y + 61.0, 18.0, Sans, "ink", "start", 0.0);
-    }
 
-    // ability and weakness box: white paper with the black frame of a manga panel, black text
-    c.els.push(format!("<rect x=\"70\" y=\"{top}\" width=\"{}\" height=\"{hbox}\" rx=\"2\" class=\"f-paper s-bk\" stroke-width=\"3\"/>", W - 140.0));
-    c.text("能力―", 88.0, top + 30.0, 22.0, Display, "bk", "start", 0.0);
-    for (i, ln) in ab.iter().take(3).enumerate() {
-        let ln = if i == 2 && ab.len() > 3 { c.sans.fit(&format!("{ln} …"), ABILITY_SIZE, TEXT_WIDTH) } else { ln.clone() };
-        c.text(&ln, 170.0, top + 30.0 + i as f64 * ABILITY_PITCH, ABILITY_SIZE, Sans, "bk", "start", 0.0);
+    // the ability: its name, then its one sentence
+    let aname = if d.ability_name.is_empty() { "Ability" } else { d.ability_name.as_str() };
+    c.text(aname, 70.0, NAME_Y, 44.0, Name, "ink", "start", 0.0);
+    for (i, ln) in c.sans.wrap(&d.ability_line, LINE_SIZE, LINE_WIDTH).iter().take(LINE_MAX_ROWS).enumerate() {
+        c.text(ln, 70.0, NAME_Y + 50.0 + i as f64 * LINE_PITCH, LINE_SIZE, Sans, "ink", "start", 0.0);
     }
-    let wy = top + 30.0 + (al as f64 - 1.0) * ABILITY_PITCH + 28.0;
-    c.text("弱点―", 88.0, wy, 20.0, Display, "pmute", "start", 0.0);
-    for (i, ln) in wk.iter().take(2).enumerate() {
-        let ln = if i == 1 && wk.len() > 2 { c.sans.fit(&format!("{ln} …"), WEAK_SIZE, TEXT_WIDTH) } else { ln.clone() };
-        c.text(&ln, 170.0, wy + i as f64 * WEAK_PITCH, WEAK_SIZE, Sans, "pmute", "start", 0.0);
-    }
-
-    // bottom rows: nearest canon, signature film, the why line in full, one credit line
-    let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), 22.0, 940.0);
-    c.text(&near, 70.0, lay.near, 22.0, Sans, "ink", "start", 0.0);
-    let sig = c.sans.fit_signature(&d.signature, 20.0, 940.0);
-    c.text(&sig, 70.0, lay.sig, 20.0, Sans, "mute", "start", 0.0);
-    for (i, ln) in why.iter().enumerate() {
-        c.text(ln, 70.0, lay.why + i as f64 * WHY_PITCH, WHY_SIZE, Sans, "ink", "start", 0.0);
-    }
-    c.text(FOOTER, 70.0, FOOT_Y, 16.0, Sans, "mute", "start", 0.0);
+    // the nearest canon line, and the one footer line
+    let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), 26.0, 940.0);
+    c.text(&near, 70.0, 1200.0, 26.0, Sans, "ink", "start", 0.0);
+    c.text(FOOTER, 70.0, FOOT_Y, 26.0, Sans, "mute", "start", 0.0);
 
     // assemble
     let key = d.accent.as_deref();
@@ -488,12 +418,13 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
         (0..6).map(|i| format!("{} {}{}", EN[i], d.grades[i], if d.prov[i] { "*" } else { "" })).collect::<Vec<_>>().join(", "),
         if any_prov { " Grades marked with an asterisk are provisional." } else { "" }
     );
-    format!(
+    let svg = format!(
         "<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {W} {H}\" width=\"{W}\" height=\"{H}\" role=\"img\" aria-labelledby=\"t d\"><title id=\"t\">{}</title><desc id=\"d\">{}</desc><style>{base}{extra}</style>{}</svg>",
         esc(&title),
         esc(&desc),
         c.els.join("")
-    )
+    );
+    (svg, c.runs)
 }
 
 #[cfg(test)]
@@ -510,11 +441,14 @@ mod tests {
             type_note: format!("{TYPE_NOTE_LOW} · {TYPE_NOTE}"),
             grades: ["C", "B", "C", "A", "A", "?"].iter().map(|s| s.to_string()).collect(),
             plot: vec![3.0, 4.0, 3.0, 5.0, 5.0, 3.0],
-            prov: vec![false, true, true, true, false, true],
+            prov: vec![false, true, true, true, false, false],
             unknown: vec![false, false, false, false, false, true],
             evidence: (0..6).map(|i| (format!("metric {i}"), format!("Film {i}"))).collect(),
             coverage: (0..6).map(|i| format!("graded on {} of 300 films", 200 + i)).collect(),
             ability: "Wind Reading. It reads the air and answers it: it agrees with the crowd on 89% of the 74,164 film pairs it can compare (difficulty-adjusted score 0.88).".into(),
+            ability_name: "Wind Reading".into(),
+            ability_line: "It reads the air and answers it: it agrees with the crowd on 89% of film pairs.".into(),
+            credit: CREDIT.into(),
             weakness: "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.05★ below the crowd on average, about what a human would.".into(),
             nearest: vec!["D4C Love Train".into(), "Dolly Dagger".into(), "The World".into()],
             signature: "Signature film: Synthetic Film One (2008), 1.0★ against the crowd's 3.54★".into(),
@@ -559,45 +493,6 @@ mod tests {
         assert!(dk.contains(palette::dark(key.as_deref()).bg) && !dk.contains(palette::light(key.as_deref()).bg));
         assert!(l.starts_with("<svg") && l.ends_with("</svg>"));
         assert!(l.len() < 900_000, "{}", l.len());
-    }
-
-    #[test]
-    fn bottom_rows_do_not_collide() {
-        // for every number of ability (1 to 3), weakness (1 to 2) and why rows (1 to 3): the box ends above the nearest-canon row
-        // (22 px type, cap height about 17), the rows keep their order, the last why row clears the credit line, and the stat
-        // cells keep a pitch that does not let two rows touch
-        for al in 1..=3 {
-            for wl in 1..=2 {
-                for wy in 1..=WHY_MAX_ROWS {
-                    let l = layout(al, wl, wy);
-                    assert!(l.box_top + l.box_h + 4.0 <= l.near - 17.0, "{al}+{wl}+{wy}: box ends {}, nearest canon at {}", l.box_top + l.box_h, l.near);
-                    assert!(l.pitch >= MIN_PITCH && l.box_top > CELLS_Y + 2.0 * l.pitch + 61.0 + 10.0, "the box touches the last stat row");
-                    assert!(l.near + 6.0 < l.sig - 14.0 && l.sig + 5.0 < l.why - 15.0, "rows overlap");
-                    assert!(l.why + (wy as f64 - 1.0) * WHY_PITCH + 5.0 < FOOT_Y - 11.0, "why rows reach the credit line");
-                }
-            }
-        }
-        assert!(FOOT_Y + 4.0 < H - 34.0, "the credit line is outside the inner frame");
-        // the legend clears the chart's bottom label and the rule clears the legend
-        assert!(LEGEND_Y - 15.0 > CHART_BOTTOM + 4.0 && LEGEND_Y + 5.0 < CELLS_Y - 22.0, "chart ends {CHART_BOTTOM}, legend at {LEGEND_Y}");
-    }
-
-    #[test]
-    fn the_credit_line_and_why_row_are_readable() {
-        // one credit line, one line of text (no TMDB disclaimer on the card), and it fits in the frame at 16 px
-        assert!(!FOOTER.contains('\n'));
-        assert!(!FOOTER.contains("endorsed"));
-        assert!(font(FontKind::Sans).width(FOOTER, 16.0, 0.0) < 940.0);
-        // the why row is body size: the same as the evidence lines
-        assert!(WHY_SIZE >= 20.0);
-    }
-
-    #[test]
-    fn the_badge_is_not_red() {
-        let s = card_svg(&sample(), Theme::Light);
-        let badge = &s[s.find("<rect x=\"770\"").unwrap()..];
-        let badge = &badge[..badge.find("/>").unwrap()];
-        assert!(badge.contains("s-mute") && !badge.contains("s-fill"), "{badge}");
     }
 
     #[test]
@@ -713,37 +608,41 @@ mod tests {
     fn text_fits_the_frame() {
         // wrapping keeps lines inside the box
         let f = font(FontKind::Sans);
-        for ln in f.wrap(&sample().ability, ABILITY_SIZE, TEXT_WIDTH) {
-            assert!(f.width(&ln, ABILITY_SIZE, 0.0) <= TEXT_WIDTH + 0.01);
+        for ln in f.wrap(&sample().ability_line, LINE_SIZE, LINE_WIDTH) {
+            assert!(f.width(&ln, LINE_SIZE, 0.0) <= LINE_WIDTH + 0.01);
         }
         assert!(f.fit("a very long film title ".repeat(10).as_str(), 19.0, 440.0).ends_with('…'));
     }
 
+    /// The text the card draws, in the order it is drawn (the Stand name in its 「」).
+    fn texts(d: &CardData) -> Vec<String> {
+        card_build(d, Theme::Light).1.into_iter().map(|r| r.text).collect()
+    }
+
     #[test]
-    fn no_card_label_is_cut() {
-        let c = Ctx { sans: font(FontKind::Sans), name: font(FontKind::Name), display: font(FontKind::Display), els: vec![] };
-        let uncut = |f: &Font, s: &str, size: f64, w: f64| assert_eq!(f.fit(s, size, w), s, "cut: {s}");
+    fn the_card_keeps_only_the_listed_content() {
         let d = sample();
-        // both notes, with and without the low-confidence tag
-        for note in [d.type_note.clone(), TYPE_NOTE.to_string()] {
-            let lines = note_lines(&c.sans, &note);
-            assert!(lines.len() <= 2 && lines.join(" · ") == note, "{lines:?}");
-            for ln in &lines {
-                assert!(c.sans.width(ln, NOTE_SIZE, 0.0) <= NOTE_WIDTH, "{ln}");
-            }
+        let t = texts(&d);
+        let all = t.join("\n");
+        // kept: the Stand name, the Stand master, the type in Japanese and English, six grades with their asterisks, the ability name and
+        // sentence, the nearest canon line and the one footer line
+        assert!(t.iter().any(|s| s == "「DIRTY WEATHER」") && all.contains("本体―") && all.contains("jas3344"));
+        assert!(all.contains("近距離パワー型") && all.contains("Close-Range Power"));
+        assert!(t.iter().any(|s| s == "B*") && t.iter().any(|s| s == "C") && t.iter().any(|s| s == "?"), "{t:?}");
+        assert!(t.iter().any(|s| s == "Wind Reading") && all.replace('\n', " ").contains(&d.ability_line));
+        assert!(t.iter().any(|s| s == "Nearest canon: D4C Love Train · Dolly Dagger · The World"));
+        assert_eq!(t.last().unwrap(), "standuser.pages.dev · Fan work, not affiliated · * provisional");
+        // removed: stat value lines, film titles, graded-on lines, weakness, signature film, why, archetype caveat, PROVISIONAL DATA, credit
+        for gone in ["metric 0", "Film 0", "graded on", "Soft spot", "Signature film", "Why", "archetype", "PROVISIONAL", "Data:", "Letterboxd", "TMDB", "MusicBrainz", "A―", "超スゴイ"] {
+            assert!(!all.contains(gone), "{gone} is still on the card");
         }
-        // the note stays left of the chart's top label (the circled grade and 破壊力 stand over the axis at x = 540) on every line
-        for (i, ln) in note_lines(&c.sans, &d.type_note).iter().enumerate() {
-            assert!(70.0 + c.sans.width(ln, NOTE_SIZE, 0.0) < 540.0 - 60.0, "line {i} reaches the chart's top label");
-        }
-        for i in 0..6 {
-            uncut(&c.sans, &d.coverage[i], 15.0, 270.0);
-            uncut(&c.sans, &d.evidence[i].0, 18.0, 440.0);
-            uncut(&c.sans, &d.evidence[i].1, 18.0, 440.0);
-        }
-        uncut(&c.sans, &format!("Nearest canon: {}", d.nearest.join(" · ")), 22.0, 940.0);
-        uncut(&c.sans, &d.signature, 20.0, 940.0);
-        uncut(&c.sans, &d.user, 34.0, 470.0);
-        assert!(c.sans.wrap(&d.ability, ABILITY_SIZE, TEXT_WIDTH).len() <= 3 && c.sans.wrap(&d.weakness, WEAK_SIZE, TEXT_WIDTH).len() <= 2);
+        // no hidden text: every grade and label is one of the listed runs
+        assert_eq!(t.iter().filter(|s| JP.contains(&s.as_str())).count(), 6);
+    }
+
+    #[test]
+    fn the_footer_is_the_one_line() {
+        assert_eq!(FOOTER, "standuser.pages.dev · Fan work, not affiliated · * provisional");
+        assert!(!FOOTER.contains('\n') && !FOOTER.contains("endorsed") && !FOOTER.contains("Data:"));
     }
 }

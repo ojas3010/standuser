@@ -414,7 +414,7 @@ fn why_line(w: &Row, pool: &[&UserFilm], template: u8) -> String {
     let mut last = None;
     for (head, place, link, rating) in ladder {
         if let Some(text) = build(head, place, link, rating) {
-            if why_rows_needed(&text) <= crate::svg::WHY_MAX_ROWS {
+            if why_rows_needed(&text) <= WHY_MAX_ROWS {
                 return text;
             }
             last = Some(text);
@@ -425,9 +425,25 @@ fn why_line(w: &Row, pool: &[&UserFilm], template: u8) -> String {
 }
 
 /// Rows the why line takes on the card.
+/// The why line is the page's now, not the card's; names are still chosen so that it fits 3 rows of the old card's width and size (the
+/// size and width it was drawn at), which keeps every name unchanged.
+pub const WHY_SIZE: f64 = 20.0;
+pub const WHY_WIDTH: f64 = 940.0;
+pub const WHY_MAX_ROWS: usize = 3;
+
+/// The why line wrapped to WHY_WIDTH, at most WHY_MAX_ROWS rows. Only a line longer than that is cut with "…".
+pub fn why_rows(f: &crate::font::Font, why: &str) -> Vec<String> {
+    let all = f.wrap(why, WHY_SIZE, WHY_WIDTH);
+    all.iter()
+        .take(WHY_MAX_ROWS)
+        .enumerate()
+        .map(|(i, ln)| if i + 1 == WHY_MAX_ROWS && all.len() > WHY_MAX_ROWS { f.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() })
+        .collect()
+}
+
 fn why_rows_needed(text: &str) -> usize {
     use crate::font::{font, FontKind};
-    font(FontKind::Sans).wrap(text, crate::svg::WHY_SIZE, crate::svg::WHY_WIDTH).len()
+    font(FontKind::Sans).wrap(text, WHY_SIZE, WHY_WIDTH).len()
 }
 
 #[cfg(test)]
@@ -739,7 +755,7 @@ mod tests {
             }
         }
         assert!(n > 20000, "{n}");
-        let rows = crate::svg::why_rows(&f, &worst);
-        assert!(rows.len() <= crate::svg::WHY_MAX_ROWS && rows.iter().all(|r| !r.contains('…')) && rows.join(" ") == worst, "the longest of {n} why lines is cut ({} rows):\n{worst}", f.wrap(&worst, 20.0, 940.0).len());
+        let rows = why_rows(&f, &worst);
+        assert!(rows.len() <= WHY_MAX_ROWS && rows.iter().all(|r| !r.contains('…')) && rows.join(" ") == worst, "the longest of {n} why lines is cut ({} rows):\n{worst}", f.wrap(&worst, 20.0, 940.0).len());
     }
 }
