@@ -71,6 +71,8 @@ button:active { transform: scale(.97); }
 #stage.done #share { order: 3; }
 #stage.done #drop { order: 4; }
 #stage > * { margin: 0; }
+#figure .theme { display: none; }   /* the card theme is chosen after a drop, for the user's own card */
+#stage.done .theme { display: block; }
 #status:empty { display: none; }
 @media (min-width: 900px) {
   /* the wordmark and the lede share a row, so the sample card fits under them in a 720 px high window */
