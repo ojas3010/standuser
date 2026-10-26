@@ -1,5 +1,5 @@
 // standuser site: export.zip in, card out, all in the browser. No network use after the page, the film table and the name candidates load.
-import init, { run } from './pkg/standuser.js';
+import init, { run, render_card } from './pkg/standuser.js';
 import { cardColours } from './accent.js';
 
 const $ = (id) => document.getElementById(id);
@@ -7,7 +7,8 @@ const drop = $('drop');
 const statusEl = $('status');
 let table = null;
 let names = '';
-let last = null; // { svgs, analysis }
+let last = null; // { svgs, analysis } of the export on show
+let sample = null; // { svgs, card } of the sample card
 
 const setStatus = (msg, error = false) => {
   statusEl.textContent = msg;
@@ -25,8 +26,12 @@ async function boot() {
       if (!r.ok) throw new Error(`${url}: ${r.status}`);
       return r.text();
     };
-    const [, t, n] = await Promise.all([init(), text('films.json'), text('names.json').catch((e) => e)]);
+    const [, t, n, smp] = await Promise.all([init(), text('films.json'), text('names.json').catch((e) => e), text('sample.json')]);
     table = t;
+    const r = JSON.parse(render_card(smp));
+    if (r.error) throw new Error(r.error);
+    sample = { svgs: r.svgs, card: r.card };
+    if (!last) showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
     if (n instanceof Error) setStatus(`The name candidates did not load (${n.message}); names will come from your composers.`);
     else {
       names = n;
@@ -97,12 +102,18 @@ function reveal(card, svgs) {
   else accentTimer = setTimeout(() => setAccent(svgs, card.accent), LAND_MS + HOLD_MS);
 }
 
-function show(a, svg) {
+function showCard(svg, label, alt) {
   const url = URL.createObjectURL(new Blob([svg], { type: 'image/svg+xml' }));
   const img = $('card');
   const old = img.src;
   img.src = url;
+  img.alt = alt;
+  $('cardlabel').textContent = label;
   if (old.startsWith('blob:')) URL.revokeObjectURL(old);
+}
+
+function show(a, svg) {
+  showCard(svg, 'Your card', 'Your Stand card');
   const tb = $('stats').tBodies[0];
   tb.replaceChildren();
   const names = ['Power', 'Speed', 'Range', 'Stamina', 'Precision', 'Potential'];
@@ -150,7 +161,7 @@ async function pngBlob(svg) {
 }
 
 $('theme').addEventListener('change', () => {
-  if (!last) return;
+  if (!last) return sample && showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
   show(last.analysis, last.svgs[resolvedTheme()]);
   if (document.documentElement.dataset.accent) setAccent(last.svgs, last.analysis.card.accent);
 });

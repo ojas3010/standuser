@@ -40,6 +40,14 @@ try {
   // the privacy line sits in the drop zone: the three files read and the two columns of profile.csv
   const dropText = document.getElementById('drop').textContent;
   for (const w of ['watched.csv', 'ratings.csv', 'diary.csv', 'two columns of', 'profile.csv', 'Date Joined', 'Favorite Films']) out('drop zone says ' + w, dropText.includes(w), true);
+  // before a drop: the sample card, labelled Sample, sits above the drop zone and the accent is still the ink colour
+  const card0 = document.getElementById('card');
+  await until('the sample card', () => card0.src.startsWith('blob:'));
+  await card0.decode();
+  out('sample label', document.getElementById('cardlabel').textContent, 'Sample');
+  out('sample card', `${card0.naturalWidth}x${card0.naturalHeight}`, '1080x1350');
+  out('sample card is above the drop zone', card0.getBoundingClientRect().top < document.getElementById('drop').getBoundingClientRect().top, true);
+  out('no accent before a drop', document.documentElement.dataset.accent || '', '');
   const before = seen();
   const result = document.getElementById('result');
   const input = document.getElementById('file');
@@ -57,7 +65,7 @@ try {
   const after = seen();
   const added = after.filter((n) => !before.includes(n));
   out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''), '0');
-  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /selftest.js /style.css /tmdb.svg');
+  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /sample.json /selftest.js /style.css /tmdb.svg');
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
   out('rows', rows.length, 6);

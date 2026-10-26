@@ -57,9 +57,12 @@ button:active { transform: scale(.97); }
 #pick { height: 32px; padding: 0 8px; margin-left: -8px; }
 
 /* subject */
+#figure { margin: 0 0 32px; max-width: 520px; }
+#figure figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+#cardlabel { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; }
+#figure .theme { font-size: .875rem; color: var(--mute); }
 #result { margin-top: 40px; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 0 16px; }
-.actions .theme { margin-left: auto; font-size: .875rem; color: var(--mute); }
 .actions select { height: 40px; }
 #card { display: block; width: 100%; height: auto; }
 #card.land { animation: land 200ms ease-out; }
@@ -78,7 +81,6 @@ footer .small { margin: 0 0 8px; max-width: 40em; }
 @media (max-width: 560px) {
   main { padding-top: 24px; }
   #drop { padding: 24px 16px; }
-  .actions .theme { margin-left: 0; width: 100%; }
   /* one row per stat: name, grade and value on a line, then what it was graded on, then its status */
   table, tbody { display: block; }
   thead { display: none; }

@@ -25,17 +25,35 @@ pub fn run_inner(zip: &[u8], file_name: &str, table_json: &str, names_json: &str
             lk.load_names(names_json)?;
         }
         let a = analysis::analyze_at(&ex, &lk, standuser_core::dates::parse_date(today));
-        let svgs = serde_json::json!({
-            "light": svg::card_svg(&a.card, svg::Theme::Light),
-            "dark": svg::card_svg(&a.card, svg::Theme::Dark),
-            "auto": svg::card_svg(&a.card, svg::Theme::Auto),
-        });
+        let svgs = svgs_of(&a.card);
         Ok(serde_json::json!({ "analysis": a, "svgs": svgs }))
     };
     match go() {
         Ok(v) => v.to_string(),
         Err(e) => serde_json::json!({ "error": e }).to_string(),
     }
+}
+
+/// Render a card from its data alone (`card_json` is `analysis.card`): no export, no table. Returns JSON { svgs: { light, dark, auto } } or
+/// { error }. The page uses it for the sample card.
+#[wasm_bindgen]
+pub fn render_card(card_json: &str) -> String {
+    render_card_inner(card_json)
+}
+
+pub fn render_card_inner(card_json: &str) -> String {
+    match serde_json::from_str::<svg::CardData>(card_json) {
+        Ok(card) => serde_json::json!({ "card": card, "svgs": svgs_of(&card) }).to_string(),
+        Err(e) => serde_json::json!({ "error": format!("not a card: {e}") }).to_string(),
+    }
+}
+
+fn svgs_of(card: &svg::CardData) -> serde_json::Value {
+    serde_json::json!({
+        "light": svg::card_svg(card, svg::Theme::Light),
+        "dark": svg::card_svg(card, svg::Theme::Dark),
+        "auto": svg::card_svg(card, svg::Theme::Auto),
+    })
 }
 
 #[cfg(test)]
@@ -94,5 +112,18 @@ mod tests {
         // and the card itself (the SVGs) draws none of them
         let svg = out["svgs"]["light"].as_str().unwrap();
         assert!(!svg.contains("<text") && svg.len() > 1000);
+    }
+
+    #[test]
+    fn a_card_renders_from_its_data_alone() {
+        let json = std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../site/sample.json")).unwrap();
+        let out: serde_json::Value = serde_json::from_str(&render_card_inner(&json)).unwrap();
+        for k in ["light", "dark", "auto"] {
+            assert!(out["svgs"][k].as_str().unwrap().starts_with("<svg"), "{k}");
+        }
+        assert_eq!(out["card"]["user"], "synthetic3");
+        // something that is not a card comes back as an error, not a panic
+        assert!(serde_json::from_str::<serde_json::Value>(&render_card_inner("{\"name\":1}")).unwrap()["error"].is_string());
+        assert!(serde_json::from_str::<serde_json::Value>(&render_card_inner("nonsense")).unwrap()["error"].is_string());
     }
 }

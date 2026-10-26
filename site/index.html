@@ -18,6 +18,16 @@
     <p class="lede">Drop your Letterboxd export. Get a JoJo-style Stand card: six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
   </header>
 
+  <figure id="figure">
+    <figcaption>
+      <span id="cardlabel">Sample</span>
+      <label class="theme">Card theme
+        <select id="theme"><option value="auto">follow my system</option><option value="light">light</option><option value="dark">dark</option></select>
+      </label>
+    </figcaption>
+    <img id="card" alt="Sample Stand card, made from synthetic data" width="1080" height="1350">
+  </figure>
+
   <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
     <input id="file" type="file" accept=".zip,application/zip" hidden>
     <p class="drop-title">Drop letterboxd-…-utc.zip here</p>
@@ -39,11 +49,7 @@
       <button id="dl-png" type="button" class="primary">Download PNG</button>
       <button id="dl-svg" type="button" class="quiet">Download SVG</button>
       <button id="dl-json" type="button" class="quiet">Download stats (JSON)</button>
-      <label class="theme">Card theme
-        <select id="theme"><option value="auto">follow my system</option><option value="light">light</option><option value="dark">dark</option></select>
-      </label>
     </div>
-    <img id="card" alt="Your Stand card" width="1080" height="1350">
 
     <h2>How the card was built</h2>
     <p class="small">Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
