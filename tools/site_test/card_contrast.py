@@ -4,7 +4,7 @@ example; --no-build reads the SVGs already in out_dir)
 For each of the 6 accents and the no-signature card, in the light and dark card themes, it reads the card's own <style> (each class's
 colour) and every text path (<path class="f-*">), and checks each against what it is drawn on:
   f-ink, f-mute        on the ground (f-bg)                       normal text, 4.5:1
-  f-bk, f-pmute        on the paper (f-paper: the ability box and the circled grades)   normal text, 4.5:1
+  f-bk, f-pmute        on the paper (f-paper: the circled grades; f-pmute is no longer used on the card)   normal text, 4.5:1
   f-paper (the Stand name, drawn white with a black outline)       its black outline (class o), 4.5:1
   f-fill  (the ゴゴゴ, large lettering with a black outline)         its black outline, 3:1 (large text); the sound effect is decoration
 For the outlined lettering the outline is what the glyphs sit against, so that is the measured pair; the ratio against the ground is
@@ -76,14 +76,14 @@ def main():
             n_checks += len(rows)
             by = {c: r for c, _, _, _, r, _, _, _ in rows}
             gg = next(r for c, _, _, _, _, _, r, _ in rows if c == "fill")
-            print(f"| {key} | {theme} | {cols['bg']} | {by['ink']:.2f} | {by['mute']:.2f} | {min(by['bk'], by['pmute']):.2f} | {by['paper']:.2f} | {by['fill']:.2f} ({gg:.2f}) |")
+            print(f"| {key} | {theme} | {cols['bg']} | {by['ink']:.2f} | {by['mute']:.2f} | {min(by[c] for c in ('bk', 'pmute') if c in by):.2f} | {by['paper']:.2f} | {by['fill']:.2f} ({gg:.2f}) |")
             all_fails += [(key, theme) + f for f in fails]
     if all_fails:
         print("\nFAIL:")
         for key, theme, cls, col, on, g, r, need in all_fails:
             print(f"  {key} {theme} card: text colour {cls} {col} on {on} {g} = {r:.2f}, needs {need}")
         sys.exit(1)
-    print(f"\nall {n_checks} text colour checks pass WCAG AA (4.5:1; 3:1 for the ゴゴゴ, large display lettering) for 6 accents + none, light and dark")
+    print(f"\nall {n_checks} text colour checks pass WCAG AA (4.5:1; 3:1 for the ゴ, large display lettering) for 6 accents + none, light and dark")
 
 
 main()
