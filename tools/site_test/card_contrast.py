@@ -4,9 +4,9 @@ example; --no-build reads the SVGs already in out_dir)
 For each of the 6 accents and the no-signature card, in the light and dark card themes, it reads the card's own <style> (each class's
 colour) and every text path (<path class="f-*">), and checks each against what it is drawn on:
   f-ink, f-mute        on the ground (f-bg)                       normal text, 4.5:1
-  f-bk, f-pmute        on the paper (f-paper: the circled grades; f-pmute is no longer used on the card)   normal text, 4.5:1
+  f-bk, f-pmute        on the paper (no text is drawn on the paper any more; kept in case a card puts some there)   normal text, 4.5:1
   f-paper (the Stand name, drawn white with a black outline)       its black outline (class o), 4.5:1
-  f-fill  (the ゴゴゴ, large lettering with a black outline)         its black outline, 3:1 (large text); the sound effect is decoration
+  f-fill  (the six grades, 72 px or more, and the ゴゴゴ: large lettering with a black outline)   its black outline, 3:1 (large text); the sound effect is decoration
 For the outlined lettering the outline is what the glyphs sit against, so that is the measured pair; the ratio against the ground is
 printed beside it for information. Prints a table and every failure; exit 1 on any failure.
 """
@@ -69,14 +69,14 @@ def main():
     if "--no-build" not in sys.argv:
         subprocess.run(["cargo", "run", "-q", "-p", "standuser-core", "--example", "card_palettes", "--", str(out)], cwd=ROOT, check=True)
     all_fails, n_checks = [], 0
-    print("| accent | card | ground | ink | mute | on paper (bk, pmute) | name vs outline | ゴゴゴ vs outline (vs ground) |\n|---|---|---|---|---|---|---|---|")
+    print("| accent | card | ground | ink | mute | name vs outline | grades and ゴゴゴ vs outline (vs ground) |\n|---|---|---|---|---|---|---|")
     for key in ["PWR", "SPD", "RNG", "STA", "PRC", "DEV", "NONE"]:
         for theme in ("light", "dark"):
             rows, fails, cols = check(out / f"{key}-{theme}.svg")
             n_checks += len(rows)
             by = {c: r for c, _, _, _, r, _, _, _ in rows}
             gg = next(r for c, _, _, _, _, _, r, _ in rows if c == "fill")
-            print(f"| {key} | {theme} | {cols['bg']} | {by['ink']:.2f} | {by['mute']:.2f} | {min(by[c] for c in ('bk', 'pmute') if c in by):.2f} | {by['paper']:.2f} | {by['fill']:.2f} ({gg:.2f}) |")
+            print(f"| {key} | {theme} | {cols['bg']} | {by['ink']:.2f} | {by['mute']:.2f} | {by['paper']:.2f} | {by['fill']:.2f} ({gg:.2f}) |")
             all_fails += [(key, theme) + f for f in fails]
     if all_fails:
         print("\nFAIL:")

@@ -4,7 +4,7 @@
 //! browsers, GitHub READMEs and PNG renderers. Fixes gen_card.py line 121, where text lost its `f-` prefix.
 //! The look is the manga's: a flat saturated cover colour for the ground, heavy lettering (Dela Gothic One for the katakana, labels and
 //! ゴゴゴ, Archivo Black for the Stand name) with a black outline drawn as a second, thicker black path under the fill path, and the
-//! Part 5 stat chart: a hexagon with a ring per grade, circled A to E up the top axis, and a circled grade at each vertex.
+//! Part 5 stat chart: a hexagon with a ring per grade and a grade (outlined lettering) at each vertex.
 
 use crate::font::{body_text, font, BodyText, Draw, Font, FontKind};
 use crate::palette::{self, Pal};
@@ -182,19 +182,6 @@ impl Ctx {
         self.runs.push(Run { text: s.into(), size, kind, outlined: true, rotated: false, bbox: [x0 - ow / 2.0, y - up - ow / 2.0, x0 + w + ow / 2.0, y + down + ow / 2.0] });
         self.els.push(format!("<path d=\"{d}\" class=\"o\" stroke-width=\"{ow}\"/><path d=\"{d}\" class=\"f-{cls}\"/>"));
     }
-
-    /// `s` centred on (cx, cy) both ways, by its real ink (a letter in a circle).
-    fn centred(&mut self, s: &str, cx: f64, cy: f64, size: f64, kind: FontKind, cls: &str) {
-        let (up, down) = self.face(kind).ink_extent(s, size);
-        self.text(s, cx, cy + (up - down) / 2.0, size, kind, cls, "middle", 0.0);
-    }
-
-    /// Japanese `s` centred on (cx, cy) like `centred`.
-    fn centred_jp(&mut self, s: &str, cx: f64, cy: f64, size: f64, cls: &str) {
-        let kind = if size >= JP_LETTERING_MIN { FontKind::Display } else { FontKind::Jp };
-        let (up, down) = self.face(kind).ink_extent(s, size);
-        self.jp_text(s, cx, cy + (up - down) / 2.0, size, cls, "middle");
-    }
 }
 
 /// The chart: centre height and the hexagon's circumradius (the ∞ ring; a grade E to A is the ring k of 6 for k = 1 to 5). The hexagon
@@ -202,11 +189,12 @@ impl Ctx {
 pub const CX: f64 = W / 2.0;
 pub const CY: f64 = 664.0;
 pub const CHART_R: f64 = 346.0;
-/// The circled grade sits on each vertex: its radius, its letter's size, and the size of the JP label beside it.
-const BADGE_R: f64 = 32.0;
-const BADGE_TEXT: f64 = 38.0;
+/// The grade sits on each vertex as lettering: Archivo Black with the black outline, the largest lettering on the card after the Stand
+/// name. Its size, the size of the 完成 grade (Dela Gothic One), and the size of the JP label beside it.
+pub const GRADE_SIZE: f64 = 80.0;
+pub const GRADE_JP_SIZE: f64 = 72.0;
 const LABEL_SIZE: f64 = MIN_TEXT;
-/// Gap between a badge and its label.
+/// Gap between a grade and its label.
 const LABEL_GAP: f64 = 12.0;
 
 /// The thick black border: its width, drawn inward from the card's edge.
@@ -247,7 +235,7 @@ pub fn ability_rows(rows: usize) -> (f64, f64) {
 
 /// The ゴゴゴ: three ゴ on a diagonal down the left side, staggered, each smaller than the last (a Dela Gothic One ゴ is one em wide):
 /// (size, centre x, centre y). They stand in the free strip between the card's edge and the hexagon, clear of every text.
-pub const GOGOGO: [(f64, f64, f64); 3] = [(110.0, 98.0, 546.0), (84.0, 136.0, 668.0), (62.0, 152.0, 776.0)];
+pub const GOGOGO: [(f64, f64, f64); 3] = [(66.0, 90.0, 560.0), (56.0, 112.0, 654.0), (48.0, 130.0, 740.0)];
 /// Width of the black outline of the display lettering, in px (half of it shows outside the glyph).
 pub const OUTLINE: f64 = 6.0;
 /// The Stand name's outline, which is heavier: the name is the card's logo.
@@ -439,28 +427,29 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
             c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"7\" class=\"f-paper s-bk\" stroke-width=\"2.5\"/>", vals[i].0, vals[i].1));
         }
     }
-    // the circled grade on each vertex, and the label beside it: to the right at the top, the bottom and the two right vertices; at the
-    // two left vertices below and above, so the label stays off the card's edge (破壊力 top, スピード upper right, 射程距離 lower right,
-    // 持続力 bottom, 精密動作性 lower left, 成長性 upper left)
+    // the grade on each vertex (outlined lettering, centred on the vertex by its letter; an asterisk hangs to the right of the letter), and
+    // the label beside it: to the right at the top and the bottom, above or below the grade at the four side vertices, so the label stays
+    // off the card's edge (破壊力 top, スピード upper right, 射程距離 lower right, 持続力 bottom, 精密動作性 lower left, 成長性 upper left)
     for i in 0..6 {
         let a = (i as f64 * 60.0).to_radians();
         let (bx, by) = (cx + r_chart * a.sin(), cy - r_chart * a.cos());
-        let g = format!("{}{}", d.grades[i], if d.prov[i] { "*" } else { "" });
-        let pill = d.grades[i] == "完成";
-        let half = if pill { 46.0 } else { BADGE_R };
-        if pill {
-            c.els.push(format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{}\" height=\"{}\" rx=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>", bx - half, by - BADGE_R, 2.0 * half, 2.0 * BADGE_R));
-            c.centred_jp(&g, bx, by, BADGE_TEXT - 4.0, "bk");
-        } else {
-            c.els.push(format!("<circle cx=\"{bx:.1}\" cy=\"{by:.1}\" r=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>"));
-            c.centred(&g, bx, by, BADGE_TEXT, Name, "bk");
-        }
-        let (up, down) = c.jp.ink_extent(JP[i], LABEL_SIZE);
-        let mid = (up - down) / 2.0;
+        let letter = d.grades[i].as_str();
+        let g = format!("{letter}{}", if d.prov[i] { "*" } else { "" });
+        let (kind, size) = if letter == "完成" { (FontKind::Display, GRADE_JP_SIZE) } else { (Name, GRADE_SIZE) };
+        let (lw, w) = (c.face(kind).width(letter, size, 0.0), c.face(kind).width(&g, size, 0.0));
+        let (up, down) = c.face(kind).ink_extent(&g, size);
+        let y = by + (up - down) / 2.0;
+        let x0 = bx - lw / 2.0;
+        c.lettering(&g, x0, y, size, kind, "fill", "start", 0.0, OUTLINE);
+        let (top, bottom, right) = (y - up - OUTLINE / 2.0, y + down + OUTLINE / 2.0, x0 + w + OUTLINE / 2.0);
+        let (lup, ldown) = c.jp.ink_extent(JP[i], LABEL_SIZE);
+        let mid = (lup - ldown) / 2.0;
         match i {
-            0..=3 => c.jp_text(JP[i], bx + half + LABEL_GAP, by + mid, LABEL_SIZE, "ink", "start"),
-            4 => c.jp_text(JP[i], bx + BADGE_R * 0.8, by + BADGE_R + LABEL_GAP + up, LABEL_SIZE, "ink", "end"),
-            _ => c.jp_text(JP[i], bx + BADGE_R * 0.8, by - BADGE_R - LABEL_GAP, LABEL_SIZE, "ink", "end"),
+            0 | 3 => c.jp_text(JP[i], right + LABEL_GAP, by + mid, LABEL_SIZE, "ink", "start"),
+            1 => c.jp_text(JP[i], x0, top - LABEL_GAP, LABEL_SIZE, "ink", "start"),
+            2 => c.jp_text(JP[i], x0, bottom + LABEL_GAP + lup, LABEL_SIZE, "ink", "start"),
+            4 => c.jp_text(JP[i], x0 + lw, bottom + LABEL_GAP + lup, LABEL_SIZE, "ink", "end"),
+            _ => c.jp_text(JP[i], x0 + lw, top - LABEL_GAP, LABEL_SIZE, "ink", "end"),
         }
     }
 
@@ -536,7 +525,7 @@ mod tests {
         // Regression: gen_card.py line 121 emitted class="{cls}" so text lost its fill colour.
         let s = card_svg(&sample(), Theme::Auto);
         assert!(s.contains("class=\"f-ink\""));
-        assert!(s.contains("class=\"f-bk\"") && s.contains("class=\"f-fill\""));
+        assert!(s.contains("class=\"f-fill\""));
         for bad in ["class=\"ink\"", "class=\"bk\"", "class=\"mute\"", "class=\"gold\""] {
             assert!(!s.contains(bad), "{bad}");
         }
@@ -629,9 +618,9 @@ mod tests {
     #[test]
     fn the_lettering_has_the_manga_outline() {
         // every outlined text is a black path (class "o", with a stroke width) followed by the fill path of the same glyphs: the name
-        // and each ゴ (3 of them)
+        // each ゴ (3 of them) and each of the six grades
         let s = card_svg(&sample(), Theme::Light);
-        assert_eq!(s.matches("class=\"o\"").count(), 1 + 3);
+        assert_eq!(s.matches("class=\"o\"").count(), 1 + 3 + 6);
         let mut pairs = 0;
         let parts: Vec<&str> = s.split("<path d=\"").skip(1).collect();
         for (k, part) in parts.iter().enumerate() {
@@ -641,7 +630,7 @@ mod tests {
                 pairs += 1;
             }
         }
-        assert_eq!(pairs, 4);
+        assert_eq!(pairs, 1 + 3 + 6);
         assert!(s.contains(".o{fill:#0b0b0b;stroke:#0b0b0b;stroke-linejoin:round}"));
     }
 
@@ -665,11 +654,11 @@ mod tests {
 
     #[test]
     fn the_chart_is_the_part_5_hexagon() {
-        // hexagonal plate and rings (7 polygons with the value polygon), one circled grade per vertex
+        // hexagonal plate and rings (7 polygons with the value polygon), one grade per vertex
         let s = card_svg(&sample(), Theme::Light);
         assert_eq!(s.matches("<polygon").count(), 1 + 5 + 1);
         assert!(!s.contains("stroke-dasharray=\"6 5\"") || sample().unknown.iter().any(|u| *u));
-        assert_eq!(s.matches(&format!("r=\"{BADGE_R}\" class=\"f-paper s-bk\"")).count(), 6, "six circled grades");
+        assert_eq!(s.matches("<circle").count(), sample().unknown.iter().filter(|u| **u).count(), "no circles but the ? markers");
         // the vertices are where the Part 5 chart puts them: Power on top, Speed upper right, Range lower right, Stamina below,
         // Precision lower left, Potential upper left (clockwise from the top)
         let v = hex(540.0, 100.0, 100.0);
@@ -785,7 +774,7 @@ mod tests {
         assert_eq!(kind("ゴ"), FontKind::Display);
         assert_eq!(kind("近距離"), FontKind::Jp);
         assert_eq!(kind("本体"), FontKind::Jp);
-        assert_eq!(kind("完成"), FontKind::Jp);
+        assert_eq!(kind("完成"), FontKind::Display, "the 完成 grade is lettering, like the other grades");
     }
 
     #[test]
@@ -850,18 +839,13 @@ mod tests {
                 let (a, b) = (centre(w[0]), centre(w[1]));
                 assert!(b.0 - a.0 >= 15.0 && b.1 - a.1 >= w[0].size / 2.0 + w[1].size / 2.0 - 40.0 && b.1 > a.1, "{a:?} {b:?}");
             }
-            // clear of every other piece of text by 10 px, and of the hexagon (its plate and its circled grades)
+            // clear of every other piece of text by 10 px (the grades are text), and of the hexagon's plate
             let apart = |a: &[f64; 4], b: &[f64; 4], pad: f64| a[2] + pad <= b[0] || b[2] + pad <= a[0] || a[3] + pad <= b[1] || b[3] + pad <= a[1];
             for g in &go {
                 for r in runs.iter().filter(|r| r.text != "ゴ") {
                     assert!(apart(&g.bbox, &r.bbox, 10.0), "ゴ {:?} touches {:?}", g.bbox, r);
                 }
                 assert!(g.bbox[2] + 10.0 <= CX - 3.0f64.sqrt() / 2.0 * CHART_R, "ゴ {:?} reaches the plate", g.bbox);
-                for i in [4usize, 5] {
-                    let a = (i as f64 * 60.0).to_radians();
-                    let (bx, by) = (CX + CHART_R * a.sin(), CY - CHART_R * a.cos());
-                    assert!(apart(&g.bbox, &[bx - BADGE_R, by - BADGE_R, bx + BADGE_R, by + BADGE_R], 10.0), "ゴ {:?} touches a grade", g.bbox);
-                }
             }
         }
     }
@@ -942,14 +926,38 @@ mod tests {
     }
 
     #[test]
+    fn the_grades_are_the_largest_lettering_after_the_stand_name() {
+        assert!(GRADE_SIZE >= 72.0 && GRADE_JP_SIZE >= 72.0);
+        for theme in [Theme::Light, Theme::Dark] {
+            let mut d = sample();
+            d.grades[1] = "完成".into();
+            let (svg, runs) = card_build(&d, theme);
+            // six grades, each with its asterisk when provisional, in Archivo Black (Dela Gothic One for 完成) with the black outline
+            let want: Vec<String> = (0..6).map(|i| format!("{}{}", d.grades[i], if d.prov[i] { "*" } else { "" })).collect();
+            let grades: Vec<&Run> = want.iter().map(|w| runs.iter().find(|r| &r.text == w).unwrap_or_else(|| panic!("grade {w} is not drawn"))).collect();
+            assert!(want.iter().any(|w| w.ends_with('*')), "the sample has a provisional grade: {want:?}");
+            for g in &grades {
+                assert!(g.outlined && g.size >= 72.0, "{g:?}");
+                assert_eq!(g.kind, if g.text.starts_with("完成") { FontKind::Display } else { FontKind::Name }, "{g:?}");
+            }
+            // every other run is smaller than the smallest grade, bar the Stand name (the one rotated run)
+            let smallest = grades.iter().map(|g| g.size).fold(f64::MAX, f64::min);
+            for r in runs.iter().filter(|r| !r.rotated && !grades.iter().any(|g| std::ptr::eq(*g, *r))) {
+                assert!(r.size < smallest, "{r:?} is as large as a grade ({smallest} px)");
+            }
+            assert!(svg.matches("class=\"o\" stroke-width=\"6\"").count() >= 6 + 3, "an outline under each grade and each ゴ");
+        }
+    }
+
+    #[test]
     fn the_radar_has_no_scale_dots() {
-        // the small black dots on each spoke at each ring are gone: the only circles are the six circled grades and the "?" markers
+        // the small black dots on each spoke at each ring are gone: the only circles are the "?" markers
         let mut d = sample();
         let s = card_svg(&d, Theme::Light);
         assert!(!s.contains("r=\"2.6\""), "a dot is still drawn");
-        assert_eq!(s.matches("<circle").count(), 6 + d.unknown.iter().filter(|u| **u).count());
+        assert_eq!(s.matches("<circle").count(), d.unknown.iter().filter(|u| **u).count());
         d.unknown = vec![false; 6];
-        assert_eq!(card_svg(&d, Theme::Light).matches("<circle").count(), 6);
+        assert_eq!(card_svg(&d, Theme::Light).matches("<circle").count(), 0);
         // the rings and the three spokes stay
         assert_eq!(s.matches("<polygon").count(), 7);
         assert_eq!(s.matches("<line").count(), 3);
