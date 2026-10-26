@@ -200,35 +200,38 @@ impl Ctx {
 /// The chart: centre height and the hexagon's circumradius (the ∞ ring; a grade E to A is the ring k of 6 for k = 1 to 5). The hexagon
 /// is 55% of the card's width or more: its plate is √3 · CHART_R wide.
 pub const CX: f64 = W / 2.0;
-pub const CY: f64 = 668.0;
+pub const CY: f64 = 664.0;
 pub const CHART_R: f64 = 346.0;
 /// The circled grade sits on each vertex: its radius, its letter's size, and the size of the JP label beside it.
 const BADGE_R: f64 = 32.0;
-const BADGE_TEXT: f64 = 30.0;
-const LABEL_SIZE: f64 = 22.0;
+const BADGE_TEXT: f64 = 38.0;
+const LABEL_SIZE: f64 = MIN_TEXT;
 /// Gap between a badge and its label.
 const LABEL_GAP: f64 = 12.0;
+
+/// No text on the card is smaller than this, in card units (the card is 1080 wide): at a phone's 390 px width it is still about 12 px.
+pub const MIN_TEXT: f64 = 34.0;
 
 /// The left edge of the text, and the right edge.
 pub const MARGIN: f64 = 48.0;
 pub const RIGHT: f64 = W - MARGIN;
 /// The Stand master sits in the free corner above the name's low left end; the type sits in the free corner under its high right end.
 const MASTER_Y: f64 = 90.0;
-const MASTER_SIZE: f64 = 34.0;
-const TYPE_SIZE: f64 = 26.0;
+const MASTER_SIZE: f64 = MIN_TEXT;
+const TYPE_SIZE: f64 = MIN_TEXT;
 const TYPE_JP_Y: f64 = 214.0;
 const TYPE_EN_Y: f64 = 262.0;
 
 /// The bottom of the card is laid out from the foot up: the footer, the nearest canon line, the ability's sentence (at most 3 rows) and
 /// above it the ability's name.
-const LINE_SIZE: f64 = 26.0;
-const LINE_PITCH: f64 = 40.0;
+const LINE_SIZE: f64 = MIN_TEXT;
+const LINE_PITCH: f64 = 42.0;
 const LINE_WIDTH: f64 = RIGHT - MARGIN;
 const LINE_MAX_ROWS: usize = 3;
 const ABILITY_SIZE: f64 = 44.0;
 pub const FOOT_Y: f64 = 1312.0;
 pub const NEAR_Y: f64 = 1262.0;
-const NEAR_SIZE: f64 = 26.0;
+const NEAR_SIZE: f64 = MIN_TEXT;
 /// Baseline of the last row of the sentence, and of the ability's name above the first row.
 const LINE_LAST_Y: f64 = NEAR_Y - 48.0;
 const ABILITY_RISE: f64 = 50.0;
@@ -321,6 +324,17 @@ fn hex(cx: f64, cy: f64, r: f64) -> Vec<(f64, f64)> {
 
 fn pts(v: &[(f64, f64)]) -> String {
     v.iter().map(|(x, y)| format!("{x:.1},{y:.1}")).collect::<Vec<_>>().join(" ")
+}
+
+/// "Nearest canon: A · B · C": all the names that fit the line, never a name cut in half; the first name is cut only if it alone is too long.
+fn nearest_line(f: &BodyText, names: &[String]) -> String {
+    for n in (1..=names.len()).rev() {
+        let line = format!("Nearest canon: {}", names[..n].join(" · "));
+        if f.width(&line, NEAR_SIZE, 0.0) <= RIGHT - MARGIN {
+            return line;
+        }
+    }
+    f.fit(&format!("Nearest canon: {}", names.join(" · ")), NEAR_SIZE, RIGHT - MARGIN)
 }
 
 pub fn card_svg(d: &CardData, theme: Theme) -> String {
@@ -441,7 +455,7 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
         c.text(ln, MARGIN, first_y + i as f64 * LINE_PITCH, LINE_SIZE, Body, "ink", "start", 0.0);
     }
     // the nearest canon line, and the one footer line
-    let near = c.body.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), NEAR_SIZE, RIGHT - MARGIN);
+    let near = nearest_line(&c.body, &d.nearest);
     c.text(&near, MARGIN, NEAR_Y, NEAR_SIZE, Body, "ink", "start", 0.0);
     c.text(FOOTER, MARGIN, FOOT_Y, NEAR_SIZE, Body, "mute", "start", 0.0);
 
@@ -754,5 +768,51 @@ mod tests {
         assert_eq!(kind("近距離"), FontKind::Jp);
         assert_eq!(kind("本体"), FontKind::Jp);
         assert_eq!(kind("完成"), FontKind::Jp);
+    }
+
+    #[test]
+    fn no_text_on_the_card_is_below_34_px() {
+        // 34 px in card units reads at 390 px phone width: every run of every card, whatever it says
+        let mut d = sample();
+        for (name, user, line) in [
+            ("A", "x", "Short."),
+            ("YORKTOWN AND THE RETURN HOME", "a_user_name_15ch", "It unravels into tendrils that cross borders: 3.4 effective production countries per 50 films, and then some more."),
+            ("THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE", "u", ""),
+        ] {
+            d.name = name.into();
+            d.user = user.into();
+            d.ability_line = line.into();
+            d.grades[2] = "完成".into();
+            for theme in [Theme::Light, Theme::Dark] {
+                let runs = card_build(&d, theme).1;
+                assert!(runs.len() > 20);
+                for r in &runs {
+                    assert!(r.size >= MIN_TEXT, "{r:?} is below {MIN_TEXT} px");
+                }
+            }
+        }
+        assert_eq!(MIN_TEXT, 34.0);
+    }
+
+    #[test]
+    fn the_nearest_canon_line_drops_whole_names_never_cuts_one() {
+        let f = body_text();
+        let names: Vec<String> = ["Dirty Deeds Done Dirt Cheap", "Highway to Hell", "Echoes ACT3 (Part 5)"].map(String::from).into();
+        let line = nearest_line(&f, &names);
+        assert!(f.width(&line, NEAR_SIZE, 0.0) <= RIGHT - MARGIN && line.starts_with("Nearest canon: Dirty Deeds Done Dirt Cheap"), "{line}");
+        assert!(!line.contains('…') && (line.ends_with("Cheap") || line.ends_with("Hell") || line.ends_with("(Part 5)")), "{line}");
+        // all three fit when they are short
+        let short: Vec<String> = ["Kiss", "Cream", "Oasis"].map(String::from).into();
+        assert_eq!(nearest_line(&f, &short), "Nearest canon: Kiss · Cream · Oasis");
+    }
+
+    #[test]
+    fn every_ability_sentence_fits_its_rows_at_34_px() {
+        let f = body_text();
+        for line in crate::ability::all_card_lines() {
+            let rows = f.wrap(&line, LINE_SIZE, LINE_WIDTH);
+            assert!(rows.len() <= 2, "{} rows: {line}", rows.len());
+            assert!(rows.len() <= LINE_MAX_ROWS);
+        }
     }
 }
