@@ -244,7 +244,7 @@ pub fn ability_rows(rows: usize) -> (f64, f64) {
 
 /// The ゴゴゴ: three ゴ on a diagonal down the left side, staggered, each smaller than the last (a Dela Gothic One ゴ is one em wide):
 /// (size, centre x, centre y). They stand in the free strip between the card's edge and the hexagon, clear of every text.
-pub const GOGOGO: [(f64, f64, f64); 3] = [(110.0, 84.0, 546.0), (84.0, 128.0, 668.0), (62.0, 150.0, 776.0)];
+pub const GOGOGO: [(f64, f64, f64); 3] = [(110.0, 98.0, 546.0), (84.0, 136.0, 668.0), (62.0, 152.0, 776.0)];
 /// Width of the black outline of the display lettering, in px (half of it shows outside the glyph).
 pub const OUTLINE: f64 = 6.0;
 /// The Stand name's outline, which is heavier: the name is the card's logo.
@@ -813,6 +813,38 @@ mod tests {
             let rows = f.wrap(&line, LINE_SIZE, LINE_WIDTH);
             assert!(rows.len() <= 2, "{} rows: {line}", rows.len());
             assert!(rows.len() <= LINE_MAX_ROWS);
+        }
+    }
+
+    #[test]
+    fn the_gogogo_are_three_staggered_on_a_diagonal_clear_of_all_text() {
+        for theme in [Theme::Light, Theme::Dark] {
+            let mut d = sample();
+            d.name = "YORKTOWN AND THE RETURN HOME".into();
+            let runs = card_build(&d, theme).1;
+            let go: Vec<&Run> = runs.iter().filter(|r| r.text == "ゴ").collect();
+            assert_eq!(go.len(), 3, "three ゴ");
+            // three sizes, each smaller than the one before, all at least the lettering size
+            assert!(go[0].size > go[1].size && go[1].size > go[2].size && go[2].size >= JP_LETTERING_MIN, "{:?}", go.iter().map(|r| r.size).collect::<Vec<_>>());
+            // on a diagonal (each lower and further right) and staggered (no two share a column or a row)
+            let centre = |r: &Run| ((r.bbox[0] + r.bbox[2]) / 2.0, (r.bbox[1] + r.bbox[3]) / 2.0);
+            for w in go.windows(2) {
+                let (a, b) = (centre(w[0]), centre(w[1]));
+                assert!(b.0 - a.0 >= 15.0 && b.1 - a.1 >= w[0].size / 2.0 + w[1].size / 2.0 - 40.0 && b.1 > a.1, "{a:?} {b:?}");
+            }
+            // clear of every other piece of text by 10 px, and of the hexagon (its plate and its circled grades)
+            let apart = |a: &[f64; 4], b: &[f64; 4], pad: f64| a[2] + pad <= b[0] || b[2] + pad <= a[0] || a[3] + pad <= b[1] || b[3] + pad <= a[1];
+            for g in &go {
+                for r in runs.iter().filter(|r| r.text != "ゴ") {
+                    assert!(apart(&g.bbox, &r.bbox, 10.0), "ゴ {:?} touches {:?}", g.bbox, r);
+                }
+                assert!(g.bbox[2] + 10.0 <= CX - 3.0f64.sqrt() / 2.0 * CHART_R, "ゴ {:?} reaches the plate", g.bbox);
+                for i in [4usize, 5] {
+                    let a = (i as f64 * 60.0).to_radians();
+                    let (bx, by) = (CX + CHART_R * a.sin(), CY - CHART_R * a.cos());
+                    assert!(apart(&g.bbox, &[bx - BADGE_R, by - BADGE_R, bx + BADGE_R, by + BADGE_R], 10.0), "ゴ {:?} touches a grade", g.bbox);
+                }
+            }
         }
     }
 }
