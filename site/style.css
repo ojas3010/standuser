@@ -44,7 +44,8 @@ a { color: inherit; }   /* links are ink, not the browser's blue */
 #filebar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding: 12px 0; border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
 #fileinfo { overflow-wrap: anywhere; }
 #filebar button { height: 32px; padding: 0 8px; margin-left: -8px; text-decoration: underline; text-underline-offset: 4px; }
-.opts { margin: 16px 0 0; }
+.opts { margin: 16px 0 0; }   /* Advanced: collapsed, in the method section */
+#notes:empty, #downloads[hidden] { display: none; }
 .opts summary { cursor: pointer; }
 .opts label { display: block; margin: 12px 0; }
 #status { min-height: 1.5em; margin: 16px 0 0; color: var(--mute); }
