@@ -409,7 +409,7 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     c.jp_text(&d.type_jp, RIGHT, TYPE_JP_Y, TYPE_SIZE, "ink", "end");
     c.text(&d.type_en, RIGHT, TYPE_EN_Y, TYPE_SIZE, Body, "ink", "end", 0.0);
 
-    // the chart, after the Part 5 tailpiece: a paper hexagon, a ring per grade, three spokes, a dot on each spoke at each ring
+    // the chart, after the Part 5 tailpiece: a paper hexagon, a ring per grade, three spokes
     let outer = hex(cx, cy, r_chart);
     c.els.push(format!("<polygon points=\"{}\" class=\"f-paper s-bk r\" stroke-width=\"4\"/>", pts(&outer)));
     for k in 1..=5 {
@@ -432,13 +432,6 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
             for j in [(i + 5) % 6, (i + 1) % 6] {
                 c.els.push(format!("<path d=\"M{:.1} {:.1}L{:.1} {:.1}\" class=\"s-bk\" stroke-width=\"2\" stroke-dasharray=\"6 5\" fill=\"none\"/>", vals[i].0, vals[i].1, vals[j].0, vals[j].1));
             }
-        }
-    }
-    for i in 0..6 {
-        let a = (i as f64 * 60.0).to_radians();
-        for kk in 1..=5 {
-            let r = r_chart * kk as f64 / 6.0;
-            c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"2.6\" class=\"f-bk\"/>", cx + r * a.sin(), cy - r * a.cos()));
         }
     }
     for i in 0..6 {
@@ -946,5 +939,19 @@ mod tests {
                 }
             }
         }
+    }
+
+    #[test]
+    fn the_radar_has_no_scale_dots() {
+        // the small black dots on each spoke at each ring are gone: the only circles are the six circled grades and the "?" markers
+        let mut d = sample();
+        let s = card_svg(&d, Theme::Light);
+        assert!(!s.contains("r=\"2.6\""), "a dot is still drawn");
+        assert_eq!(s.matches("<circle").count(), 6 + d.unknown.iter().filter(|u| **u).count());
+        d.unknown = vec![false; 6];
+        assert_eq!(card_svg(&d, Theme::Light).matches("<circle").count(), 6);
+        // the rings and the three spokes stay
+        assert_eq!(s.matches("<polygon").count(), 7);
+        assert_eq!(s.matches("<line").count(), 3);
     }
 }
