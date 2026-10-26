@@ -1,4 +1,4 @@
-/* Page chrome: quiet, flat, warm. Only the card carries the JoJo identity.
+/* Page chrome: quiet, flat, neutral (zero hue: white and near-black, greys with equal channels). Only the card carries the JoJo identity.
    No gradients, glows or shadows. One accent, keyed to the user's card (accent.js); before a card exists it is the ink colour. */
 @font-face {
   font-family: Overpass;
@@ -7,12 +7,12 @@
   font-display: swap;
 }
 :root {
-  --ground: #ece7dc; --ground2: #f4f0e7; --ink: #1c0b01; --mute: #55493f; --line: #c9c1b0; --alert: #b3200f;
+  --ground: #ffffff; --ground2: #f4f4f4; --ink: #0b0b0b; --mute: #595959; --line: #d4d4d4;
   --accent: var(--ink);
 }
 :root[data-accent] { --accent: var(--accent-light); }
 @media (prefers-color-scheme: dark) {
-  :root { --ground: #1d1b17; --ground2: #26231e; --ink: #f2eee6; --mute: #b5aea2; --line: #3d3932; --alert: #ff7b66; }
+  :root { --ground: #0e0e0e; --ground2: #1a1a1a; --ink: #f5f5f5; --mute: #b3b3b3; --line: #3a3a3a; }
   :root[data-accent] { --accent: var(--accent-dark); }
 }
 * { box-sizing: border-box; }
@@ -39,7 +39,7 @@ code { font-size: .9em; }
 .opts summary { cursor: pointer; }
 .opts label { display: block; margin: 12px 0; }
 #status { min-height: 1.5em; margin: 16px 0 0; color: var(--mute); }
-#status.error { color: var(--alert); font-weight: 600; }
+#status.error { color: var(--ink); font-weight: 600; padding-left: 12px; border-left: 4px solid var(--ink); }   /* an error is bold and barred, not red: the chrome has no hue */
 
 input[type=text], input[type=date], select { height: 40px; margin-left: 8px; padding: 0 8px; font: inherit; color: var(--ink); background: var(--ground2); border: 2px solid var(--line); border-radius: 0; }
 

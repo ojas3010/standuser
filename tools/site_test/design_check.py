@@ -104,14 +104,13 @@ def main():
 
         # --- rule 3: ground and flat fills
         bg = rgb(page.evaluate("getComputedStyle(document.body).backgroundColor"))
-        warm = bg[0] > bg[2] and bg[0] != bg[1] != bg[2]
-        check("R3 ground is warm, not neutral grey (light)", warm, f"rgb{tuple(bg)}")
+        check("R3 ground is neutral with zero hue: #ffffff (light)", bg == [255, 255, 255], f"rgb{tuple(bg)}")
         check("R3 ban: no gradients", not any(e["bgimg"] != "none" for e in els) and "gradient" not in css + html, "background-image none on every element; no gradient in CSS")
         check("R3 ban: no shadows or glows", not any(e["shadow"] != "none" or e["tshadow"] != "none" or "drop-shadow" in e["filter"] for e in els) and "shadow" not in css, "box-shadow, text-shadow, filter all none on every element")
         pre_ok = True
         ctxd, paged, _, _ = load(browser, base, 1280, 900, scheme="dark")
         bgd = rgb(paged.evaluate("getComputedStyle(document.body).backgroundColor"))
-        check("R3 ground is warm in dark too", bgd[0] > bgd[2], f"rgb{tuple(bgd)}")
+        check("R3 ground is neutral with zero hue: #0e0e0e (dark)", bgd == [14, 14, 14], f"rgb{tuple(bgd)}")
         ctxd.close()
 
         # --- rule 5: type

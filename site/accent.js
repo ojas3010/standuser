@@ -11,9 +11,9 @@ export const ACCENTS = {
   PRC: { light: '#6a3cb4', dark: '#b69aff' },
   DEV: { light: '#a94700', dark: '#ff964a' },
 };
-export const GROUND = { light: '#ece7dc', dark: '#1d1b17' };
+export const GROUND = { light: '#ffffff', dark: '#0e0e0e' };
 // the ground of the drop zone, the inputs and the table header
-export const GROUND2 = { light: '#f4f0e7', dark: '#26231e' };
+export const GROUND2 = { light: '#f4f4f4', dark: '#1a1a1a' };
 
 const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const luminance = (hex) => {
