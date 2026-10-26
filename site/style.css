@@ -22,11 +22,11 @@
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }   /* a display rule below must not show what the page hides */
 body { margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Archivo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-main { max-width: 720px; margin: 0 auto; padding: 40px 16px 64px; }
+main { max-width: 800px; margin: 0 auto; padding: 40px 16px 64px; }
 
 /* the wordmark: the page's one tilt */
 .mark { display: inline-block; margin: 8px 0 12px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-weight: 400; font-size: clamp(2.6rem, 11vw, 4rem); line-height: 1; letter-spacing: -.01em; transform: rotate(-4deg); transform-origin: 0 100%; padding-bottom: .08em; border-bottom: .14em solid var(--accent); transition: border-color 250ms ease-out; }
-.lede { margin: 0 0 32px; max-width: 34em; color: var(--mute); }
+.lede { margin: 0 0 24px; max-width: 34em; color: var(--mute); }
 h2 { margin: 48px 0 8px; padding-top: 12px; border-top: 4px solid var(--accent); transition: border-color 250ms ease-out; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; font-weight: 400; }
 .small { color: var(--mute); font-size: .875rem; }
 code { font-size: .9em; }
@@ -61,13 +61,36 @@ button:active { transform: scale(.97); }
 .primary:hover { background: var(--ink); color: var(--ground); }
 #pick { height: 32px; padding: 0 8px; margin-left: -8px; }
 
+/* stage: before a card of the user's exists, the drop zone and the sample (one column on a phone, the drop zone first; two columns from
+   900 px); after a file or on an opened link, one column: the file line, the card at the width of the column, the share bar */
+#stage { display: grid; grid-template-columns: minmax(0, 1fr); gap: 24px; align-items: start; }
+#stage.done #filebar { order: 0; }
+#stage.done #status { order: 1; }
+#stage.done #figure { order: 2; }
+#stage.done #share { order: 3; }
+#stage.done #drop { order: 4; }
+#stage > * { margin: 0; }
+#status:empty { display: none; }
+@media (min-width: 900px) {
+  /* the wordmark and the lede share a row, so the sample card fits under them in a 720 px high window */
+  main { padding-top: 24px; }
+  header { display: flex; align-items: flex-end; gap: 8px 40px; }
+  .mark { margin: 0; font-size: 3.25rem; flex: none; }
+  .lede { margin: 0; flex: 1 1 auto; max-width: 30em; }
+  #stage:not(.done) { grid-template-columns: minmax(0, 1fr) minmax(280px, 400px); column-gap: 48px; }
+  #stage:not(.done) #drop, #stage:not(.done) #status { grid-column: 1; }
+  #stage:not(.done) #figure { grid-column: 2; grid-row: 1 / span 4; }
+  /* the whole sample card shows in a 720 px high window: its height is what is left under the header */
+  #stage:not(.done) #card { width: min(100%, calc((100vh - 250px) * .8)); }
+}
+
 /* subject */
-#figure { margin: 0 0 32px; max-width: 520px; }
+#figure { margin: 0; }
 #figure figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
+#stage.done #cardlabel { font-size: 1rem; }
 #cardlabel { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; }
 #figure .theme { font-size: .875rem; color: var(--mute); }
-#result { margin-top: 40px; }
-.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; max-width: 520px; margin: -16px 0 32px; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 #linknote { flex: 1 1 14em; }
 #sharenote { flex-basis: 100%; min-height: 1.5em; color: var(--mute); font-size: .875rem; }
 .downloads a { color: var(--ink); text-underline-offset: 4px; }

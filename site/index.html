@@ -18,45 +18,39 @@
     <p class="lede">Drop your Letterboxd export. Get a JoJo-style Stand card: six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
   </header>
 
-  <figure id="figure">
-    <figcaption>
-      <span id="cardlabel">Sample</span>
-      <label class="theme">Card theme
-        <select id="theme"><option value="light">Light card</option><option value="dark">Dark card</option></select>
-      </label>
-    </figcaption>
-    <img id="card" alt="Sample Stand card, made from synthetic data" width="1080" height="1350">
-  </figure>
+  <div id="stage">
+    <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
+      <input id="file" type="file" accept=".zip,application/zip" hidden>
+      <p class="drop-title">Drop letterboxd-…-utc.zip here</p>
+      <p>or <button id="pick" type="button" class="quiet">choose the file</button></p>
+      <p class="small">Get it at Letterboxd, Settings, Data, Export your data. The ZIP is read in this tab and never uploaded; the page makes no requests after it loads.</p>
+      <p class="small privacy">Only <code>watched.csv</code>, <code>ratings.csv</code> and <code>diary.csv</code> are read, plus two columns of <code>profile.csv</code> (Date Joined and Favorite Films). Nothing else in <code>profile.csv</code> is read.</p>
+    </section>
+    <p id="filebar" hidden><span id="fileinfo"></span> <button id="change" type="button" class="quiet">Change file</button></p>
+    <p id="status" role="status" aria-live="polite"></p>
 
-  <div id="share" class="actions" hidden>
-    <button id="dl-png" type="button" class="primary">Download PNG</button>
-    <button id="copy-img" type="button" class="quiet" hidden>Copy image</button>
-    <button id="share-btn" type="button" class="quiet" hidden>Share</button>
-    <button id="copy-link" type="button" class="quiet">Copy link</button>
-    <span id="linknote" class="small">The link contains your username and grades, and the card's text.</span>
-    <span id="sharenote" role="status" aria-live="polite"></span>
+    <figure id="figure">
+      <figcaption>
+        <span id="cardlabel">Sample</span>
+        <label class="theme">Card theme
+          <select id="theme"><option value="light">Light card</option><option value="dark">Dark card</option></select>
+        </label>
+      </figcaption>
+      <img id="card" alt="Sample Stand card, made from synthetic data" width="1080" height="1350">
+    </figure>
+
+    <div id="share" class="actions" hidden>
+      <button id="dl-png" type="button" class="primary">Download PNG</button>
+      <button id="copy-img" type="button" class="quiet" hidden>Copy image</button>
+      <button id="share-btn" type="button" class="quiet" hidden>Share</button>
+      <button id="copy-link" type="button" class="quiet">Copy link</button>
+      <span id="linknote" class="small">The link contains your username and grades, and the card's text.</span>
+      <span id="sharenote" role="status" aria-live="polite"></span>
+    </div>
   </div>
-
-  <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
-    <input id="file" type="file" accept=".zip,application/zip" hidden>
-    <p class="drop-title">Drop letterboxd-…-utc.zip here</p>
-    <p>or <button id="pick" type="button" class="quiet">choose the file</button></p>
-    <p class="small">Get it at Letterboxd, Settings, Data, Export your data. The ZIP is read in this tab and never uploaded; the page makes no requests after it loads.</p>
-    <p class="small privacy">Only <code>watched.csv</code>, <code>ratings.csv</code> and <code>diary.csv</code> are read, plus two columns of <code>profile.csv</code> (Date Joined and Favorite Films). Nothing else in <code>profile.csv</code> is read.</p>
-  </section>
-  <p id="filebar" hidden><span id="fileinfo"></span> <button id="change" type="button" class="quiet">Change file</button></p>
-  <details class="opts">
-    <summary>Advanced</summary>
-    <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
-    <label>Join date <input id="joined" type="date"></label>
-    <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
-  </details>
-
-  <p id="status" role="status" aria-live="polite"></p>
 
   <section id="result" hidden>
     <h2>Why these grades</h2>
-    <p class="small">Each stat is graded against 34,523 Letterboxd users. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
     <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Film</th><th>Graded on</th><th>Status</th></tr></thead><tbody></tbody></table>
     <dl id="why">
       <dt>Ability</dt><dd id="why-ability"></dd>
@@ -66,10 +60,19 @@
       <dt>The type</dt><dd id="why-type"></dd>
       <dt>Data credits</dt><dd id="why-credit"></dd>
     </dl>
+  </section>
 
+  <section id="method">
     <h2>How the card was built</h2>
-    <p class="downloads">Download the card as <a id="dl-svg" href="#" download="card.svg">SVG</a> or the stats as <a id="dl-json" href="#" download="stand.json">JSON</a>.</p>
+    <p class="small">Each stat is graded against 34,523 Letterboxd users. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
+    <p id="downloads" class="downloads" hidden>Download the card as <a id="dl-svg" href="#" download="card.svg">SVG</a> or the stats as <a id="dl-json" href="#" download="stand.json">JSON</a>.</p>
     <ul id="notes"></ul>
+    <details class="opts">
+      <summary>Advanced</summary>
+      <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
+      <label>Join date <input id="joined" type="date"></label>
+      <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
+    </details>
   </section>
 
   <footer>

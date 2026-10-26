@@ -10,6 +10,10 @@ let names = '';
 let last = null; // { svgs, card, analysis } of the card on show (a file's); null on the sample
 let sample = null; // { svgs, card } of the sample card
 
+// Before a card of the user's exists the stage has two columns (the drop zone, the sample); after a file or on an opened link it is one
+// column: the file line, the card, the share bar.
+const setDone = (on) => $('stage').classList.toggle('done', on);
+
 const setStatus = (msg, error = false) => {
   statusEl.textContent = msg;
   statusEl.classList.toggle('error', error);
@@ -60,8 +64,10 @@ function openLink() {
   last = { svgs: r.svgs, card: r.card, analysis: null };
   showCard(r.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${r.card.user}`);
   $('result').hidden = true;
+  $('downloads').hidden = true;
   $('share').hidden = false;
   $('sharenote').textContent = '';
+  setDone(true);
   reveal(r.card, r.svgs);
   return true;
 }
@@ -77,6 +83,7 @@ async function handle(file) {
   await ready;
   if (!table) return;
   $('result').hidden = true;
+  $('downloads').hidden = true;
   $('share').hidden = true;
   try {
     setStatus('Reading the export…');
@@ -91,8 +98,9 @@ async function handle(file) {
     $('filebar').hidden = false;
     $('share').hidden = false;
     $('sharenote').textContent = '';
+    setDone(true);
     reveal(out.analysis.card, out.svgs);
-    $('figure').scrollIntoView({ block: 'start' });
+    $('stage').scrollIntoView({ block: 'start' });
     setStatus('');
   } catch (e) {
     // back to the first state: the sample card, the ink accent, the drop zone
@@ -105,6 +113,7 @@ async function handle(file) {
     delete root.dataset.accent;
     showSample();
     drop.hidden = false;
+    setDone(false);
     $('filebar').hidden = true;
     $('share').hidden = true;
     setStatus(e.message, true);
@@ -197,6 +206,7 @@ function show(a, svg) {
   setLink($('dl-svg'), new Blob([last.svgs.auto], { type: 'image/svg+xml' }));
   setLink($('dl-json'), new Blob([JSON.stringify(a, null, 2)], { type: 'application/json' }));
   $('result').hidden = false;
+  $('downloads').hidden = false;
 }
 
 // a download link that points at a blob made in this tab
