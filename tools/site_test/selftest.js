@@ -57,7 +57,7 @@ try {
   const after = seen();
   const added = after.filter((n) => !before.includes(n));
   out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''), '0');
-  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /films.json /fonts/overpass.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /selftest.js /style.css /tmdb.svg');
+  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /selftest.js /style.css /tmdb.svg');
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
   out('rows', rows.length, 6);

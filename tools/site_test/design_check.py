@@ -90,7 +90,7 @@ def main():
         check("Self-host: no request outside the site's own files at load", hosts == {urlparse(base).netloc}, f"hosts: {sorted(hosts)} (the local server stands for standuser.pages.dev)")
         check("0 requests after the drop", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests (blob: card images are in-memory)")
         fonts = page.evaluate("[...document.fonts].map(f => f.family + ' ' + f.status)")
-        check("Fonts self-hosted: Overpass loads from fonts/", any("Overpass loaded" in f for f in fonts) and "/fonts/overpass.woff2" in "".join(reqs["load"]), str(fonts))
+        check("Fonts self-hosted: Archivo Black and Archivo load from fonts/, Overpass is gone", any("Archivo Black loaded" in f for f in fonts) and any("Archivo loaded" in f for f in fonts) and "/fonts/archivo-black.woff2" in "".join(reqs["load"]) and "/fonts/archivo.woff2" in "".join(reqs["load"]) and "overpass" not in (css + html + js).lower() and not (SITE / "fonts/overpass.woff2").exists(), str(fonts))
         check("CSP allows only the site (no font or script host)", "default-src 'self'" in (SITE / "_headers").read_text() and "http" not in re.sub(r"https?://www\.themoviedb\.org", "", css + js), "default-src 'self'; no absolute URL in style.css or app.js")
         els = page.evaluate(ALL)
         vis = [e for e in els if not e["hidden"]]
@@ -116,7 +116,8 @@ def main():
         # --- rule 5: type
         fam = page.evaluate("getComputedStyle(document.body).fontFamily")
         serif_chrome = [e for e in els if "Serif" in e["font"] or "Mincho" in e["font"]]
-        check("R5 interface sans is Overpass; no serif in the chrome", fam.startswith("Overpass") and not serif_chrome and "Inter" not in css, f"body font-family: {fam}")
+        heads = page.evaluate("[...document.querySelectorAll('h1, h2, .drop-title')].filter(e => !e.closest('[hidden]')).map(e => getComputedStyle(e).fontFamily.split(',')[0])")
+        check("R5 body is Archivo; the wordmark and headings are Archivo Black; no serif in the chrome", fam.startswith("Archivo") and heads and all(h.strip('"') == "Archivo Black" for h in heads) and not serif_chrome and "Inter" not in css, f"body font-family: {fam}; headings {sorted(set(heads))}")
         tilted = [e for e in vis if e["transform"] not in ("none", "")]
         check("R5 the wordmark has one tilt; nothing else tilts", len(tilted) == 1 and tilted[0]["tag"] == "H1", f"{len(tilted)} transformed element(s): {[t['tag'] for t in tilted]}")
         check("R6 at most one diagonal", len(tilted) <= 1, f"{len(tilted)} rotated element(s) at rest")

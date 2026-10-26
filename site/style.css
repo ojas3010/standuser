@@ -1,8 +1,14 @@
 /* Page chrome: quiet, flat, neutral (zero hue: white and near-black, greys with equal channels). Only the card carries the JoJo identity.
    No gradients, glows or shadows. One accent, keyed to the user's card (accent.js); before a card exists it is the ink colour. */
 @font-face {
-  font-family: Overpass;
-  src: url(fonts/overpass.woff2) format("woff2");
+  font-family: "Archivo Black";
+  src: url(fonts/archivo-black.woff2) format("woff2");
+  font-weight: 400;
+  font-display: swap;
+}
+@font-face {
+  font-family: Archivo;
+  src: url(fonts/archivo.woff2) format("woff2");
   font-weight: 400 800;
   font-display: swap;
 }
@@ -16,20 +22,20 @@
   :root[data-accent] { --accent: var(--accent-dark); }
 }
 * { box-sizing: border-box; }
-body { margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Overpass, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Archivo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 main { max-width: 720px; margin: 0 auto; padding: 40px 16px 64px; }
 
 /* the wordmark: the page's one tilt */
-.mark { display: inline-block; margin: 8px 0 12px; font-weight: 800; font-size: clamp(2.6rem, 11vw, 4rem); line-height: 1; letter-spacing: -.01em; transform: rotate(-4deg); transform-origin: 0 100%; color: var(--accent); transition: color 250ms ease-out; }
+.mark { display: inline-block; margin: 8px 0 12px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-weight: 400; font-size: clamp(2.6rem, 11vw, 4rem); line-height: 1; letter-spacing: -.01em; transform: rotate(-4deg); transform-origin: 0 100%; color: var(--accent); transition: color 250ms ease-out; }
 .lede { margin: 0 0 32px; max-width: 34em; color: var(--mute); }
-h2 { margin: 48px 0 8px; font-size: 1.25rem; font-weight: 700; }
+h2 { margin: 48px 0 8px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; font-weight: 400; }
 .small { color: var(--mute); font-size: .875rem; }
 code { font-size: .9em; }
 
 /* stage */
 #drop { padding: 32px 24px; border: 2px dashed var(--mute); background: var(--ground2); cursor: pointer; }
 #drop p { margin: 0 0 8px; }
-#drop .drop-title { font-size: 1.375rem; font-weight: 700; }
+#drop .drop-title { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.375rem; font-weight: 400; }
 #drop .small { margin: 16px 0 0; max-width: 40em; }
 #drop .small + .small { margin-top: 8px; }
 #drop.over { border-style: solid; border-color: var(--accent); background: var(--ground); }   /* instant: #drop has no transition */
@@ -44,7 +50,7 @@ code { font-size: .9em; }
 input[type=text], input[type=date], select { height: 40px; margin-left: 8px; padding: 0 8px; font: inherit; color: var(--ink); background: var(--ground2); border: 2px solid var(--line); border-radius: 0; }
 
 /* buttons: Download PNG is the one filled button; the others are quiet text buttons of the same height and radius */
-button { height: 40px; padding: 0 16px; font: 600 1rem/1 Overpass, system-ui, sans-serif; border: 2px solid transparent; border-radius: 0; cursor: pointer; transition: transform 120ms ease-out; }
+button { height: 40px; padding: 0 16px; font: 600 1rem/1 Archivo, system-ui, sans-serif; border: 2px solid transparent; border-radius: 0; cursor: pointer; transition: transform 120ms ease-out; }
 button:active { transform: scale(.97); }
 .primary { background: var(--accent); color: var(--ground); border-color: var(--accent); transition: transform 120ms ease-out, background-color 250ms ease-out, border-color 250ms ease-out; }
 .quiet { background: transparent; color: var(--ink); }
