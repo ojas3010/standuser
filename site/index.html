@@ -28,6 +28,13 @@
     <img id="card" alt="Sample Stand card, made from synthetic data" width="1080" height="1350">
   </figure>
 
+  <div id="share" class="actions" hidden>
+    <button id="dl-png" type="button" class="primary">Download PNG</button>
+    <button id="copy-img" type="button" class="quiet" hidden>Copy image</button>
+    <button id="share-btn" type="button" class="quiet" hidden>Share</button>
+    <span id="sharenote" role="status" aria-live="polite"></span>
+  </div>
+
   <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
     <input id="file" type="file" accept=".zip,application/zip" hidden>
     <p class="drop-title">Drop letterboxd-…-utc.zip here</p>
@@ -46,13 +53,8 @@
   <p id="status" role="status" aria-live="polite"></p>
 
   <section id="result" hidden>
-    <div class="actions">
-      <button id="dl-png" type="button" class="primary">Download PNG</button>
-      <button id="dl-svg" type="button" class="quiet">Download SVG</button>
-      <button id="dl-json" type="button" class="quiet">Download stats (JSON)</button>
-    </div>
-
     <h2>How the card was built</h2>
+    <p class="downloads">Download the card as <a id="dl-svg" href="#" download="card.svg">SVG</a> or the stats as <a id="dl-json" href="#" download="stand.json">JSON</a>.</p>
     <p class="small">Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
     <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Graded on</th><th>Status</th></tr></thead><tbody></tbody></table>
     <ul id="notes"></ul>

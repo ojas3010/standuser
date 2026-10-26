@@ -83,6 +83,21 @@ try {
   const dls = [];
   HTMLAnchorElement.prototype.click = function () { dls.push([this.download, fetch(this.href).then((r) => r.arrayBuffer())]); };
   const heads = { 'card.png': '89 50 4e 47 d a 1a a', 'card.svg': '3c 73 76 67 20 78 6d 6c', 'stand.json': '7b a 20 20 22 61 62 69' };
+  out('share bar is under the card', document.getElementById('card').getBoundingClientRect().bottom <= document.getElementById('share').getBoundingClientRect().top, true);
+  out('share bar order', [...document.querySelectorAll('#share button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
+  out('Download SVG and JSON are text links in the method section', ['dl-svg', 'dl-json'].map((id) => document.getElementById(id).tagName + document.getElementById(id).closest('#result').tagName).join(' '), 'ASECTION ASECTION');
+  out('Share is hidden exactly where the API cannot share files', document.getElementById('share-btn').hidden, !(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'a.png', { type: 'image/png' })] })));
+  // Copy image puts a PNG on the clipboard
+  if (!document.getElementById('copy-img').hidden) {
+    let copied = null;
+    Object.defineProperty(navigator.clipboard, 'write', { configurable: true, value: async (items) => { copied = items; } });
+    document.getElementById('copy-img').click();
+    await until('Copy image to write', () => copied, 5000);
+    const blob = await copied[0].getType('image/png');
+    const head = [...new Uint8Array(await blob.arrayBuffer()).slice(0, 8)].map((x) => x.toString(16)).join(' ');
+    out('Copy image puts a PNG on the clipboard', `${copied[0].types.join()} ${head}`, 'image/png 89 50 4e 47 d a 1a a');
+    out('Copy image says so', document.getElementById('sharenote').textContent, 'Image copied.');
+  }
   for (const [n, id] of [[1, 'dl-png'], [2, 'dl-svg'], [3, 'dl-json']]) {
     document.getElementById(id).click();
     await until(id + ' to produce a file', () => dls.length === n);

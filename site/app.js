@@ -7,7 +7,7 @@ const drop = $('drop');
 const statusEl = $('status');
 let table = null;
 let names = '';
-let last = null; // { svgs, analysis } of the export on show
+let last = null; // { svgs, card, analysis } of the card on show (a file's); null on the sample
 let sample = null; // { svgs, card } of the sample card
 
 const setStatus = (msg, error = false) => {
@@ -62,16 +62,19 @@ async function handle(file) {
   await ready;
   if (!table) return;
   $('result').hidden = true;
+  $('share').hidden = true;
   try {
     setStatus('Reading the export…');
     const bytes = new Uint8Array(await file.arrayBuffer());
     const out = exec(bytes, file.name);
-    last = { svgs: out.svgs, analysis: out.analysis };
+    last = { svgs: out.svgs, card: out.analysis.card, analysis: out.analysis };
     show(out.analysis, out.svgs[resolvedTheme()]);
     // the drop zone gives way to one line: the file, the films read, and a way to pick another
     $('fileinfo').textContent = `${file.name} · ${out.analysis.coverage.watched.toLocaleString('en-US')} films read`;
     drop.hidden = true;
     $('filebar').hidden = false;
+    $('share').hidden = false;
+    $('sharenote').textContent = '';
     reveal(out.analysis.card, out.svgs);
     $('figure').scrollIntoView({ block: 'start' });
     setStatus('');
@@ -86,6 +89,7 @@ async function handle(file) {
     if (sample) showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
     drop.hidden = false;
     $('filebar').hidden = true;
+    $('share').hidden = true;
     setStatus(e.message, true);
   }
 }
@@ -149,7 +153,15 @@ function show(a, svg) {
     ...a.notes,
   ];
   for (const t of items) notes.appendChild(Object.assign(document.createElement('li'), { textContent: t }));
+  setLink($('dl-svg'), new Blob([last.svgs.auto], { type: 'image/svg+xml' }));
+  setLink($('dl-json'), new Blob([JSON.stringify(a, null, 2)], { type: 'application/json' }));
   $('result').hidden = false;
+}
+
+// a download link that points at a blob made in this tab
+function setLink(a, blob) {
+  if (a.href.startsWith('blob:')) URL.revokeObjectURL(a.href);
+  a.href = URL.createObjectURL(blob);
 }
 
 function download(name, blob) {
@@ -178,14 +190,36 @@ async function pngBlob(svg) {
 $('theme').addEventListener('change', () => {
   if (!last) return sample && showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
   show(last.analysis, last.svgs[resolvedTheme()]);
-  if (document.documentElement.dataset.accent) setAccent(last.svgs, last.analysis.card.accent);
+  if (document.documentElement.dataset.accent) setAccent(last.svgs, last.card.accent);
 });
-$('dl-svg').addEventListener('click', () => last && download('card.svg', new Blob([last.svgs.auto], { type: 'image/svg+xml' })));
+const png = () => pngBlob(last.svgs[resolvedTheme()]);
 $('dl-png').addEventListener('click', async () => {
   if (!last) return;
-  try { download('card.png', await pngBlob(last.svgs[chosenTheme('png')])); } catch (e) { setStatus(e.message, true); }
+  try { download('card.png', await png()); } catch (e) { setStatus(e.message, true); }
 });
-$('dl-json').addEventListener('click', () => last && download('stand.json', new Blob([JSON.stringify(last.analysis, null, 2)], { type: 'application/json' })));
+
+// Copy image and Share need the clipboard and the Web Share API; each button stays hidden where its API is missing
+const note = (t) => { $('sharenote').textContent = t; };
+if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) $('copy-img').hidden = false;
+const canShareFile = () => {
+  try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'card.png', { type: 'image/png' })] })); } catch { return false; }
+};
+if (canShareFile()) $('share-btn').hidden = false;
+$('copy-img').addEventListener('click', async () => {
+  if (!last) return;
+  try {
+    // the PNG is handed over as a promise so that Safari keeps the click's permission while it is made
+    await navigator.clipboard.write([new ClipboardItem({ 'image/png': png() })]);
+    note('Image copied.');
+  } catch (e) { note(`Could not copy the image: ${e.message}`); }
+});
+$('share-btn').addEventListener('click', async () => {
+  if (!last) return;
+  try {
+    const file = new File([await png()], 'stand-card.png', { type: 'image/png' });
+    await navigator.share({ files: [file], title: 'My Stand card' });
+  } catch (e) { if (e.name !== 'AbortError') note(`Could not share: ${e.message}`); }
+});
 
 $('change').addEventListener('click', () => $('file').click());
 $('pick').addEventListener('click', (e) => { e.stopPropagation(); $('file').click(); });
