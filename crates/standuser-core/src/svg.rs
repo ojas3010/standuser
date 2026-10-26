@@ -171,42 +171,65 @@ impl Ctx {
     }
 }
 
-/// The chart centre and the hexagon's circumradius (the ∞ ring; a grade E to A is the ring k of 6 for k = 1 to 5).
-pub const CY: f64 = 510.0;
-pub const CHART_R: f64 = 148.0;
-/// The circled grade at each vertex: its radius, how far beyond the vertex its centre is, and the size of the JP label past it.
-const BADGE_R: f64 = 22.0;
-const BADGE_OFF: f64 = 34.0;
+/// The chart: centre height and the hexagon's circumradius (the ∞ ring; a grade E to A is the ring k of 6 for k = 1 to 5). The hexagon
+/// is 55% of the card's width or more: its plate is √3 · CHART_R wide.
+pub const CX: f64 = W / 2.0;
+pub const CY: f64 = 668.0;
+pub const CHART_R: f64 = 346.0;
+/// The circled grade sits on each vertex: its radius, its letter's size, and the size of the JP label beside it.
+const BADGE_R: f64 = 32.0;
+const BADGE_TEXT: f64 = 30.0;
 const LABEL_SIZE: f64 = 22.0;
+/// Gap between a badge and its label.
+const LABEL_GAP: f64 = 12.0;
 
-/// The ability sentence's size and width, and its most rows.
+/// The left edge of the text, and the right edge.
+pub const MARGIN: f64 = 48.0;
+pub const RIGHT: f64 = W - MARGIN;
+/// The Stand master sits in the free corner above the name's low left end; the type sits in the free corner under its high right end.
+const MASTER_Y: f64 = 90.0;
+const MASTER_SIZE: f64 = 34.0;
+const TYPE_SIZE: f64 = 26.0;
+const TYPE_JP_Y: f64 = 214.0;
+const TYPE_EN_Y: f64 = 262.0;
+
+/// The bottom of the card is laid out from the foot up: the footer, the nearest canon line, the ability's sentence (at most 3 rows) and
+/// above it the ability's name.
 const LINE_SIZE: f64 = 26.0;
-const LINE_PITCH: f64 = 34.0;
-const LINE_WIDTH: f64 = 940.0;
+const LINE_PITCH: f64 = 40.0;
+const LINE_WIDTH: f64 = RIGHT - MARGIN;
 const LINE_MAX_ROWS: usize = 3;
-const NAME_Y: f64 = 880.0;
-pub const FOOT_Y: f64 = 1290.0;
+const ABILITY_SIZE: f64 = 44.0;
+pub const FOOT_Y: f64 = 1312.0;
+pub const NEAR_Y: f64 = 1262.0;
+const NEAR_SIZE: f64 = 26.0;
+/// Baseline of the last row of the sentence, and of the ability's name above the first row.
+const LINE_LAST_Y: f64 = NEAR_Y - 48.0;
+const ABILITY_RISE: f64 = 50.0;
 
-/// The ゴゴゴ along both sides are the SFX of the scene: the card's second colour with the black outline, level, each one smaller than
-/// the last as on the covers; their size (a Dela Gothic One ゴ is one em wide) and the centre of the column.
-pub const GOGOGO_SIZES: [f64; 4] = [76.0, 70.0, 64.0, 58.0];
-pub const GOGOGO_X: f64 = 82.0;
-const GOGOGO_Y0: f64 = 380.0;
+/// Where the ability's name and its rows of sentence stand: (name baseline, first row baseline).
+pub fn ability_rows(rows: usize) -> (f64, f64) {
+    let first = LINE_LAST_Y - (rows.clamp(1, LINE_MAX_ROWS) as f64 - 1.0) * LINE_PITCH;
+    (first - ABILITY_RISE, first)
+}
+
+/// The ゴゴゴ: three ゴ on a diagonal down the left side, staggered, each smaller than the last (a Dela Gothic One ゴ is one em wide):
+/// (size, centre x, centre y). They stand in the free strip between the card's edge and the hexagon, clear of every text.
+pub const GOGOGO: [(f64, f64, f64); 3] = [(110.0, 84.0, 546.0), (84.0, 128.0, 668.0), (62.0, 150.0, 776.0)];
 /// Width of the black outline of the display lettering, in px (half of it shows outside the glyph).
 pub const OUTLINE: f64 = 6.0;
 /// The Stand name's outline, which is heavier: the name is the card's logo.
-pub const NAME_OUTLINE: f64 = 10.0;
+pub const NAME_OUTLINE: f64 = 12.0;
 /// The Stand name's one tilt, in degrees as SVG's rotate() takes them: negative is counter-clockwise, so the name climbs to the right,
 /// like the slant of a Part logo. Nothing else on the card is rotated.
 pub const NAME_TILT: f64 = -5.0;
-/// The header box the tilted name stays inside: from the left margin to the right margin; its left end stays below the 【STAND NAME】
-/// label, anywhere else it stays this far from the top frame, and it ends above the 【STAND MASTER】 row.
-pub const NAME_X0: f64 = 70.0;
-pub const NAME_X1: f64 = W - 70.0;
-pub const NAME_TOP_AT_LEFT: f64 = 100.0;
-pub const NAME_TOP: f64 = 54.0;
-pub const NAME_BOTTOM: f64 = 190.0;
-pub const NAME_MAX_SIZE: f64 = 80.0;
+/// The header box the tilted name stays inside. Its low left corner is the box's low left corner, so the name's bottom edge is one fixed
+/// line whatever the name, and the corners above and below that line stay free for the master and the type.
+pub const NAME_X0: f64 = MARGIN;
+pub const NAME_X1: f64 = RIGHT;
+pub const NAME_TOP: f64 = 30.0;
+pub const NAME_BOTTOM: f64 = 270.0;
+pub const NAME_MAX_SIZE: f64 = 120.0;
 pub const NAME_MIN_SIZE: f64 = 34.0;
 /// Letter spacing of the Stand name.
 const NAME_LS: f64 = 1.0;
@@ -236,7 +259,7 @@ fn name_box(f: &Font, text: &str, size: f64) -> NamePlace {
 
 fn name_fits(p: &NamePlace) -> bool {
     let c = &p.corners;
-    c.iter().all(|q| q.0 >= NAME_X0 - 0.01 && q.0 <= NAME_X1 && q.1 >= NAME_TOP && q.1 <= NAME_BOTTOM + 0.01) && c[0].1 >= NAME_TOP_AT_LEFT
+    c.iter().all(|q| q.0 >= NAME_X0 - 0.01 && q.0 <= NAME_X1 && q.1 >= NAME_TOP && q.1 <= NAME_BOTTOM + 0.01)
 }
 
 /// The largest size from NAME_MAX_SIZE down to NAME_MIN_SIZE at which the tilted name fits the header. Only a name that does not fit
@@ -282,19 +305,16 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
 pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     use FontKind::{Display, Name, Sans};
     let mut c = Ctx { sans: font(Sans), name: font(Name), display: font(Display), els: vec![], runs: vec![] };
-    let (cx, cy, r_chart) = (540.0, CY, CHART_R);
+    let (cx, cy, r_chart) = (CX, CY, CHART_R);
 
     // ground, and the frame: the panel border in black, a fine line of the ink inside it
     c.els.push(format!("<rect width=\"{W}\" height=\"{H}\" class=\"f-bg\"/>"));
     c.els.push(format!("<rect x=\"24\" y=\"24\" width=\"{}\" height=\"{}\" rx=\"4\" class=\"s-bk\" fill=\"none\" stroke-width=\"8\"/>", W - 48.0, H - 48.0));
     c.els.push(format!("<rect x=\"39\" y=\"39\" width=\"{}\" height=\"{}\" rx=\"2\" class=\"s-ink\" fill=\"none\" stroke-width=\"2\"/>", W - 78.0, H - 78.0));
-    // the ゴゴゴ of the scene, down both sides
-    let mut gy = GOGOGO_Y0;
-    for sz in GOGOGO_SIZES {
-        for gx in [GOGOGO_X, W - GOGOGO_X] {
-            c.lettering("ゴ", gx, gy, sz, Display, "fill", "middle", 0.0, OUTLINE);
-        }
-        gy += sz * 1.45;
+    // the ゴゴゴ of the scene, on a diagonal down the left side
+    for (sz, gx, gy) in GOGOGO {
+        let (up, down) = c.display.ink_extent("ゴ", sz);
+        c.lettering("ゴ", gx, gy + (up - down) / 2.0, sz, Display, "fill", "middle", 0.0, OUTLINE);
     }
     // the Stand name: the card's one diagonal, largest size that keeps its tilted box in the header; the outline and the fill share the tilt
     let np = place_name(&c.name, &d.name);
@@ -315,15 +335,14 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
             NAME_TILT, n1(np.x), n1(np.y)
         ));
     }
-    // the Stand master, and the type in Japanese and English
+    // the Stand master (top left, above the name's low end) and the type in Japanese and English (right, under the name's high end)
     let label = "本体―";
-    c.text(label, 70.0, 204.0, 30.0, Display, "ink", "start", 0.0);
-    let lw = c.display.width(label, 30.0, 0.0);
-    let user = c.sans.fit(&d.user, 34.0, 470.0 - lw - 10.0);
-    c.text(&user, 70.0 + lw + 10.0, 204.0, 34.0, Sans, "ink", "start", 0.0);
-    c.text(&d.type_jp, 70.0, 252.0, 26.0, Display, "ink", "start", 0.0);
-    let tw = c.display.width(&d.type_jp, 26.0, 0.0);
-    c.text(&format!(" · {}", d.type_en), 70.0 + tw, 252.0, 26.0, Sans, "mute", "start", 0.0);
+    c.text(label, MARGIN, MASTER_Y, MASTER_SIZE, Display, "ink", "start", 0.0);
+    let lw = c.display.width(label, MASTER_SIZE, 0.0);
+    let user = c.sans.fit(&d.user, MASTER_SIZE, 470.0 - lw - 10.0);
+    c.text(&user, MARGIN + lw + 10.0, MASTER_Y, MASTER_SIZE, Sans, "ink", "start", 0.0);
+    c.text(&d.type_jp, RIGHT, TYPE_JP_Y, TYPE_SIZE, Display, "ink", "end", 0.0);
+    c.text(&d.type_en, RIGHT, TYPE_EN_Y, TYPE_SIZE, Sans, "ink", "end", 0.0);
 
     // the chart, after the Part 5 tailpiece: a paper hexagon, a ring per grade, three spokes, a dot on each spoke at each ring
     let outer = hex(cx, cy, r_chart);
@@ -362,46 +381,43 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
             c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"7\" class=\"f-paper s-bk\" stroke-width=\"2.5\"/>", vals[i].0, vals[i].1));
         }
     }
-    // the circled grade past each vertex, and the label past it: at the top and bottom above and below, at the four sides to the right
-    // or left, so the labels stand where the Part 5 chart has them (破壊力 top, スピード upper right, 射程距離 lower right, 持続力
-    // bottom, 精密動作性 lower left, 成長性 upper left)
+    // the circled grade on each vertex, and the label beside it: to the right at the top, the bottom and the two right vertices; at the
+    // two left vertices below and above, so the label stays off the card's edge (破壊力 top, スピード upper right, 射程距離 lower right,
+    // 持続力 bottom, 精密動作性 lower left, 成長性 upper left)
     for i in 0..6 {
         let a = (i as f64 * 60.0).to_radians();
-        let r_b = r_chart + BADGE_OFF;
-        let (bx, by) = (cx + r_b * a.sin(), cy - r_b * a.cos());
+        let (bx, by) = (cx + r_chart * a.sin(), cy - r_chart * a.cos());
         let g = format!("{}{}", d.grades[i], if d.prov[i] { "*" } else { "" });
-        let g = g.as_str();
-        if d.grades[i] == "完成" {
-            c.els.push(format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{}\" height=\"{}\" rx=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>", bx - 31.0, by - BADGE_R, 62.0, 2.0 * BADGE_R));
-            c.centred(g, bx, by, 24.0, Display, "bk");
+        let pill = d.grades[i] == "完成";
+        let half = if pill { 46.0 } else { BADGE_R };
+        if pill {
+            c.els.push(format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{}\" height=\"{}\" rx=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>", bx - half, by - BADGE_R, 2.0 * half, 2.0 * BADGE_R));
+            c.centred(&g, bx, by, BADGE_TEXT - 4.0, Display, "bk");
         } else {
             c.els.push(format!("<circle cx=\"{bx:.1}\" cy=\"{by:.1}\" r=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>"));
-            c.centred(g, bx, by, 30.0, Display, "bk");
+            c.centred(&g, bx, by, BADGE_TEXT, Display, "bk");
         }
-        let half = if d.grades[i] == "完成" { 31.0 } else { BADGE_R };
+        let (up, down) = c.display.ink_extent(JP[i], LABEL_SIZE);
+        let mid = (up - down) / 2.0;
         match i {
-            0 => c.text(JP[i], bx, by - BADGE_R - 8.0, LABEL_SIZE, Display, "ink", "middle", 0.0),
-            3 => c.text(JP[i], bx, by + BADGE_R + 8.0 + LABEL_SIZE * 0.8, LABEL_SIZE, Display, "ink", "middle", 0.0),
-            _ => {
-                let right = a.sin() > 0.0;
-                let (ux, uy) = if right { (bx + half + 10.0, by) } else { (bx - half - 10.0, by) };
-                let (up, down) = c.display.ink_extent(JP[i], LABEL_SIZE);
-                c.text(JP[i], ux, uy + (up - down) / 2.0, LABEL_SIZE, Display, "ink", if right { "start" } else { "end" }, 0.0);
-            }
+            0..=3 => c.text(JP[i], bx + half + LABEL_GAP, by + mid, LABEL_SIZE, Display, "ink", "start", 0.0),
+            4 => c.text(JP[i], bx + BADGE_R * 0.8, by + BADGE_R + LABEL_GAP + up, LABEL_SIZE, Display, "ink", "end", 0.0),
+            _ => c.text(JP[i], bx + BADGE_R * 0.8, by - BADGE_R - LABEL_GAP, LABEL_SIZE, Display, "ink", "end", 0.0),
         }
     }
-
 
     // the ability: its name, then its one sentence
     let aname = if d.ability_name.is_empty() { "Ability" } else { d.ability_name.as_str() };
-    c.text(aname, 70.0, NAME_Y, 44.0, Name, "ink", "start", 0.0);
-    for (i, ln) in c.sans.wrap(&d.ability_line, LINE_SIZE, LINE_WIDTH).iter().take(LINE_MAX_ROWS).enumerate() {
-        c.text(ln, 70.0, NAME_Y + 50.0 + i as f64 * LINE_PITCH, LINE_SIZE, Sans, "ink", "start", 0.0);
+    let rows: Vec<String> = c.sans.wrap(&d.ability_line, LINE_SIZE, LINE_WIDTH).into_iter().take(LINE_MAX_ROWS).collect();
+    let (name_y, first_y) = ability_rows(rows.len());
+    c.text(aname, MARGIN, name_y, ABILITY_SIZE, Name, "ink", "start", 0.0);
+    for (i, ln) in rows.iter().enumerate() {
+        c.text(ln, MARGIN, first_y + i as f64 * LINE_PITCH, LINE_SIZE, Sans, "ink", "start", 0.0);
     }
     // the nearest canon line, and the one footer line
-    let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), 26.0, 940.0);
-    c.text(&near, 70.0, 1200.0, 26.0, Sans, "ink", "start", 0.0);
-    c.text(FOOTER, 70.0, FOOT_Y, 26.0, Sans, "mute", "start", 0.0);
+    let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), NEAR_SIZE, RIGHT - MARGIN);
+    c.text(&near, MARGIN, NEAR_Y, NEAR_SIZE, Sans, "ink", "start", 0.0);
+    c.text(FOOTER, MARGIN, FOOT_Y, NEAR_SIZE, Sans, "mute", "start", 0.0);
 
     // assemble
     let key = d.accent.as_deref();
@@ -555,9 +571,9 @@ mod tests {
     #[test]
     fn the_lettering_has_the_manga_outline() {
         // every outlined text is a black path (class "o", with a stroke width) followed by the fill path of the same glyphs: the name
-        // and each ゴゴゴ (8 of them)
+        // and each ゴ (3 of them)
         let s = card_svg(&sample(), Theme::Light);
-        assert_eq!(s.matches("class=\"o\"").count(), 1 + 8);
+        assert_eq!(s.matches("class=\"o\"").count(), 1 + 3);
         let mut pairs = 0;
         let parts: Vec<&str> = s.split("<path d=\"").skip(1).collect();
         for (k, part) in parts.iter().enumerate() {
@@ -567,7 +583,7 @@ mod tests {
                 pairs += 1;
             }
         }
-        assert_eq!(pairs, 9);
+        assert_eq!(pairs, 4);
         assert!(s.contains(".o{fill:#0b0b0b;stroke:#0b0b0b;stroke-linejoin:round}"));
     }
 
@@ -591,11 +607,11 @@ mod tests {
 
     #[test]
     fn the_chart_is_the_part_5_hexagon() {
-        // hexagonal plate and rings (7 polygons with the value polygon), the circled A to E on the top axis, one circled grade per vertex
+        // hexagonal plate and rings (7 polygons with the value polygon), one circled grade per vertex
         let s = card_svg(&sample(), Theme::Light);
         assert_eq!(s.matches("<polygon").count(), 1 + 5 + 1);
         assert!(!s.contains("stroke-dasharray=\"6 5\"") || sample().unknown.iter().any(|u| *u));
-        assert_eq!(s.matches("r=\"22\" class=\"f-paper s-bk\"").count(), 6, "six circled grades");
+        assert_eq!(s.matches(&format!("r=\"{BADGE_R}\" class=\"f-paper s-bk\"")).count(), 6, "six circled grades");
         // the vertices are where the Part 5 chart puts them: Power on top, Speed upper right, Range lower right, Stamina below,
         // Precision lower left, Potential upper left (clockwise from the top)
         let v = hex(540.0, 100.0, 100.0);
@@ -644,5 +660,40 @@ mod tests {
     fn the_footer_is_the_one_line() {
         assert_eq!(FOOTER, "standuser.pages.dev · Fan work, not affiliated · * provisional");
         assert!(!FOOTER.contains('\n') && !FOOTER.contains("endorsed") && !FOOTER.contains("Data:"));
+    }
+
+    #[test]
+    fn the_hexagon_is_at_least_55_percent_of_the_card_width() {
+        let s = card_svg(&sample(), Theme::Light);
+        // the plate is the first polygon: read its points back
+        let at = s.find("<polygon points=\"").unwrap() + "<polygon points=\"".len();
+        let pts: Vec<(f64, f64)> = s[at..at + s[at..].find('"').unwrap()]
+            .split(' ')
+            .map(|p| {
+                let (x, y) = p.split_once(',').unwrap();
+                (x.parse().unwrap(), y.parse().unwrap())
+            })
+            .collect();
+        let (min, max) = (pts.iter().map(|p| p.0).fold(f64::MAX, f64::min), pts.iter().map(|p| p.0).fold(f64::MIN, f64::max));
+        assert!(max - min >= 0.55 * W, "the hexagon is {:.1}% of the card's width", 100.0 * (max - min) / W);
+        assert!((3.0f64).sqrt() * CHART_R >= 0.55 * W);
+    }
+
+    #[test]
+    fn the_stand_name_is_larger_than_it_was() {
+        // the old card capped the name at 80 px and drew the median name in names.json at that cap; every name that was at the cap is
+        // now larger, and the median name is well above it
+        let f = font(FontKind::Name);
+        let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
+        let mut sizes: Vec<f64> = vec![];
+        for v in names["names"].as_object().unwrap().values() {
+            for cand in v[1].as_array().unwrap().iter().take(1) {
+                sizes.push(place_name(&f, cand[0].as_str().unwrap()).size);
+            }
+        }
+        sizes.sort_by(|a, b| a.total_cmp(b));
+        let median = sizes[sizes.len() / 2];
+        println!("{} names, drawn at {} px at the smallest, {median} px at the median, {} px at the largest", sizes.len(), sizes[0], sizes[sizes.len() - 1]);
+        assert!(median >= 85.0 && sizes[0] >= NAME_MIN_SIZE, "median {median}");
     }
 }
