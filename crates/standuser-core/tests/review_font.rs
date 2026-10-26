@@ -22,7 +22,7 @@ fn missing(s: &str, kinds: &[FontKind]) -> String {
     out
 }
 
-/// A composer-route Stand name is drawn in the serif font. Every composer in the table must give a name the card can draw
+/// A composer-route Stand name is drawn in the name font (Archivo Black). Every composer in the table must give a name the card can draw
 /// (accents folded to ASCII, or the composer skipped), never a name with a hole in it.
 #[test]
 fn every_composer_in_the_table_gives_a_drawable_stand_name() {
@@ -55,7 +55,7 @@ fn every_composer_in_the_table_gives_a_drawable_stand_name() {
         let ex = parse::parse_files(&f, Some("letterboxd-g-2026-10-19-13-22-utc.zip")).unwrap();
         let a = analysis::analyze(&ex, &lk);
         // the card draws the name inside 「」 in the serif font, so the brackets are part of what must render
-        let miss = missing(&format!("「{}」", a.name.name), &[FontKind::Serif]);
+        let miss = missing(&format!("「{}」", a.name.name), &[FontKind::Name]);
         checked += 1;
         if !miss.is_empty() {
             bad.push(format!("{name:?} -> 「{}」 missing {miss:?}", a.name.name));
@@ -76,7 +76,7 @@ fn stand_names_are_folded_to_ascii() {
     assert_eq!(ascii_fold("Łukasz Błaszczyk").as_deref(), Some("LUKASZ BLASZCZYK"));
     assert_eq!(ascii_fold("Ennio Morricone").as_deref(), Some("ENNIO MORRICONE"));
     assert_eq!(ascii_fold("Wayne \"The Train\" Hancock").as_deref(), Some("WAYNE \"THE TRAIN\" HANCOCK"), "a straight double quote is allowed");
-    assert_eq!(missing("「WAYNE \"THE TRAIN\" HANCOCK」", &[FontKind::Serif]), "", "and the card font draws it");
+    assert_eq!(missing("「WAYNE \"THE TRAIN\" HANCOCK」", &[FontKind::Name]), "", "and the card font draws it");
     assert_eq!(ascii_fold("久石 譲"), None, "a name with no ASCII form cannot be drawn");
     assert_eq!(ascii_fold("Сталкер"), None);
     assert_eq!(ascii_fold("   "), None);
@@ -86,22 +86,30 @@ fn stand_names_are_folded_to_ascii() {
 #[test]
 fn every_fixed_card_label_has_its_glyphs() {
     use standuser_core::{grading, name, svg, types};
-    let sans_only: Vec<String> = svg::JP.iter().map(|s| s.to_string())
+    // the manga lettering is drawn in the display font (Dela Gothic One): the stat labels, the legend, the type names and the labels
+    let display: Vec<String> = svg::JP.iter().map(|s| s.to_string())
         .chain(svg::LEGEND.iter().map(|(a, b)| format!("{a}―{b}")))
-        .chain(["PROVISIONAL DATA", "ゴ", "完成", "∞", "∅", "?", "*", "本体 ―", "能力―", "弱点―", "A B C D E", "E D C B A"].map(String::from))
-        .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().flat_map(|t| [t.jp().to_string(), t.en().to_string()]))
+        .chain(["ゴ", "完成", "∞", "∅", "?", "*", "本体―", "能力―", "弱点―", "A", "B", "C", "D", "E", "【STAND NAME】", "【STAND MASTER】"].map(String::from))
+        .chain(svg::JP.iter().flat_map(|j| ["A", "B", "C", "D", "E", "?", "∞", "∅", "完成"].map(|g| format!("{j}―{g}*"))))
+        .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.jp().to_string()))
+        .collect();
+    for s in &display {
+        assert_eq!(missing(s, &[FontKind::Display]), "", "display: {s}");
+    }
+    let sans_only: Vec<String> = ["PROVISIONAL DATA", "A B C D E", "E D C B A"].map(String::from).into_iter()
+        .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.en().to_string()))
         .chain(grading::LABEL.iter().map(|s| s.to_string()))
         .collect();
     for s in &sans_only {
         assert_eq!(missing(s, &[FontKind::Sans]), "", "sans: {s}");
     }
-    let serif: Vec<String> = ["【STAND NAME】", "【STAND MASTER】", "「」", "…"].map(String::from).into_iter()
+    let serif: Vec<String> = ["「」", "…"].map(String::from).into_iter()
         .chain(name::tarot_names())
         .collect();
     for s in &serif {
-        assert_eq!(missing(s, &[FontKind::Serif]), "", "serif: {s}");
+        assert_eq!(missing(s, &[FontKind::Name]), "", "name font: {s}");
         // as drawn on the card: inside the corner brackets
-        assert_eq!(missing(&format!("「{s}」"), &[FontKind::Serif]), "", "serif, bracketed: {s}");
+        assert_eq!(missing(&format!("「{s}」"), &[FontKind::Name]), "", "name font, bracketed: {s}");
     }
     // footer and text templates
     for s in [svg::FOOTER, svg::TYPE_NOTE, svg::TYPE_NOTE_LOW] {
@@ -141,21 +149,24 @@ fn every_artist_credit_in_names_json_is_drawable() {
     assert!(bad.is_empty(), "{} credits would draw a box, e.g. {:?}", bad.len(), &bad[..bad.len().min(5)]);
 }
 
-/// Serif is display only (the Stand name and the 【】 labels): it keeps Basic Latin and Latin-1, and does not carry the
-/// kana, Greek or Cyrillic that the sans draws.
+/// The name font is for the Stand name only: Basic Latin, Latin-1 and the brackets, not the kana, Greek or Cyrillic that the sans
+/// draws. The display font is the manga lettering: kana, the kanji of the labels, Basic Latin and 【】, not Greek or Cyrillic.
 #[test]
-fn serif_is_display_only() {
-    let serif = font(FontKind::Serif);
-    assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '&-.,!?:\"「」【】…".chars().all(|c| serif.has(c)));
-    assert!(!serif.has('ひ') && !serif.has('Ж'));
+fn the_display_fonts_keep_to_their_job() {
+    let name = font(FontKind::Name);
+    assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '&-.,!?:\"「」…".chars().all(|c| name.has(c)));
+    assert!(!name.has('ひ') && !name.has('Ж'));
+    let display = font(FontKind::Display);
+    assert!("ゴゴゴスピードニガテひらがな【】「」ABCDE".chars().all(|c| display.has(c)));
+    assert!(!display.has('Ж') && !display.has('ά'));
 }
 
-/// A track-title Stand name is drawn in the serif inside 「」. Every character of every candidate title in names.json must
-/// have a glyph in serif.ttf; a failure lists each missing character with the names that use it.
+/// A track-title Stand name is drawn in the name font inside 「」. Every character of every candidate title in names.json must
+/// have a glyph in name.ttf; a failure lists each missing character with the names that use it.
 #[test]
-fn every_stand_name_in_names_json_is_drawable_in_the_serif() {
+fn every_stand_name_in_names_json_is_drawable_in_the_name_font() {
     let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
-    let serif = font(FontKind::Serif);
+    let serif = font(FontKind::Name);
     let mut by_char: BTreeMap<char, Vec<String>> = BTreeMap::new();
     let mut total = 0;
     for v in names["names"].as_object().unwrap().values() {
@@ -172,5 +183,5 @@ fn every_stand_name_in_names_json_is_drawable_in_the_serif() {
     }
     assert!(total > 20000, "{total}");
     let report: Vec<String> = by_char.iter().map(|(c, n)| format!("{c:?} U+{:04X} ({} names): {:?}", *c as u32, n.len(), &n[..n.len().min(8)])).collect();
-    assert!(by_char.is_empty(), "{} characters missing from serif.ttf over {total} names:\n{}", by_char.len(), report.join("\n"));
+    assert!(by_char.is_empty(), "{} characters missing from name.ttf over {total} names:\n{}", by_char.len(), report.join("\n"));
 }

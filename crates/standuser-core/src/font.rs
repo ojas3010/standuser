@@ -1,15 +1,21 @@
-//! Text as outlines: glyph paths from the embedded Noto Sans JP / Noto Serif JP Bold subsets, so the SVG renders the
-//! same everywhere with no font files. Characters missing from the subset are drawn as □.
+//! Text as outlines: glyph paths from the embedded font subsets, so the SVG renders the same everywhere with no font files (all
+//! SIL OFL; the licence texts sit beside the fonts in data/). Sans is Noto Sans JP Bold, for body text; Display is Dela Gothic One,
+//! the manga lettering (katakana, the stat labels, ゴゴゴ); Name is Archivo Black, the Stand name. Characters missing from the
+//! subset are drawn as □.
 
 use ttf_parser::{Face, OutlineBuilder};
 
 static SANS: &[u8] = include_bytes!("../data/sans.ttf");
-static SERIF: &[u8] = include_bytes!("../data/serif.ttf");
+static NAME: &[u8] = include_bytes!("../data/name.ttf");
+static DISPLAY: &[u8] = include_bytes!("../data/display.ttf");
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum FontKind {
     Sans,
-    Serif,
+    /// The Stand name (Archivo Black): Basic Latin, Latin-1, punctuation and 「」.
+    Name,
+    /// The manga lettering (Dela Gothic One): kana, the kanji of the labels and types, Basic Latin, 【】.
+    Display,
 }
 
 pub struct Font {
@@ -18,7 +24,12 @@ pub struct Font {
 }
 
 pub fn font(kind: FontKind) -> Font {
-    let face = Face::parse(if kind == FontKind::Sans { SANS } else { SERIF }, 0).expect("embedded font");
+    let data = match kind {
+        FontKind::Sans => SANS,
+        FontKind::Name => NAME,
+        FontKind::Display => DISPLAY,
+    };
+    let face = Face::parse(data, 0).expect("embedded font");
     let upm = face.units_per_em() as f64;
     Font { face, upm }
 }
@@ -293,19 +304,20 @@ mod title_tests {
         }
     }
 
-    fn serif() -> Font {
-        font(FontKind::Serif)
+    /// The fitting rules run on the card's body text, which is the sans.
+    fn sans() -> Font {
+        font(FontKind::Sans)
     }
 
     #[test]
     fn a_title_that_fits_is_left_alone() {
-        let f = serif();
+        let f = sans();
         assert_eq!(f.fit_title("Ghost Rider: Spirit of Vengeance (Denmark)", 18.0, 2000.0), "Ghost Rider: Spirit of Vengeance (Denmark)");
     }
 
     #[test]
     fn the_subtitle_after_the_colon_goes_first_and_the_country_stays() {
-        let f = serif();
+        let f = sans();
         let long = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
         let short = "Ghost Rider (United Arab Emirates)";
         let w = f.width(short, 18.0, 0.0) + 1.0;
@@ -315,7 +327,7 @@ mod title_tests {
 
     #[test]
     fn if_still_too_long_the_title_is_cut_at_a_word_boundary_with_an_ellipsis() {
-        let f = serif();
+        let f = sans();
         let long = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
         let w = f.width("Ghost… (United Arab Emirates)", 18.0, 0.0) + 1.0;
         assert_eq!(f.fit_title(long, 18.0, w), "Ghost… (United Arab Emirates)");
@@ -326,7 +338,7 @@ mod title_tests {
 
     #[test]
     fn never_cuts_inside_a_word_at_any_width() {
-        let f = serif();
+        let f = sans();
         let src = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
         let words: Vec<&str> = src.split([' ', ':']).map(|w| w.trim_matches(|c| c == '(' || c == ')')).filter(|w| !w.is_empty()).collect();
         for w in (120..460).step_by(7) {
@@ -344,7 +356,7 @@ mod title_tests {
 
     #[test]
     fn the_signature_line_is_cut_mid_word_by_plain_fit_and_not_by_fit_signature() {
-        let f = serif();
+        let f = sans();
         assert!(f.width(LONG_SIG, 20.0, 0.0) > 940.0);
         let old = f.fit(LONG_SIG, 20.0, 940.0);
         assert!(old.ends_with('…') && !old.ends_with(" …") && !old.contains("ratings"), "the old cut ends inside the line: {old}");
@@ -355,7 +367,7 @@ mod title_tests {
 
     #[test]
     fn a_signature_title_without_a_colon_is_cut_at_a_word_boundary_and_keeps_the_numbers() {
-        let f = serif();
+        let f = sans();
         let s = "Signature film: The Lord of the Rings the Fellowship of the Ring Extended Edition Director's Cut (2001), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.";
         let r = f.fit_signature(s, 20.0, 940.0);
         assert!(f.width(&r, 20.0, 0.0) <= 940.0, "{r}");
@@ -370,7 +382,7 @@ mod title_tests {
 
     #[test]
     fn a_one_word_signature_title_is_shortened_so_the_numbers_after_it_stay() {
-        let f = serif();
+        let f = sans();
         // this line was cut after "(-3.55)," by the word-boundary rule, which dropped the rating count
         let s = "Signature film: themuppetchristmascarol (1992), 0.5★ against the crowd's 4.05★ (-3.55), 388,056 ratings.";
         assert!(f.width(s, 20.0, 0.0) > 940.0);
@@ -384,7 +396,7 @@ mod title_tests {
 
     #[test]
     fn a_single_word_wider_than_the_box_falls_back_to_a_character_cut() {
-        let f = serif();
+        let f = sans();
         let r = f.fit_title("Supercalifragilisticexpialidocious", 18.0, 100.0);
         assert!(r.ends_with('…') && f.width(&r, 18.0, 0.0) <= 100.0);
     }

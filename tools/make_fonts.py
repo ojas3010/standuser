@@ -1,13 +1,12 @@
-"""Instantiate Noto Sans JP / Noto Serif JP (variable, OFL) at weight 700 and subset them for the card.
-Usage: ~/lb_venv/bin/python tools/make_fonts.py <NotoSansJP.ttf> <NotoSerifJP.ttf> <NotoSansKR.ttf> <NotoSansSC.ttf> <NotoSans.ttf>
-Output: crates/standuser-core/data/sans.ttf, serif.ttf
+"""Instantiate Noto Sans JP (variable, OFL) at weight 700 and subset it for the card.
+Usage: ~/lb_venv/bin/python tools/make_fonts.py <NotoSansJP.ttf> <NotoSansKR.ttf> <NotoSansSC.ttf> <NotoSans.ttf>
+Output: crates/standuser-core/data/sans.ttf (the display faces are built by tools/make_card_fonts.py)
 
 Sans draws everything but the Stand name and the 【】 labels: evidence lines, the ability box, the why line (which carries an
 artist credit from names.json), film titles and the user name. Every character of every artist credit in names.json is added to
 it, from Noto Sans JP when it has the glyph, else from Noto Sans KR (Hangul), Noto Sans SC (simplified hanzi) or Noto Sans
 (Latin Extended, Greek with tonos, the combining diaeresis). The credits are read from names.json, so a rebuild of the names
 keeps them drawable; tests/review_font.rs fails if one is not.
-Serif is for display only (the Stand name and the 【】 labels): Basic Latin, Latin-1, general punctuation and the brackets.
 """
 import io, json, sys
 from pathlib import Path
@@ -68,7 +67,7 @@ fixed = set("破壊力スピード射程距離持続力精密動作性成長性�
 greek = set("ΑΒΓΔΕΖΗΘΙΚΛΜΝΞΟΠΡΣΤΥΦΧΨΩαβγδεζηθικλμνξοπρστυφχψω")   # for the odd title
 cyrillic = set(chr(c) for c in range(0x400, 0x460))
 
-jp, serif_src, kr, sc, latin = sys.argv[1:6]
+jp, kr, sc, latin = sys.argv[1:5]
 want = ascii_ | latin1 | punct | kana | fixed | greek | cyrillic | credit_chars()
 
 # sans: the Noto Sans JP subset, plus the glyphs it lacks copied in (outlines decomposed) from the other sources; all use 1000 units per em
@@ -105,11 +104,7 @@ still = [c for c in sorted(want) if ord(c) not in cmap]
 (OUT / "sans.ttf").write_bytes(to_bytes(sans))
 print("sans.ttf", len(to_bytes(sans)) // 1024, "KB; credit characters still missing:", "".join(c for c in still if c in credit_chars()) or "none")
 
-serif_chars = ascii_ | latin1 | punct
-serif = cut(instance(serif_src), serif_chars, "Noto Serif JP")
-(OUT / "serif.ttf").write_bytes(to_bytes(serif))
-print("serif.ttf", len(to_bytes(serif)) // 1024, "KB")
-for name, f in (("sans", sans), ("serif", serif)):
+for name, f in (("sans", sans),):
     cm = f.getBestCmap()
     for label, lo, hi in (("Basic Latin", 0x20, 0x7E), ("Latin-1 letters", 0xC0, 0xFF), ("Latin Extended-A", 0x100, 0x17F),
                           ("Greek", 0x391, 0x3C9), ("Cyrillic basics", 0x400, 0x45F), ("Hiragana", 0x3041, 0x3096), ("Katakana", 0x30A1, 0x30FA)):
