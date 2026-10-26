@@ -1,6 +1,6 @@
 //! Browser entry points. Everything runs client-side: the export ZIP never leaves the page.
 
-use standuser_core::{analysis, lookup::Lookup, parse, svg};
+use standuser_core::{analysis, lookup::Lookup, parse, share, svg};
 use wasm_bindgen::prelude::*;
 
 /// Analyse an export entirely in the page: no network. `table_json` is the film lookup table; films missing from it are
@@ -45,6 +45,26 @@ pub fn render_card_inner(card_json: &str) -> String {
     match serde_json::from_str::<svg::CardData>(card_json) {
         Ok(card) => serde_json::json!({ "card": card, "svgs": svgs_of(&card) }).to_string(),
         Err(e) => serde_json::json!({ "error": format!("not a card: {e}") }).to_string(),
+    }
+}
+
+/// The payload of the share link for a card (`card_json` is `analysis.card`): the page puts it after `#c=`. Empty when the data is not a card.
+#[wasm_bindgen]
+pub fn share_encode(card_json: &str) -> String {
+    serde_json::from_str::<svg::CardData>(card_json).map(|c| share::encode(&c)).unwrap_or_default()
+}
+
+/// Open a share link: `hash` is `location.hash`. Returns JSON { card, svgs: { light, dark, auto } }, or { error } for anything that is not a
+/// well-formed card link (the page then shows its normal state).
+#[wasm_bindgen]
+pub fn share_decode(hash: &str) -> String {
+    share_decode_inner(hash)
+}
+
+pub fn share_decode_inner(hash: &str) -> String {
+    match share::decode_fragment(hash) {
+        Ok(card) => serde_json::json!({ "card": card, "svgs": svgs_of(&card) }).to_string(),
+        Err(e) => serde_json::json!({ "error": e }).to_string(),
     }
 }
 
@@ -125,5 +145,20 @@ mod tests {
         // something that is not a card comes back as an error, not a panic
         assert!(serde_json::from_str::<serde_json::Value>(&render_card_inner("{\"name\":1}")).unwrap()["error"].is_string());
         assert!(serde_json::from_str::<serde_json::Value>(&render_card_inner("nonsense")).unwrap()["error"].is_string());
+    }
+
+    #[test]
+    fn a_link_opens_to_the_same_card_and_a_bad_one_is_an_error() {
+        let json = std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../site/sample.json")).unwrap();
+        let shown: serde_json::Value = serde_json::from_str(&render_card_inner(&json)).unwrap();
+        let payload = share_encode(&json);
+        assert!(!payload.is_empty() && !payload.contains(['=', '+', '/']));
+        let opened: serde_json::Value = serde_json::from_str(&share_decode_inner(&format!("#c={payload}"))).unwrap();
+        assert_eq!(opened["svgs"], shown["svgs"], "the link draws the very card that made it");
+        for bad in ["", "#", "#c=", "#c=!!!", "#c=e30", "#x=abc", &format!("#c={}", &payload[..payload.len() / 2])] {
+            let v: serde_json::Value = serde_json::from_str(&share_decode_inner(bad)).unwrap();
+            assert!(v["error"].is_string() && v.get("svgs").is_none(), "{bad:?}");
+        }
+        assert_eq!(share_encode("nonsense"), "");
     }
 }

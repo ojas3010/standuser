@@ -134,6 +134,47 @@ try {
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('good file afterwards: result visible', !result.hidden, true);
   out('good file afterwards: status', JSON.stringify(statusEl().textContent), '""');
+  // Copy link: the card's data in the URL fragment, base64url
+  let copiedText = null;
+  Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async (t) => { copiedText = t; } });
+  document.getElementById('copy-link').click();
+  await until('Copy link to write', () => copiedText, 5000);
+  out('link', copiedText.replace(/#c=.{12,}$/, '#c=…'), `${location.origin}${location.pathname}#c=…`);
+  out('link payload is base64url', /#c=[A-Za-z0-9_-]{100,900}$/.test(copiedText), true);
+  out('Copy link says so', document.getElementById('sharenote').textContent, 'Link copied.');
+  out('next to Copy link: what the link contains', document.getElementById('linknote').textContent.includes('The link contains your username and grades'), true);
+  // opening the link: the card with no file, and no request beyond the page's own load
+  const open = async (hash) => {
+    const f = document.createElement('iframe');
+    f.src = 'index.html' + hash;
+    f.style.cssText = 'position:fixed;left:-2000px;width:1280px;height:900px';
+    document.body.appendChild(f);
+    await new Promise((r) => f.addEventListener('load', r, { once: true }));
+    const d = () => f.contentDocument;
+    await until('the linked page to boot', () => d().getElementById('status') && d().getElementById('status').textContent === '' && !d().getElementById('drop').classList.contains('loading') && d().getElementById('card').src.startsWith('blob:'), 20000);
+    return f;
+  };
+  const fr = await open(copiedText.slice(copiedText.indexOf('#')));
+  const fd = fr.contentDocument;
+  await fd.getElementById('card').decode();
+  const names = () => fr.contentWindow.performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname);
+  const atLoad = names();
+  out('opened link: card label', fd.getElementById('cardlabel').textContent, 'Shared card');
+  out('opened link: card', `${fd.getElementById('card').naturalWidth}x${fd.getElementById('card').naturalHeight}`, '1080x1350');
+  out('opened link: same card as the file made', (await (await fetch(fd.getElementById('card').src)).text()) === (await (await fetch(img.src)).text()), true);
+  out('opened link: share bar visible, why section hidden', `${!fd.getElementById('share').hidden} ${fd.getElementById('result').hidden}`, 'true true');
+  await sleep(1500);
+  out('opened link: requests after the page load', names().filter((n) => !atLoad.includes(n)).length, 0);
+  out('opened link: only the page\'s own files', [...new Set(names())].filter((n) => !/^\/(accent\.js|app\.js|films\.json|names\.json|sample\.json|style\.css|tmdb\.svg|pkg\/.*|fonts\/.*)$/.test(n)).join(' '), '');
+  out('opened link: no file was read', fd.getElementById('filebar').hidden && !fd.getElementById('drop').hidden, true);
+  fr.remove();
+  // a malformed fragment shows the normal page
+  for (const bad of ['#c=%21%21%21', '#c=e30', '#c=', '#c=' + 'A'.repeat(5000), '#x=1']) {
+    const g = await open(bad);
+    const gd = g.contentDocument;
+    out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden}`, 'Sample false true');
+    g.remove();
+  }
   // theme switch: the card image changes to a new blob
   const sel = document.getElementById('theme');
   const was = img.src;

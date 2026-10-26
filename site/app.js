@@ -1,5 +1,5 @@
 // standuser site: export.zip in, card out, all in the browser. No network use after the page, the film table and the name candidates load.
-import init, { run, render_card } from './pkg/standuser.js';
+import init, { run, render_card, share_encode, share_decode } from './pkg/standuser.js';
 import { cardColours } from './accent.js';
 
 const $ = (id) => document.getElementById(id);
@@ -31,7 +31,7 @@ async function boot() {
     const r = JSON.parse(render_card(smp));
     if (r.error) throw new Error(r.error);
     sample = { svgs: r.svgs, card: r.card };
-    if (!last) showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
+    if (!openLink()) showSample();
     if (n instanceof Error) setStatus(`The name candidates did not load (${n.message}); names will come from your composers.`);
     else {
       names = n;
@@ -46,11 +46,26 @@ async function boot() {
 }
 const ready = boot();
 
-function chosenTheme(kind) {
-  const t = $('theme').value;
-  if (kind === 'png') return t === 'auto' ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : t;
-  return t;
+function showSample() {
+  if (sample) showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
 }
+
+// A share link (#c=...) holds the data the card needs: it renders the card with no file and no request. A fragment that is not a
+// well-formed card link leaves the page as it is, in its normal state.
+function openLink() {
+  if (!location.hash.startsWith('#c=')) return false;
+  let r;
+  try { r = JSON.parse(share_decode(location.hash)); } catch { return false; }
+  if (r.error) return false;
+  last = { svgs: r.svgs, card: r.card, analysis: null };
+  showCard(r.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${r.card.user}`);
+  $('result').hidden = true;
+  $('share').hidden = false;
+  $('sharenote').textContent = '';
+  reveal(r.card, r.svgs);
+  return true;
+}
+addEventListener('hashchange', () => ready.then(() => { if (!openLink() && !last) showSample(); }));
 
 function exec(bytes, name) {
   const out = JSON.parse(run(bytes, name, table, names, $('joined').value || '', $('username').value.trim(), new Date().toISOString().slice(0, 10)));
@@ -68,6 +83,7 @@ async function handle(file) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const out = exec(bytes, file.name);
     last = { svgs: out.svgs, card: out.analysis.card, analysis: out.analysis };
+    if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     show(out.analysis, out.svgs[resolvedTheme()]);
     // the drop zone gives way to one line: the file, the films read, and a way to pick another
     $('fileinfo').textContent = `${file.name} · ${out.analysis.coverage.watched.toLocaleString('en-US')} films read`;
@@ -81,12 +97,13 @@ async function handle(file) {
   } catch (e) {
     // back to the first state: the sample card, the ink accent, the drop zone
     last = null;
+    if (location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);
     clearTimeout(accentTimer);
     const root = document.documentElement;
     root.style.removeProperty('--accent');
     root.style.removeProperty('--on-accent');
     delete root.dataset.accent;
-    if (sample) showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
+    showSample();
     drop.hidden = false;
     $('filebar').hidden = true;
     $('share').hidden = true;
@@ -188,8 +205,9 @@ async function pngBlob(svg) {
 }
 
 $('theme').addEventListener('change', () => {
-  if (!last) return sample && showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
-  show(last.analysis, last.svgs[resolvedTheme()]);
+  if (!last) return showSample();
+  if (last.analysis) show(last.analysis, last.svgs[resolvedTheme()]);
+  else showCard(last.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${last.card.user}`);
   if (document.documentElement.dataset.accent) setAccent(last.svgs, last.card.accent);
 });
 const png = () => pngBlob(last.svgs[resolvedTheme()]);
@@ -212,6 +230,15 @@ $('copy-img').addEventListener('click', async () => {
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': png() })]);
     note('Image copied.');
   } catch (e) { note(`Could not copy the image: ${e.message}`); }
+});
+// Copy link: the card's data in the fragment, which the browser never sends anywhere
+$('copy-link').addEventListener('click', async () => {
+  if (!last) return;
+  const url = `${location.origin}${location.pathname}#c=${share_encode(JSON.stringify(last.card))}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    note('Link copied.');
+  } catch { note(url); }
 });
 $('share-btn').addEventListener('click', async () => {
   if (!last) return;

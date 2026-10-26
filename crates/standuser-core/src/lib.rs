@@ -23,6 +23,7 @@ pub mod palette;
 pub mod parse;
 pub mod pool;
 pub mod rng;
+pub mod share;
 pub mod stats;
 pub mod svg;
 pub mod timeline;
