@@ -4,7 +4,7 @@
 // or "key: value [FAIL: expected ...]", and tools/site_test/run.sh exits non-zero on any FAIL or ERROR line.
 // Nothing waits a fixed time for the page: each step waits for the element it changes (until / settled) and times out
 // with an error instead of reading a half-finished page.
-import { ACCENTS, GROUND, GROUND2, contrast } from './accent.js';
+import { cardColours, contrast } from './accent.js';
 const log = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const same = (v, e) => (e instanceof RegExp ? e.test(String(v)) : e instanceof Function ? e(v) : String(v) === String(e));
@@ -85,15 +85,15 @@ try {
       out('name has a why line on the card data', a.card.why.startsWith('Why 「' + a.name.name + '」'), true);
     }
   }
-  // colour per user: the accent was applied after the reveal (or at once with reduced motion) and every accent passes WCAG AA on the grounds
+  // colour per user: the accent applied after the reveal (or at once with reduced motion) is the exact ground colour of the card on show,
+  // with the card's ink for the text on it, at WCAG AA
   await until('the accent to shift', () => document.documentElement.dataset.accent, 3000);
-  out('accent key', document.documentElement.dataset.accent, /^(PWR|SPD|RNG|STA|PRC|DEV)$/);
-  for (const [k, v] of Object.entries(ACCENTS)) {
-    for (const scheme of ['light', 'dark']) {
-      const worst = Math.min(contrast(v[scheme], GROUND[scheme]), contrast(v[scheme], GROUND2[scheme]));
-      out(`accent ${k} ${scheme} contrast on the ground`, worst.toFixed(2), (x) => Number(x) >= 4.5);
-    }
-  }
+  out('accent key', document.documentElement.dataset.accent, /^(PWR|SPD|RNG|STA|PRC|DEV|none)$/);
+  const root = getComputedStyle(document.documentElement);
+  const colours = cardColours(await (await fetch(img.src)).text());
+  out('accent is the card ground', root.getPropertyValue('--accent').trim(), colours.ground);
+  out('text on the accent is the card ink', root.getPropertyValue('--on-accent').trim(), colours.ink);
+  out('accent label contrast', contrast(colours.ground, colours.ink).toFixed(2), (x) => Number(x) >= 4.5);
   out('Download PNG is the one primary button', document.querySelectorAll('button.primary').length, 1);
   // malformed input: an error message for a corrupt file, a card for a file with a bad date and a NaN rating, and the page keeps working
   await feed('bad.zip', 'bad.zip');

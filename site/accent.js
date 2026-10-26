@@ -1,19 +1,13 @@
-// The page's one accent, keyed to the user's signature stat (the stat the ability is built on).
-// The six hues are Araki's signature colours (hot pink, yellow, light blue, green, purple, orange) and sit on the chart so that the
-// opposite axes are complementary pairs: Power/Stamina pink and green, Speed/Precision yellow and purple, Range/Potential blue and orange.
-// Each has a light-ground and a dark-ground value. The label on the filled button is the ground colour, so a value that passes
-// WCAG AA (4.5:1) against the ground passes for the button label too. tools/site_test/selftest.js and design_check.py verify it.
-export const ACCENTS = {
-  PWR: { light: '#b0104c', dark: '#ff6da3' },
-  SPD: { light: '#7a5f00', dark: '#f0c02c' },
-  RNG: { light: '#17659a', dark: '#6cbcf0' },
-  STA: { light: '#1d7438', dark: '#5ccd80' },
-  PRC: { light: '#6a3cb4', dark: '#b69aff' },
-  DEV: { light: '#a94700', dark: '#ff964a' },
+// The page's one accent is the exact ground colour of the user's card (the colour the card renderer fills its ground with, read back
+// from the card's own SVG so the two can never differ), and the text on it is the card's ink, which the card palette keeps at 4.5:1
+// or better on that ground. Before a card exists the accent is the page's ink colour (style.css). tools/site_test/selftest.js and
+// design_check.py verify it.
+const hexOf = (svg, cls) => {
+  const m = svg.match(new RegExp(`\\.f-${cls}\\{fill:(#[0-9a-fA-F]{6})\\}`));
+  return m ? m[1].toLowerCase() : null;
 };
-export const GROUND = { light: '#ffffff', dark: '#0e0e0e' };
-// the ground of the drop zone, the inputs and the table header
-export const GROUND2 = { light: '#f4f4f4', dark: '#1a1a1a' };
+// { ground, ink } of a card SVG (the light or the dark one, not the auto one, which carries both)
+export const cardColours = (svg) => ({ ground: hexOf(svg, 'bg'), ink: hexOf(svg, 'ink') });
 
 const lin = (c) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
 const luminance = (hex) => {
@@ -24,10 +18,3 @@ export const contrast = (a, b) => {
   const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x);
   return (hi + 0.05) / (lo + 0.05);
 };
-
-// "PWR".."DEV" from the analysis: the signature stat, or for a balanced chart the stat that stood out most; none when nothing was graded
-export function accentKey(analysis) {
-  const s = analysis && analysis.ability && analysis.ability.signature;
-  const key = s && (s.stat === 'BAL' ? s.top : s.stat);
-  return key in ACCENTS ? key : null;
-}

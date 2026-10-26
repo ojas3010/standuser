@@ -157,14 +157,16 @@ def main():
                 c2, pg, _, ph = load(browser, base, 1280, 900, scheme=scheme)
                 drop(pg, ph, z)
                 pg.wait_for_timeout(1300)
-                r = pg.evaluate("""() => { const s = getComputedStyle(document.getElementById('dl-png')); return [document.documentElement.dataset.accent || '',
-                  s.backgroundColor, s.color, getComputedStyle(document.body).backgroundColor, getComputedStyle(document.documentElement).getPropertyValue('--ground2')]; }""")
-                out.append((scheme, z.name[-30:-4], r[0], cr(rgb(r[1]), rgb(r[3])), cr(rgb(r[1]), rgb(r[2]))))
+                r = pg.evaluate("""async () => { const s = getComputedStyle(document.getElementById('dl-png')); const svg = await (await fetch(document.getElementById('card').src)).text();
+                  return [document.documentElement.dataset.accent || '', s.backgroundColor, s.color, svg.match(/\\.f-bg\\{fill:(#[0-9a-f]{6})\\}/)[1]]; }""")
+                hexrgb = lambda h: [int(h[i:i + 2], 16) for i in (1, 3, 5)]
+                out.append((scheme, z.name[-30:-4], r[0], rgb(r[1]) == hexrgb(r[3]), cr(rgb(r[1]), rgb(r[2]))))
                 c2.close()
         keys = {o[2] for o in out}
-        worst = min(min(o[3], o[4]) for o in out)
+        worst = min(o[4] for o in out)
         check("R2 one accent per user, from the card's signature stat", "" not in keys, f"{len(zips)} users give accents {sorted(keys)}")
-        check("R2 accent passes WCAG AA (4.5:1) on the ground, and its button label on it, light and dark", worst >= 4.5, f"lowest ratio over {len(out)} renders: {worst:.2f}")
+        check("R2 the accent is the exact ground colour of the card on show", all(o[3] for o in out), f"{sum(o[3] for o in out)} of {len(out)} renders: the filled button equals the card's .f-bg")
+        check("R2 the text on the accent (the card's ink) passes WCAG AA (4.5:1), light and dark", worst >= 4.5, f"lowest ratio over {len(out)} renders: {worst:.2f}")
 
         c3, pg, _, ph = load(browser, base, 1280, 900)
         pg.evaluate("window.__t = []; new MutationObserver(() => window.__t.push(['accent', performance.now()])).observe(document.documentElement, {attributes: true, attributeFilter: ['data-accent']})")
@@ -175,7 +177,7 @@ def main():
         pg.wait_for_timeout(1300)
         t = pg.evaluate("window.__t")
         lag = (t[0][1] - t0) if t else None
-        check("R4 colour event: the card lands, holds, then one palette shift", early[0] == "" and early[1] == "land" and bool(t) and len(t) == 1 and 800 <= lag <= 2500, f"accent unset while the card lands ({early[1]} {early[2]} {early[3]}); one shift {lag:.0f} ms after the drop" if t else "no shift")
+        check("R4 colour event: the card lands, holds, then one palette shift", early[0] in ("", "none") and early[1] == "land" and bool(t) and len(t) == 1 and 800 <= lag <= 2500, f"accent unset while the card lands ({early[1]} {early[2]} {early[3]}); one shift {lag:.0f} ms after the drop" if t else "no shift")
         c3.close()
         c4, pg, _, ph = load(browser, base, 1280, 900, motion="reduce")
         drop(pg, ph, zips[0])

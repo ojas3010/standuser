@@ -1,6 +1,6 @@
 // standuser site: export.zip in, card out, all in the browser. No network use after the page, the film table and the name candidates load.
 import init, { run } from './pkg/standuser.js';
-import { ACCENTS, accentKey } from './accent.js';
+import { cardColours } from './accent.js';
 
 const $ = (id) => document.getElementById(id);
 const drop = $('drop');
@@ -62,8 +62,8 @@ async function handle(file) {
     const bytes = new Uint8Array(await file.arrayBuffer());
     const out = exec(bytes, file.name);
     last = { svgs: out.svgs, analysis: out.analysis };
-    show(out.analysis, out.svgs[$('theme').value]);
-    reveal(out.analysis);
+    show(out.analysis, out.svgs[resolvedTheme()]);
+    reveal(out.analysis.card, out.svgs);
     setStatus('');
   } catch (e) {
     setStatus(e.message, true);
@@ -71,12 +71,20 @@ async function handle(file) {
 }
 
 // The one colour event. The card lands (opacity 0 and scale 0.98 to 1, 200 ms, ease-out), holds, then the page's accent shifts once
-// from the ink colour to the one keyed to the user's signature stat (a 250 ms colour transition in style.css). With reduced motion
-// there is no landing and no hold: the card and the accent are simply there.
+// from the ink colour to the exact ground colour of the card on show (a 250 ms colour transition in style.css), with the card's own ink
+// as the colour of the text on it. With reduced motion there is no landing and no hold: the card and the accent are simply there.
 const LAND_MS = 200;
 const HOLD_MS = 700;
 let accentTimer = 0;
-function reveal(a) {
+const resolvedTheme = () => (($('theme').value === 'auto') ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : $('theme').value);
+function setAccent(svgs, key) {
+  const root = document.documentElement;
+  const { ground, ink } = cardColours(svgs[resolvedTheme()]);
+  root.style.setProperty('--accent', ground);
+  root.style.setProperty('--on-accent', ink);
+  root.dataset.accent = key || 'none';
+}
+function reveal(card, svgs) {
   const img = $('card');
   const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
   clearTimeout(accentTimer);
@@ -85,16 +93,8 @@ function reveal(a) {
     void img.offsetWidth; // restart the animation for a second file
     img.classList.add('land');
   }
-  const key = accentKey(a);
-  const shift = () => {
-    const root = document.documentElement;
-    if (!key) return root.removeAttribute('data-accent');
-    root.style.setProperty('--accent-light', ACCENTS[key].light);
-    root.style.setProperty('--accent-dark', ACCENTS[key].dark);
-    root.dataset.accent = key;
-  };
-  if (still) shift();
-  else accentTimer = setTimeout(shift, LAND_MS + HOLD_MS);
+  if (still) setAccent(svgs, card.accent);
+  else accentTimer = setTimeout(() => setAccent(svgs, card.accent), LAND_MS + HOLD_MS);
 }
 
 function show(a, svg) {
@@ -149,7 +149,11 @@ async function pngBlob(svg) {
   }
 }
 
-$('theme').addEventListener('change', () => last && show(last.analysis, last.svgs[$('theme').value]));
+$('theme').addEventListener('change', () => {
+  if (!last) return;
+  show(last.analysis, last.svgs[resolvedTheme()]);
+  if (document.documentElement.dataset.accent) setAccent(last.svgs, last.analysis.card.accent);
+});
 $('dl-svg').addEventListener('click', () => last && download('card.svg', new Blob([last.svgs.auto], { type: 'image/svg+xml' })));
 $('dl-png').addEventListener('click', async () => {
   if (!last) return;

@@ -14,21 +14,19 @@
 }
 :root {
   --ground: #ffffff; --ground2: #f4f4f4; --ink: #0b0b0b; --mute: #595959; --line: #d4d4d4;
-  --accent: var(--ink);
+  --accent: var(--ink); --on-accent: var(--ground);
 }
-:root[data-accent] { --accent: var(--accent-light); }
 @media (prefers-color-scheme: dark) {
   :root { --ground: #0e0e0e; --ground2: #1a1a1a; --ink: #f5f5f5; --mute: #b3b3b3; --line: #3a3a3a; }
-  :root[data-accent] { --accent: var(--accent-dark); }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Archivo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 main { max-width: 720px; margin: 0 auto; padding: 40px 16px 64px; }
 
 /* the wordmark: the page's one tilt */
-.mark { display: inline-block; margin: 8px 0 12px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-weight: 400; font-size: clamp(2.6rem, 11vw, 4rem); line-height: 1; letter-spacing: -.01em; transform: rotate(-4deg); transform-origin: 0 100%; color: var(--accent); transition: color 250ms ease-out; }
+.mark { display: inline-block; margin: 8px 0 12px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-weight: 400; font-size: clamp(2.6rem, 11vw, 4rem); line-height: 1; letter-spacing: -.01em; transform: rotate(-4deg); transform-origin: 0 100%; padding-bottom: .08em; border-bottom: .14em solid var(--accent); transition: border-color 250ms ease-out; }
 .lede { margin: 0 0 32px; max-width: 34em; color: var(--mute); }
-h2 { margin: 48px 0 8px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; font-weight: 400; }
+h2 { margin: 48px 0 8px; padding-top: 12px; border-top: 4px solid var(--accent); transition: border-color 250ms ease-out; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; font-weight: 400; }
 .small { color: var(--mute); font-size: .875rem; }
 code { font-size: .9em; }
 
@@ -39,7 +37,7 @@ code { font-size: .9em; }
 #drop .small { margin: 16px 0 0; max-width: 40em; }
 #drop .small + .small { margin-top: 8px; }
 #drop.over { border-style: solid; border-color: var(--accent); background: var(--ground); }   /* instant: #drop has no transition */
-#drop:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+#drop:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
 .opts { margin: 16px 0 0; }
 .opts summary { cursor: pointer; }
@@ -52,10 +50,10 @@ input[type=text], input[type=date], select { height: 40px; margin-left: 8px; pad
 /* buttons: Download PNG is the one filled button; the others are quiet text buttons of the same height and radius */
 button { height: 40px; padding: 0 16px; font: 600 1rem/1 Archivo, system-ui, sans-serif; border: 2px solid transparent; border-radius: 0; cursor: pointer; transition: transform 120ms ease-out; }
 button:active { transform: scale(.97); }
-.primary { background: var(--accent); color: var(--ground); border-color: var(--accent); transition: transform 120ms ease-out, background-color 250ms ease-out, border-color 250ms ease-out; }
+.primary { background: var(--accent); color: var(--on-accent); border-color: var(--ink); transition: transform 120ms ease-out, background-color 250ms ease-out, color 250ms ease-out; }   /* the card's ground and ink, in the manga's black outline */
 .quiet { background: transparent; color: var(--ink); }
 .quiet:hover { text-decoration: underline; text-underline-offset: 4px; }
-.primary:hover { background: var(--ink); border-color: var(--ink); }
+.primary:hover { background: var(--ink); color: var(--ground); }
 #pick { height: 32px; padding: 0 8px; margin-left: -8px; }
 
 /* subject */

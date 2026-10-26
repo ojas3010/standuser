@@ -1,6 +1,6 @@
 //! The card's per-user palette (docs/DESIGN.md section 4).
 //!
-//! The accent is the page's: ACCENTS repeats site/accent.js (a test reads that file and fails if the two differ), keyed to the user's
+//! The page's accent is the card's ground, read back from the card's SVG (site/accent.js); it is keyed to the user's
 //! signature stat. The card's ground is the cover colour of that stat's family: Power hot pink, Speed yellow, Range blue, Stamina green,
 //! Precision purple, Potential orange. Every ground, and every radar fill, is a colour sampled from the reference covers by
 //! tools/ref_palette.py; docs/ref-palette.json names the image each came from and a test checks that this table and the file agree.
@@ -9,21 +9,14 @@
 //! each ground is black or white, whichever reads better, and the muted tint is that ink pulled toward the ground as far as keeps 5:1.
 //! tools/site_test/card_contrast.py checks every text colour on the real SVGs.
 
-/// "PWR".."DEV" in chart order, each with its light-ground and dark-ground value (the same as site/accent.js).
-pub const ACCENTS: [(&str, &str, &str); 6] = [
-    ("PWR", "#b0104c", "#ff6da3"),
-    ("SPD", "#7a5f00", "#f0c02c"),
-    ("RNG", "#17659a", "#6cbcf0"),
-    ("STA", "#1d7438", "#5ccd80"),
-    ("PRC", "#6a3cb4", "#b69aff"),
-    ("DEV", "#a94700", "#ff964a"),
-];
+/// "PWR".."DEV" in chart order: the keys a card's ground and fill are chosen by.
+pub const KEYS: [&str; 6] = ["PWR", "SPD", "RNG", "STA", "PRC", "DEV"];
 
 /// The accent a card carries, from the signature: the stat the ability is built on, or for a balanced chart the stat that stood out
 /// most (the rule of accentKey in site/accent.js). None when nothing was graded.
 pub fn accent_key(stat: &str, top: Option<&str>) -> Option<String> {
     let key = if stat == "BAL" { top? } else { stat };
-    ACCENTS.iter().find(|(k, _, _)| *k == key).map(|(k, _, _)| k.to_string())
+    KEYS.iter().find(|k| **k == key).map(|k| k.to_string())
 }
 
 /// Colours of one card theme.
@@ -88,16 +81,6 @@ pub fn dark(key: Option<&str>) -> Pal {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn accents_are_the_pages() {
-        // site/accent.js is the source of the mapping: every "KEY: { light: '#..', dark: '#..' }" line must match
-        let js = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/../../site/accent.js")).unwrap();
-        for (k, l, d) in ACCENTS {
-            let line = js.lines().find(|ln| ln.trim_start().starts_with(&format!("{k}:"))).unwrap_or_else(|| panic!("{k} not in accent.js"));
-            assert!(line.contains(&format!("light: '{l}'")) && line.contains(&format!("dark: '{d}'")), "{k}: {line}");
-        }
-    }
 
     #[test]
     fn the_accent_follows_the_signature() {

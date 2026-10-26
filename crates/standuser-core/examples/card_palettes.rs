@@ -1,6 +1,6 @@
 //! Writes the sample card for every accent (and none) in both card themes to a directory, for tools/site_test/card_contrast.py:
 //! `cargo run -p standuser-core --example card_palettes -- <out_dir>` gives <KEY>-light.svg and <KEY>-dark.svg.
-use standuser_core::palette::ACCENTS;
+use standuser_core::palette::KEYS;
 use standuser_core::svg::{card_svg, CardData, Theme, TYPE_NOTE, TYPE_NOTE_LOW};
 
 fn sample() -> CardData {
@@ -32,7 +32,7 @@ fn sample() -> CardData {
 fn main() {
     let out = std::path::PathBuf::from(std::env::args().nth(1).expect("usage: card_palettes <out_dir>"));
     std::fs::create_dir_all(&out).unwrap();
-    let keys: Vec<Option<&str>> = ACCENTS.iter().map(|a| Some(a.0)).chain([None]).collect();
+    let keys: Vec<Option<&str>> = KEYS.iter().map(|k| Some(*k)).chain([None]).collect();
     for key in keys {
         let mut d = sample();
         d.accent = key.map(String::from);
