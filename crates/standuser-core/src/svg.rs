@@ -254,7 +254,7 @@ pub const OUTLINE: f64 = 6.0;
 pub const NAME_OUTLINE: f64 = 12.0;
 /// The Stand name's one tilt, in degrees as SVG's rotate() takes them: negative is counter-clockwise, so the name climbs to the right,
 /// like the slant of a Part logo. Nothing else on the card is rotated.
-pub const NAME_TILT: f64 = -5.0;
+pub const NAME_TILT: f64 = -8.0;
 /// The header box the tilted name stays inside. Its low left corner is the box's low left corner, so the name's bottom edge is one fixed
 /// line whatever the name, and the corners above and below that line stay free for the master and the type.
 pub const NAME_X0: f64 = MARGIN;
@@ -289,9 +289,31 @@ fn name_box(f: &Font, text: &str, size: f64) -> NamePlace {
     NamePlace { text: text.to_string(), size, x, y, corners: raw.map(|(px, py)| (px + x, py + y)) }
 }
 
+/// Where the master and the type stand, as boxes (left, top, right, bottom) the name must stay clear of: the widest master the card
+/// draws (470 px), and the widest type lines (Automatic, in Japanese and in English). A test checks the real text is inside them.
+pub const MASTER_BOX: [f64; 4] = [MARGIN, MASTER_Y - 32.0, MARGIN + 470.0, MASTER_Y + 10.0];
+pub const TYPE_JP_BOX: [f64; 4] = [RIGHT - 250.0, TYPE_JP_Y - 32.0, RIGHT, TYPE_JP_Y + 8.0];
+pub const TYPE_EN_BOX: [f64; 4] = [RIGHT - 600.0, TYPE_EN_Y - 28.0, RIGHT, TYPE_EN_Y + 10.0];
+
+/// Does the convex quadrilateral `q` touch the box `r` (left, top, right, bottom)? Separating axis test.
+pub fn quad_hits(q: &[(f64, f64); 4], r: &[f64; 4]) -> bool {
+    let rc = [(r[0], r[1]), (r[2], r[1]), (r[2], r[3]), (r[0], r[3])];
+    let mut axes = vec![(1.0, 0.0), (0.0, 1.0)];
+    for i in 0..2 {
+        let (a, b) = (q[i], q[i + 1]);
+        axes.push((-(b.1 - a.1), b.0 - a.0));
+    }
+    axes.iter().all(|&(ax, ay)| {
+        let proj = |pts: &[(f64, f64)]| pts.iter().map(|p| p.0 * ax + p.1 * ay).fold((f64::MAX, f64::MIN), |(lo, hi), v| (lo.min(v), hi.max(v)));
+        let (ql, qh) = proj(q);
+        let (rl, rh) = proj(&rc);
+        ql <= rh && rl <= qh
+    })
+}
+
 fn name_fits(p: &NamePlace) -> bool {
     let c = &p.corners;
-    c.iter().all(|q| q.0 >= NAME_X0 - 0.01 && q.0 <= NAME_X1 && q.1 >= NAME_TOP && q.1 <= NAME_BOTTOM + 0.01)
+    c.iter().all(|q| q.0 >= NAME_X0 - 0.01 && q.0 <= NAME_X1 && q.1 >= NAME_TOP && q.1 <= NAME_BOTTOM + 0.01) && ![MASTER_BOX, TYPE_JP_BOX, TYPE_EN_BOX].iter().any(|r| quad_hits(c, r))
 }
 
 /// The largest size from NAME_MAX_SIZE down to NAME_MIN_SIZE at which the tilted name fits the header. Only a name that does not fit
@@ -870,6 +892,58 @@ mod tests {
             for r in &runs {
                 let b = r.bbox;
                 assert!(b[0] >= FRAME && b[1] >= FRAME && b[2] <= W - FRAME && b[3] <= H - FRAME, "{r:?} reaches the frame");
+            }
+        }
+    }
+
+    #[test]
+    fn the_name_is_tilted_8_degrees_and_the_boxes_hold_the_real_text() {
+        assert_eq!(NAME_TILT, -8.0);
+        // the master and type boxes the name keeps clear of contain the widest real master and the type lines of every type
+        let mut d = sample();
+        d.user = "a_user_name_15ch".into();
+        for (jp, en) in [("遠隔自動操縦型", "Automatic, Far-Distance Autopilot"), ("遠隔操作型", "Long-Distance Operation"), ("近距離パワー型", "Close-Range Power"), ("未分類", "Unclassified")] {
+            d.type_jp = jp.into();
+            d.type_en = en.into();
+            let runs = card_build(&d, Theme::Light).1;
+            let inside = |t: &str, b: &[f64; 4]| {
+                let r = runs.iter().find(|r| r.text.starts_with(t)).unwrap();
+                assert!(r.bbox[0] >= b[0] && r.bbox[1] >= b[1] && r.bbox[2] <= b[2] && r.bbox[3] <= b[3], "{t}: {:?} is outside {b:?}", r.bbox);
+            };
+            inside("本体", &MASTER_BOX);
+            inside("a_user", &MASTER_BOX);
+            inside(jp, &TYPE_JP_BOX);
+            inside(en, &TYPE_EN_BOX);
+        }
+    }
+
+    #[test]
+    fn no_two_texts_overlap_and_the_name_clears_them_all() {
+        let apart = |a: &[f64; 4], b: &[f64; 4], pad: f64| a[2] + pad <= b[0] || b[2] + pad <= a[0] || a[3] + pad <= b[1] || b[3] + pad <= a[1];
+        let f = font(FontKind::Name);
+        let mut d = sample();
+        for (name, jp, en) in [
+            ("YORKTOWN AND THE RETURN HOME", "遠隔自動操縦型", "Automatic, Far-Distance Autopilot"),
+            ("A", "近距離パワー型", "Close-Range Power"),
+            ("DIRTY WEATHER", "遠隔操作型", "Long-Distance Operation"),
+            ("THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE", "未分類", "Unclassified"),
+        ] {
+            d.name = name.into();
+            d.type_jp = jp.into();
+            d.type_en = en.into();
+            d.user = "a_user_name_15ch".into();
+            d.grades[1] = "完成".into();
+            let runs = card_build(&d, Theme::Light).1;
+            let np = place_name(&f, name);
+            for (i, a) in runs.iter().enumerate() {
+                if a.rotated {
+                    continue;
+                }
+                assert!(!quad_hits(&np.corners, &a.bbox), "the name {name:?} touches {a:?}");
+                for b in runs.iter().skip(i + 1).filter(|b| !b.rotated) {
+                    // the badge letter sits inside its circle and the labels are beside the circles: no text box touches another
+                    assert!(apart(&a.bbox, &b.bbox, 2.0), "{a:?} touches {b:?}");
+                }
             }
         }
     }
