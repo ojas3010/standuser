@@ -96,11 +96,17 @@ def main():
         vis = [e for e in els if not e["hidden"]]
 
         # --- before a drop: the sample card above the drop zone, the accent is the ink colour
-        ctx1, pg1, _, _ = load(browser, base, 1280, 900)
-        pre = pg1.evaluate("""() => [document.getElementById('cardlabel').textContent, document.getElementById('card').getBoundingClientRect().top < document.getElementById('drop').getBoundingClientRect().top,
+        ctx1, pg1, _, _ = load(browser, base, 1280, 720)
+        pre = pg1.evaluate("""() => [document.getElementById('cardlabel').textContent, (() => { const d = document.getElementById('drop').getBoundingClientRect(), c = document.getElementById('card').getBoundingClientRect(); return d.right <= c.left && d.bottom <= innerHeight && c.bottom <= innerHeight && c.top >= 0 && d.top >= 0; })(),
           getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), getComputedStyle(document.body).color, document.getElementById('share').offsetParent === null && document.getElementById('filebar').offsetParent === null, getComputedStyle(document.querySelector('.mark')).borderBottomColor]""")
-        check("R6 before a drop: a sample card labelled Sample sits above the drop zone; the share bar and the file line are not displayed", pre[0] == "Sample" and pre[1] and pre[4], f"label {pre[0]!r}, above the drop zone: {pre[1]}, share bar and file line not displayed: {pre[4]}")
+        check("R6 before a drop (1280 x 720): two columns, the drop zone on the left and the sample card labelled Sample on the right, both whole in the window; the share bar, the file line and the theme select are not displayed", pre[0] == "Sample" and pre[1] and pre[4] and pg1.evaluate("document.getElementById('theme').offsetParent === null"), f"label {pre[0]!r}, side by side and in the window without scrolling: {pre[1]}, share bar and file line not displayed: {pre[4]}")
+        gaps0 = pg1.evaluate("(() => { const r = [...document.querySelectorAll('main > *')].filter(e => e.offsetParent !== null).map(e => e.getBoundingClientRect()); return r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)); })()")
+        check("R6 48 px between sections (before a drop)", gaps0 and all(g == 48 for g in gaps0), f"gaps {gaps0}")
         check("R2 before a drop the accent is the ink colour", pre[5] == pre[3], f"the wordmark's rule is {pre[5]}, the ink is {pre[3]}; no accent set")
+        ctx1.close()
+        ctx1, pg1, _, _ = load(browser, base, 390, 844)
+        ph = pg1.evaluate("(() => { const d = document.getElementById('drop').getBoundingClientRect(), c = document.getElementById('card').getBoundingClientRect(); return [d.bottom <= c.top, Math.round(d.left) === Math.round(c.left)]; })()")
+        check("R6 phone, before a drop: the drop zone comes first and the sample card is under it", ph[0] and ph[1], f"drop zone above the card: {ph[0]}, one column: {ph[1]}")
         ctx1.close()
 
         # --- rule 1 and 7: chrome text
@@ -165,8 +171,14 @@ def main():
         b = page.evaluate("""() => ['dl-png', 'copy-img', 'copy-link'].map(id => { const e = document.getElementById(id), s = getComputedStyle(e);
           return { bg: s.backgroundColor, h: e.getBoundingClientRect().height, r: s.borderRadius }; })""")
         filled = [x["bg"] not in ("rgba(0, 0, 0, 0)", "transparent") for x in b]
-        links = page.evaluate("['dl-svg', 'dl-json'].map(id => document.getElementById(id).tagName + ' ' + !!document.getElementById(id).closest('#result'))")
+        links = page.evaluate("['dl-svg', 'dl-json'].map(id => document.getElementById(id).tagName + ' ' + !!document.getElementById(id).closest('#method'))")
         check("S3 share bar: Download PNG is the one filled button; Copy image and Copy link are quiet buttons of the same height and radius; SVG and JSON are text links in the method section", filled == [True, False, False] and len({x["h"] for x in b}) == 1 and len({x["r"] for x in b}) == 1 and links == ["A true", "A true"], f"filled {filled}, heights {[x['h'] for x in b]}, links {links}")
+        lay = page.evaluate("""() => { const m = document.querySelector('main'), c = document.getElementById('card').getBoundingClientRect(), mb = m.getBoundingClientRect(), cs = getComputedStyle(m), inner = [mb.left + parseFloat(cs.paddingLeft), mb.right - parseFloat(cs.paddingRight)];
+          const r = [...m.children].filter(e => e.offsetParent !== null).map(e => e.getBoundingClientRect());
+          return { inner, c: [c.left, c.right], gaps: r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)), theme: document.getElementById('theme').offsetParent !== null,
+            adv: (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })() }; }""")
+        check("R6 after a drop: the card is centred and the full width of the content column; the theme select is displayed; Advanced is collapsed in the method section", abs(lay["c"][0] - lay["inner"][0]) < 1.5 and abs(lay["c"][1] - lay["inner"][1]) < 1.5 and lay["theme"] and lay["adv"], f"card {lay['c']}, column {lay['inner']}, theme select shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
+        check("R6 48 px between sections (after a drop)", all(g == 48 for g in lay["gaps"]) and len(lay["gaps"]) >= 4, f"gaps {lay['gaps']}")
         card = page.evaluate("""() => { const c = document.getElementById('card'), s = getComputedStyle(c), p = getComputedStyle(c.parentElement);
           return [s.borderTopWidth, p.borderTopWidth, p.backgroundColor, p.paddingTop]; }""")
         check("S3 no bordered container around the card (no double frame)", card[0] == "0px" and card[1] == "0px", f"img border {card[0]}, parent border {card[1]}")

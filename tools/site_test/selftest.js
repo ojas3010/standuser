@@ -46,7 +46,11 @@ try {
   await card0.decode();
   out('sample label', document.getElementById('cardlabel').textContent, 'Sample');
   out('sample card', `${card0.naturalWidth}x${card0.naturalHeight}`, '1080x1350');
-  out('sample card is above the drop zone', card0.getBoundingClientRect().top < document.getElementById('drop').getBoundingClientRect().top, true);
+  // from 900 px the drop zone is on the left and the sample on the right, side by side; on a phone the drop zone comes first, the sample under it
+  const dz = document.getElementById('drop').getBoundingClientRect(), cz = card0.getBoundingClientRect();
+  out('sample card and drop zone are placed by the viewport width', innerWidth >= 900 ? dz.right <= cz.left && Math.abs(dz.top - cz.top) < 80 : dz.bottom <= cz.top, true);
+  out('sample username is sample', (await (await fetch(card0.src)).text()).includes('>Stand card for sample: '), true);
+  out('card theme select is not displayed before a drop', document.getElementById('theme').offsetParent === null, true);
   out('no accent before a drop', document.documentElement.dataset.accent || '', '');
   out('share bar and file line are not displayed before a drop', ['share', 'filebar', 'result'].map((id) => document.getElementById(id).offsetParent === null).join(), 'true,true,true');
   const before = seen();
@@ -91,7 +95,10 @@ try {
   const heads = { 'card.png': '89 50 4e 47 d a 1a a', 'card.svg': '3c 73 76 67 20 78 6d 6c', 'stand.json': '7b a 20 20 22 61 62 69' };
   out('share bar is under the card', document.getElementById('card').getBoundingClientRect().bottom <= document.getElementById('share').getBoundingClientRect().top, true);
   out('share bar order', [...document.querySelectorAll('#share button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
-  out('Download SVG and JSON are text links in the method section', ['dl-svg', 'dl-json'].map((id) => document.getElementById(id).tagName + document.getElementById(id).closest('#result').tagName).join(' '), 'ASECTION ASECTION');
+  out('Download SVG and JSON are text links in the method section', ['dl-svg', 'dl-json'].map((id) => document.getElementById(id).tagName + document.getElementById(id).closest('#method').tagName).join(' '), 'ASECTION ASECTION');
+  out('card theme select is displayed after a drop', document.getElementById('theme').offsetParent !== null, true);
+  out('Advanced is collapsed, in the method section', (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })(), true);
+  out('order after a drop: file line, card, share bar, Why these grades', ['filebar', 'figure', 'share', 'result'].map((id) => document.getElementById(id).getBoundingClientRect().top).every((t, i, a) => !i || a[i - 1] < t), true);
   out('Share is hidden exactly where the API cannot share files', document.getElementById('share-btn').hidden, !(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'a.png', { type: 'image/png' })] })));
   // Copy image puts a PNG on the clipboard
   if (!document.getElementById('copy-img').hidden) {
