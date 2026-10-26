@@ -48,6 +48,7 @@ try {
   out('sample card', `${card0.naturalWidth}x${card0.naturalHeight}`, '1080x1350');
   out('sample card is above the drop zone', card0.getBoundingClientRect().top < document.getElementById('drop').getBoundingClientRect().top, true);
   out('no accent before a drop', document.documentElement.dataset.accent || '', '');
+  out('share bar and file line are not displayed before a drop', ['share', 'filebar', 'result'].map((id) => document.getElementById(id).offsetParent === null).join(), 'true,true,true');
   const before = seen();
   const result = document.getElementById('result');
   const input = document.getElementById('file');

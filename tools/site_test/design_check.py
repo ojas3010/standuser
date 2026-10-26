@@ -98,8 +98,8 @@ def main():
         # --- before a drop: the sample card above the drop zone, the accent is the ink colour
         ctx1, pg1, _, _ = load(browser, base, 1280, 900)
         pre = pg1.evaluate("""() => [document.getElementById('cardlabel').textContent, document.getElementById('card').getBoundingClientRect().top < document.getElementById('drop').getBoundingClientRect().top,
-          getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), getComputedStyle(document.body).color, document.getElementById('share').hidden, getComputedStyle(document.querySelector('.mark')).borderBottomColor]""")
-        check("R6 before a drop: a sample card labelled Sample sits above the drop zone", pre[0] == "Sample" and pre[1] and pre[4], f"label {pre[0]!r}, above the drop zone: {pre[1]}")
+          getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), getComputedStyle(document.body).color, document.getElementById('share').offsetParent === null && document.getElementById('filebar').offsetParent === null, getComputedStyle(document.querySelector('.mark')).borderBottomColor]""")
+        check("R6 before a drop: a sample card labelled Sample sits above the drop zone; the share bar and the file line are not displayed", pre[0] == "Sample" and pre[1] and pre[4], f"label {pre[0]!r}, above the drop zone: {pre[1]}, share bar and file line not displayed: {pre[4]}")
         check("R2 before a drop the accent is the ink colour", pre[5] == pre[3], f"the wordmark's rule is {pre[5]}, the ink is {pre[3]}; no accent set")
         ctx1.close()
 
