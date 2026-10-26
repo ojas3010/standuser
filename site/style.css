@@ -86,6 +86,10 @@ button:active { transform: scale(.97); }
   #stage:not(.done) #figure { grid-column: 2; grid-row: 1 / span 4; }
   /* the whole sample card shows in a 720 px high window: its height is what is left under the header */
   #stage:not(.done) #card { width: min(100%, calc((100vh - 230px) * .8)); }
+  /* after a drop the file line, the whole card and the share bar fit in the window: the card is as wide as the height left allows */
+  #stage.done #figure { width: min(100%, calc((100vh - 230px) * .8)); margin-inline: auto; }
+  #stage.done #share { justify-content: center; row-gap: 0; }
+  #stage.done #sharenote { min-height: 0; text-align: center; }
 }
 
 /* subject */

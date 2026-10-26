@@ -141,7 +141,7 @@ mod tests {
         for k in ["light", "dark", "auto"] {
             assert!(out["svgs"][k].as_str().unwrap().starts_with("<svg"), "{k}");
         }
-        assert_eq!(out["card"]["user"], "synthetic3");
+        assert_eq!(out["card"]["user"], "sample");
         // something that is not a card comes back as an error, not a panic
         assert!(serde_json::from_str::<serde_json::Value>(&render_card_inner("{\"name\":1}")).unwrap()["error"].is_string());
         assert!(serde_json::from_str::<serde_json::Value>(&render_card_inner("nonsense")).unwrap()["error"].is_string());

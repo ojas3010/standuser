@@ -165,7 +165,7 @@ def main():
         ctxp.close()
 
         # --- section 3 chrome
-        ctx, page, reqs, phase = load(browser, base, 1280, 900)
+        ctx, page, reqs, phase = load(browser, base, 1280, 720)
         drop(page, phase, zips[0])
         page.wait_for_timeout(1200)
         b = page.evaluate("""() => ['dl-png', 'copy-img', 'copy-link'].map(id => { const e = document.getElementById(id), s = getComputedStyle(e);
@@ -175,9 +175,11 @@ def main():
         check("S3 share bar: Download PNG is the one filled button; Copy image and Copy link are quiet buttons of the same height and radius; SVG and JSON are text links in the method section", filled == [True, False, False] and len({x["h"] for x in b}) == 1 and len({x["r"] for x in b}) == 1 and links == ["A true", "A true"], f"filled {filled}, heights {[x['h'] for x in b]}, links {links}")
         lay = page.evaluate("""() => { const m = document.querySelector('main'), c = document.getElementById('card').getBoundingClientRect(), mb = m.getBoundingClientRect(), cs = getComputedStyle(m), inner = [mb.left + parseFloat(cs.paddingLeft), mb.right - parseFloat(cs.paddingRight)];
           const r = [...m.children].filter(e => e.offsetParent !== null).map(e => e.getBoundingClientRect());
-          return { inner, c: [c.left, c.right], gaps: r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)), theme: document.getElementById('theme').offsetParent !== null,
+          const f = document.getElementById('filebar').getBoundingClientRect(), sh = document.getElementById('share').getBoundingClientRect();
+          return { inner, c: [c.left, c.right], fit: [f.top, c.top, c.bottom, sh.bottom, innerHeight], gaps: r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)), theme: document.getElementById('theme').offsetParent !== null,
             adv: (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })() }; }""")
-        check("R6 after a drop: the card is centred and the full width of the content column; the theme select is displayed; Advanced is collapsed in the method section", abs(lay["c"][0] - lay["inner"][0]) < 1.5 and abs(lay["c"][1] - lay["inner"][1]) < 1.5 and lay["theme"] and lay["adv"], f"card {lay['c']}, column {lay['inner']}, theme select shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
+        mid = (lay["inner"][0] + lay["inner"][1]) / 2
+        check("R6 after a drop (1280 x 720): the file line, the whole card and the share bar fit in the window without scrolling; the card is centred; the theme select is displayed; Advanced is collapsed in the method section", lay["fit"][0] >= 0 and lay["fit"][3] <= lay["fit"][4] and abs((lay["c"][0] + lay["c"][1]) / 2 - mid) < 1.5 and lay["theme"] and lay["adv"], f"file line top {lay['fit'][0]:.0f}, card {lay['fit'][1]:.0f} to {lay['fit'][2]:.0f}, share bar bottom {lay['fit'][3]:.0f} of {lay['fit'][4]}, card {lay['c']} in column {lay['inner']}, theme select shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
         check("R6 48 px between sections (after a drop)", all(g == 48 for g in lay["gaps"]) and len(lay["gaps"]) >= 4, f"gaps {lay['gaps']}")
         card = page.evaluate("""() => { const c = document.getElementById('card'), s = getComputedStyle(c), p = getComputedStyle(c.parentElement);
           return [s.borderTopWidth, p.borderTopWidth, p.backgroundColor, p.paddingTop]; }""")
