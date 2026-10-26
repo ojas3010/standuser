@@ -209,6 +209,9 @@ const LABEL_SIZE: f64 = MIN_TEXT;
 /// Gap between a badge and its label.
 const LABEL_GAP: f64 = 12.0;
 
+/// The thick black border: its width, drawn inward from the card's edge.
+pub const FRAME: f64 = 16.0;
+
 /// No text on the card is smaller than this, in card units (the card is 1080 wide): at a phone's 390 px width it is still about 12 px.
 pub const MIN_TEXT: f64 = 34.0;
 
@@ -347,10 +350,10 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     let mut c = Ctx { jp: font(FontKind::Jp), body: body_text(), name: font(Name), display: font(FontKind::Display), els: vec![], runs: vec![] };
     let (cx, cy, r_chart) = (CX, CY, CHART_R);
 
-    // ground, and the frame: the panel border in black, a fine line of the ink inside it
+    // the ground, and the one frame: the thick black border of a manga panel, flush with the card's edge (no margin outside it, no
+    // line inside it)
     c.els.push(format!("<rect width=\"{W}\" height=\"{H}\" class=\"f-bg\"/>"));
-    c.els.push(format!("<rect x=\"24\" y=\"24\" width=\"{}\" height=\"{}\" rx=\"4\" class=\"s-bk\" fill=\"none\" stroke-width=\"8\"/>", W - 48.0, H - 48.0));
-    c.els.push(format!("<rect x=\"39\" y=\"39\" width=\"{}\" height=\"{}\" rx=\"2\" class=\"s-ink\" fill=\"none\" stroke-width=\"2\"/>", W - 78.0, H - 78.0));
+    c.els.push(format!("<rect x=\"{0}\" y=\"{0}\" width=\"{1}\" height=\"{2}\" class=\"s-bk\" fill=\"none\" stroke-width=\"{FRAME}\"/>", FRAME / 2.0, W - FRAME, H - FRAME));
     // the ゴゴゴ of the scene, on a diagonal down the left side
     for (sz, gx, gy) in GOGOGO {
         let (up, down) = c.display.ink_extent("ゴ", sz);
@@ -844,6 +847,29 @@ mod tests {
                     let (bx, by) = (CX + CHART_R * a.sin(), CY - CHART_R * a.cos());
                     assert!(apart(&g.bbox, &[bx - BADGE_R, by - BADGE_R, bx + BADGE_R, by + BADGE_R], 10.0), "ゴ {:?} touches a grade", g.bbox);
                 }
+            }
+        }
+    }
+
+    #[test]
+    fn the_card_has_one_frame_and_everything_is_inside_it() {
+        let d = sample();
+        for theme in [Theme::Light, Theme::Dark] {
+            let (s, runs) = card_build(&d, theme);
+            // one frame: a single unfilled stroked rectangle, the thick black border, flush with the card's edge
+            let frames: Vec<&str> = s.split("<rect ").skip(1).filter(|r| r.contains("fill=\"none\"")).collect();
+            assert_eq!(frames.len(), 1, "{frames:?}");
+            let f = frames[0];
+            assert!(f.contains(&format!("x=\"{}\" y=\"{}\"", FRAME / 2.0, FRAME / 2.0)) && f.contains(&format!("width=\"{}\" height=\"{}\"", W - FRAME, H - FRAME)), "{f}");
+            assert!(f.contains("class=\"s-bk\"") && f.contains(&format!("stroke-width=\"{FRAME}\"")) && !f.contains("rx="), "{f}");
+            // no outer margin (the ground fills the card to its edge) and no thin inner line
+            assert!(s.contains(&format!("<rect width=\"{W}\" height=\"{H}\" class=\"f-bg\"/>")));
+            assert!(!s.contains("class=\"s-ink\""), "no thin line of the ink colour");
+            // the border is thick, and all text is inside it
+            assert!(FRAME >= 16.0);
+            for r in &runs {
+                let b = r.bbox;
+                assert!(b[0] >= FRAME && b[1] >= FRAME && b[2] <= W - FRAME && b[3] <= H - FRAME, "{r:?} reaches the frame");
             }
         }
     }
