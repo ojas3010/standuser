@@ -117,7 +117,18 @@ async function handle(file) {
 const LAND_MS = 200;
 const HOLD_MS = 700;
 let accentTimer = 0;
-const resolvedTheme = () => (($('theme').value === 'auto') ? (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : $('theme').value);
+// The card starts in the theme of the system and follows it until the user picks one.
+const resolvedTheme = () => $('theme').value;
+const systemDark = matchMedia('(prefers-color-scheme: dark)');
+let picked = false;
+$('theme').value = systemDark.matches ? 'dark' : 'light';
+$('theme').addEventListener('change', () => { picked = true; });
+systemDark.addEventListener('change', (e) => {
+  if (picked) return;
+  $('theme').value = e.matches ? 'dark' : 'light';
+  $('theme').dispatchEvent(new Event('change'));
+  picked = false;
+});
 function setAccent(svgs, key) {
   const root = document.documentElement;
   const { ground, ink } = cardColours(svgs[resolvedTheme()]);

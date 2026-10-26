@@ -182,6 +182,9 @@ try {
   }
   // theme switch: the card image changes to a new blob
   const sel = document.getElementById('theme');
+  out('card theme options', [...sel.options].map((o) => o.textContent).join(' | '), 'Light card | Dark card');
+  out('card theme starts as the system', sel.value, matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  if (sel.value === 'dark') { sel.value = 'light'; sel.dispatchEvent(new Event('change')); await sleep(50); }
   const was = img.src;
   sel.value = 'dark';
   sel.dispatchEvent(new Event('change'));
