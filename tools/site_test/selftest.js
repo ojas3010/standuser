@@ -62,6 +62,10 @@ try {
   };
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('result visible', !result.hidden, true);
+  out('drop zone is replaced', document.getElementById('drop').hidden, true);
+  out('file line', document.getElementById('fileinfo').textContent, /^letterboxd-synthuser-2026-06-30-12-00-utc\.zip · \d[\d,]* films read$/);
+  out('Change file button', document.getElementById('change').textContent, 'Change file');
+  out('card scrolled into view', (() => { const r = document.getElementById('figure').getBoundingClientRect(); return r.top >= -2 && r.top < innerHeight; })(), true);
   const after = seen();
   const added = after.filter((n) => !before.includes(n));
   out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''), '0');

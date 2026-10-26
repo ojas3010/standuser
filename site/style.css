@@ -39,6 +39,9 @@ code { font-size: .9em; }
 #drop.over { border-style: solid; border-color: var(--accent); background: var(--ground); }   /* instant: #drop has no transition */
 #drop:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
+#filebar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding: 12px 0; border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
+#fileinfo { overflow-wrap: anywhere; }
+#filebar button { height: 32px; padding: 0 8px; margin-left: -8px; text-decoration: underline; text-underline-offset: 4px; }
 .opts { margin: 16px 0 0; }
 .opts summary { cursor: pointer; }
 .opts label { display: block; margin: 12px 0; }

@@ -68,9 +68,24 @@ async function handle(file) {
     const out = exec(bytes, file.name);
     last = { svgs: out.svgs, analysis: out.analysis };
     show(out.analysis, out.svgs[resolvedTheme()]);
+    // the drop zone gives way to one line: the file, the films read, and a way to pick another
+    $('fileinfo').textContent = `${file.name} · ${out.analysis.coverage.watched.toLocaleString('en-US')} films read`;
+    drop.hidden = true;
+    $('filebar').hidden = false;
     reveal(out.analysis.card, out.svgs);
+    $('figure').scrollIntoView({ block: 'start' });
     setStatus('');
   } catch (e) {
+    // back to the first state: the sample card, the ink accent, the drop zone
+    last = null;
+    clearTimeout(accentTimer);
+    const root = document.documentElement;
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--on-accent');
+    delete root.dataset.accent;
+    if (sample) showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
+    drop.hidden = false;
+    $('filebar').hidden = true;
     setStatus(e.message, true);
   }
 }
@@ -172,6 +187,7 @@ $('dl-png').addEventListener('click', async () => {
 });
 $('dl-json').addEventListener('click', () => last && download('stand.json', new Blob([JSON.stringify(last.analysis, null, 2)], { type: 'application/json' })));
 
+$('change').addEventListener('click', () => $('file').click());
 $('pick').addEventListener('click', (e) => { e.stopPropagation(); $('file').click(); });
 drop.addEventListener('click', () => $('file').click());
 drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
