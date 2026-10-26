@@ -63,4 +63,36 @@ mod tests {
         assert!(m["analysis"]["coverage"]["not_in_table"].as_u64().unwrap() >= 3);
         assert_eq!(m["analysis"]["coverage"]["per_stat"].as_array().unwrap().len(), 6);
     }
+
+    /// The card no longer draws the stat value lines, film titles, graded-on lines, weakness, signature film, why line, archetype caveat,
+    /// PROVISIONAL DATA pill or data credit. The page still gets every one of them in `analysis.card`.
+    #[test]
+    fn the_page_still_gets_every_item_the_card_dropped() {
+        let d = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../standuser-core/tests/fixtures/synth");
+        let name = "letterboxd-synthuser-2026-06-30-12-00-utc.zip";
+        let zip = std::fs::read(d.join(name)).unwrap();
+        let table = std::fs::read_to_string(d.join("table.json")).unwrap();
+        let names = std::fs::read_to_string(d.join("names.json")).unwrap();
+        let out: serde_json::Value = serde_json::from_str(&run_inner(&zip, name, &table, &names, "", "", "")).unwrap();
+        let card = &out["analysis"]["card"];
+        let text = |k: &str| card[k].as_str().unwrap_or_else(|| panic!("card.{k} is not text: {card}")).to_string();
+        let six = |k: &str| card[k].as_array().unwrap_or_else(|| panic!("card.{k} is not a list")).len();
+        // stat value lines and film titles: one (metric, film) pair per stat; graded-on: one line per stat
+        assert_eq!(six("evidence"), 6);
+        assert!(card["evidence"].as_array().unwrap().iter().all(|e| !e[0].as_str().unwrap().is_empty()), "{}", card["evidence"]);
+        assert!(card["evidence"].as_array().unwrap().iter().any(|e| !e[1].as_str().unwrap().is_empty()), "no example film at all: {}", card["evidence"]);
+        assert_eq!(six("coverage"), 6);
+        assert!(card["coverage"].as_array().unwrap().iter().all(|c| !c.as_str().unwrap().is_empty()));
+        // weakness, signature film, why line, archetype caveat, data credit
+        assert!(text("weakness").contains("Weakness") || text("weakness").contains("Soft spot") || text("weakness").contains("No weakness"), "{}", text("weakness"));
+        assert!(text("signature").starts_with("Signature film:"));
+        assert!(text("why").starts_with("Why 「"), "{}", text("why"));
+        assert!(text("type_note").contains("archetype by stats"));
+        assert_eq!(text("credit"), "Data: Letterboxd, TMDB, MusicBrainz");
+        // the PROVISIONAL DATA pill: the flag that drew it
+        assert!(card["badge"].is_boolean());
+        // and the card itself (the SVGs) draws none of them
+        let svg = out["svgs"]["light"].as_str().unwrap();
+        assert!(!svg.contains("<text") && svg.len() > 1000);
+    }
 }
