@@ -2,8 +2,9 @@
 Usage: ~/lb_venv/bin/python tools/make_fonts.py <NotoSansJP.ttf> <NotoSansKR.ttf> <NotoSansSC.ttf> <NotoSans.ttf>
 Output: crates/standuser-core/data/sans.ttf (the display faces are built by tools/make_card_fonts.py)
 
-Sans draws everything but the Stand name and the 【】 labels: evidence lines, the ability box, the why line (which carries an
-artist credit from names.json), film titles and the user name. Every character of every artist credit in names.json is added to
+sans.ttf is the card's Japanese face below 48 px (the stat labels, 本体, the type names, 完成): Noto Sans JP Bold, no outline. The card
+draws no Latin from it (Latin is Archivo, see make_card_fonts.py); the page's name choice still measures its why line with its Latin
+glyphs, so they stay. Every character of every artist credit in names.json is added to
 it, from Noto Sans JP when it has the glyph, else from Noto Sans KR (Hangul), Noto Sans SC (simplified hanzi) or Noto Sans
 (Latin Extended, Greek with tonos, the combining diaeresis). The credits are read from names.json, so a rebuild of the names
 keeps them drawable; tests/review_font.rs fails if one is not.

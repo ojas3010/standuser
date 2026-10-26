@@ -10,7 +10,7 @@ use standuser_core::{analysis, dates::parse_date, lookup::Lookup, pool};
 fn no_why_line_of_the_ten_synthetic_users_is_cut() {
     let mut lk = Lookup::from_json(include_str!("../data/films.json")).unwrap();
     lk.load_names(include_str!("../data/names.json")).unwrap();
-    let f = font(FontKind::Sans);
+    let f = font(FontKind::Jp);
     let mut longest = 0;
     for (i, (mut ex, _)) in synth_users::users(10, &lk).into_iter().enumerate() {
         ex.joined = parse_date("2022-01-01");

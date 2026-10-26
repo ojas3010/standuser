@@ -1,12 +1,17 @@
-"""Build the card's two display fonts (both SIL OFL, embedded as glyph outlines like the sans, so the SVG needs no font file).
-Usage: python3 -I tools/make_card_fonts.py <DelaGothicOne-Regular.ttf> <ArchivoBlack-Regular.ttf> <OFL-DelaGothicOne.txt> <OFL-ArchivoBlack.txt>
-Output (crates/standuser-core/data/): display.ttf, name.ttf, OFL-DelaGothicOne.txt, OFL-ArchivoBlack.txt
+"""Build the card's three display and body fonts (all SIL OFL, embedded as glyph outlines like the sans, so the SVG needs no font file).
+Usage: python3 -I tools/make_card_fonts.py <DelaGothicOne-Regular.ttf> <ArchivoBlack-Regular.ttf> <Archivo[wdth,wght].ttf> \\
+           <OFL-DelaGothicOne.txt> <OFL-ArchivoBlack.txt> <OFL-Archivo.txt> <OFL-NotoSansJP.txt>
+Output (crates/standuser-core/data/): display.ttf, name.ttf, body.ttf and the four licence texts. sans.ttf (Noto Sans JP Bold) comes from
+tools/make_fonts.py.
 
-display.ttf  Dela Gothic One, subset: the katakana of the manga lettering (ゴゴゴ, スピード, the legend), the kanji of the stat labels and the
-             Stand types, Basic Latin, and the punctuation the labels use (【】「」・―). All JP lettering on the card that is not body text.
-name.ttf     Archivo Black, subset: Basic Latin, Latin-1, Latin Extended-A and punctuation, for the Stand name. Archivo Black has no 「」, so those
-             two glyphs are copied from Dela Gothic One (both 1000 units per em). The face was picked against the Part 3, 5 and 6 logos
-             (docs/ref-compare notes): squared, wide, very heavy; the card's one tilt gives it the logos' slant.
+The card's four faces, and what each is for (docs/DESIGN.md section 4, rule 7):
+display.ttf  Dela Gothic One, subset: kana, the kanji of the labels and the Stand types, 【】「」・―. Japanese at 48 px or larger, with the
+             black outline (the ゴ). No Latin: the Latin display text is Archivo Black.
+name.ttf     Archivo Black, subset: Basic Latin, Latin-1, Latin Extended-A and punctuation. The Stand name and the other Latin display text
+             (the ability's name, the grades). Archivo Black has no 「」, so those two glyphs are copied from Dela Gothic One (both 1000 units per
+             em), and no ∅, which is copied from Archivo at weight 900 (the same family).
+body.ttf     Archivo (variable font) cut to weight 700, width 100, same character set. All other Latin text.
+sans.ttf     Noto Sans JP Bold, no outline. Japanese below 48 px (made by make_fonts.py; its licence is OFL-NotoSansJP.txt).
 """
 import io, shutil, sys
 from pathlib import Path
@@ -68,18 +73,28 @@ def to_bytes(f):
     return buf.getvalue()
 
 
-dela_p, archivo_p, ofl_d, ofl_a = sys.argv[1:5]
+dela_p, archivo_p, var_p, ofl_d, ofl_a, ofl_v, ofl_n = sys.argv[1:8]
 dela_full, archivo_full = TTFont(dela_p), TTFont(archivo_p)
+from fontTools.varLib import instancer
+def archivo(w):
+    return instancer.instantiateVariableFont(TTFont(var_p), {"wght": w, "wdth": 100}, inplace=False)
+heavy = archivo(900)
 assert dela_full["head"].unitsPerEm == 1000 and archivo_full["head"].unitsPerEm == 1000
-display = cut(TTFont(dela_p), ascii_ | latin & set(chr(k) for k in dela_full.getBestCmap()) | punct | kana | kanji, "Dela Gothic One")
+display = cut(TTFont(dela_p), (punct | kana | kanji) & set(chr(k) for k in dela_full.getBestCmap()), "Dela Gothic One")
 (OUT / "display.ttf").write_bytes(to_bytes(display))
 want = ascii_ | latin | punct
 name = cut(archivo_full, {c for c in want if ord(c) in archivo_full.getBestCmap()}, "Archivo Black")
 graft(name, dela_full, {c for c in want if ord(c) not in name.getBestCmap() and ord(c) in dela_full.getBestCmap() and c in "「」【】"})
+graft(name, heavy, {c for c in "∅" if ord(c) in heavy.getBestCmap() and ord(c) not in name.getBestCmap()})
 (OUT / "name.ttf").write_bytes(to_bytes(name))
+bold = archivo(700)
+body = cut(bold, {c for c in want if ord(c) in bold.getBestCmap()}, "Archivo")
+(OUT / "body.ttf").write_bytes(to_bytes(body))
 shutil.copy(ofl_d, OUT / "OFL-DelaGothicOne.txt")
 shutil.copy(ofl_a, OUT / "OFL-ArchivoBlack.txt")
-for label, f in (("display", display), ("name", name)):
+shutil.copy(ofl_v, OUT / "OFL-Archivo.txt")
+shutil.copy(ofl_n, OUT / "OFL-NotoSansJP.txt")
+for label, f in (("display", display), ("name", name), ("body", body)):
     cm = f.getBestCmap()
     print(f"{label}.ttf {len(to_bytes(f)) // 1024} KB, {len(cm)} characters; Basic Latin drawn: {sum(ord(c) in cm for c in ascii_)} of {len(ascii_)}")
-print("name.ttf has 「」:", all(ord(c) in name.getBestCmap() for c in "「」"), "…:", ord("…") in name.getBestCmap())
+print("name.ttf has 「」 and ∅:", all(ord(c) in name.getBestCmap() for c in "「」∅"), "…:", ord("…") in name.getBestCmap())

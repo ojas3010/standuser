@@ -86,78 +86,65 @@ fn stand_names_are_folded_to_ascii() {
 #[test]
 fn every_fixed_card_label_has_its_glyphs() {
     use standuser_core::{grading, name, svg, types};
-    // the manga lettering is drawn in the display font (Dela Gothic One): the stat labels, the legend, the type names and the labels
-    let display: Vec<String> = svg::JP.iter().map(|s| s.to_string())
-        .chain(["ゴ", "完成", "∞", "∅", "?", "*", "本体―", "能力―", "弱点―", "A", "B", "C", "D", "E", "【STAND NAME】", "【STAND MASTER】"].map(String::from))
-        .chain(svg::JP.iter().flat_map(|j| ["A", "B", "C", "D", "E", "?", "∞", "∅", "完成"].map(|g| format!("{j}―{g}*"))))
+    // Japanese below 48 px is Noto Sans JP Bold: the stat labels, the master label, the type names, the 完成 grade
+    let jp: Vec<String> = svg::JP.iter().map(|s| s.to_string())
+        .chain(["本体―", "完成"].map(String::from))
         .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.jp().to_string()))
         .collect();
-    for s in &display {
-        assert_eq!(missing(s, &[FontKind::Display]), "", "display: {s}");
+    for s in &jp {
+        assert_eq!(missing(s, &[FontKind::Jp]), "", "jp: {s}");
     }
-    let sans_only: Vec<String> = ["A B C D E"].map(String::from).into_iter()
-        .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.en().to_string()))
+    // Japanese at 48 px or larger is Dela Gothic One: the ゴ
+    assert_eq!(missing("ゴ", &[FontKind::Display]), "");
+    // Latin display text is Archivo Black: the grades, with the asterisk, and the ability names
+    let grades: Vec<String> = ["A", "B", "C", "D", "E", "?", "∞", "∅", "A*", "B*", "C*", "D*", "E*", "?*", "∞*"].map(String::from).into();
+    let abilities: Vec<String> = (1..=17u8).map(|i| standuser_core::ability::template_by_id(i).name.to_string()).chain(["Not yet revealed", "Ability"].map(String::from)).collect();
+    for s in grades.iter().chain(&abilities) {
+        assert_eq!(missing(s, &[FontKind::Name]), "", "latin display: {s}");
+    }
+    // all other Latin text is Archivo 700: the type names in English, the footer, the nearest canon line
+    let body: Vec<String> = [types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.en().to_string())
         .chain(grading::LABEL.iter().map(|s| s.to_string()))
+        .chain([svg::FOOTER.to_string(), "Nearest canon: ".into()])
         .collect();
-    for s in &sans_only {
-        assert_eq!(missing(s, &[FontKind::Sans]), "", "sans: {s}");
+    for s in &body {
+        assert_eq!(missing(s, &[FontKind::Body]), "", "body: {s}");
     }
-    let serif: Vec<String> = ["「」", "…"].map(String::from).into_iter()
-        .chain(name::tarot_names())
-        .collect();
-    for s in &serif {
+    let canon: Vec<String> = include_str!("../data/canon_names.txt").lines().map(String::from).collect();
+    for s in &canon {
+        assert_eq!(missing(s, &[FontKind::Body]), "", "nearest canon: {s}");
+    }
+    let name_font: Vec<String> = ["「」", "…"].map(String::from).into_iter().chain(name::tarot_names()).collect();
+    for s in &name_font {
         assert_eq!(missing(s, &[FontKind::Name]), "", "name font: {s}");
         // as drawn on the card: inside the corner brackets
         assert_eq!(missing(&format!("「{s}」"), &[FontKind::Name]), "", "name font, bracketed: {s}");
     }
-    // footer and text templates
-    for s in [svg::FOOTER, svg::CREDIT, svg::TYPE_NOTE, svg::TYPE_NOTE_LOW] {
-        assert_eq!(missing(s, &[FontKind::Sans]), "", "footer: {s}");
+}
+
+/// Every sentence the card draws under an ability name draws without a hole in Archivo 700 (no ★: Archivo has none).
+#[test]
+fn every_card_sentence_has_its_glyphs() {
+    for s in standuser_core::ability::all_card_lines() {
+        assert_eq!(missing(&s, &[FontKind::Body]), "", "{s}");
     }
 }
 
-/// Every ability, weakness and coverage sentence the engine can write draws without a hole (they use ★, curly quotes,
-/// the ellipsis and the minus sign). The ability box is drawn in the sans.
+/// Each face keeps to its job. The name font: Basic Latin, Latin-1 and the brackets, not kana, Greek or Cyrillic. The display font is
+/// Dela Gothic One for Japanese: kana, the kanji of the labels and 【】, and no Latin at all. The body font is Archivo: Latin, no kana.
 #[test]
-fn every_ability_and_weakness_sentence_has_its_glyphs() {
-    for s in standuser_core::ability::all_sample_sentences() {
-        assert_eq!(missing(&s, &[FontKind::Sans]), "", "{s}");
-    }
-    for s in ["graded on 450 of 512 films", "224 of 533 dated watches", "only 4 of 5 dated watches, needs 12", "−0.13★ vs crowd", "DPA 0.88, top 3%", "47% directors seen once", "· from marking dates"] {
-        assert_eq!(missing(s, &[FontKind::Sans]), "", "{s}");
-    }
-}
-
-/// The why line carries an artist credit from names.json, drawn in the sans. Every character of every credit must have a
-/// glyph (Japanese, Korean and Chinese names, Latin Extended letters, Greek with tonos): the names are not folded or dropped.
-#[test]
-fn every_artist_credit_in_names_json_is_drawable() {
-    let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
-    let (mut credits, mut bad) = (0, vec![]);
-    for v in names["names"].as_object().unwrap().values() {
-        for artist in v[0].as_array().unwrap() {
-            let a = artist[0].as_str().unwrap();
-            credits += 1;
-            let miss = missing(a, &[FontKind::Sans]);
-            if !miss.is_empty() {
-                bad.push(format!("{a:?} missing {miss:?}"));
-            }
-        }
-    }
-    assert!(credits > 1000);
-    assert!(bad.is_empty(), "{} credits would draw a box, e.g. {:?}", bad.len(), &bad[..bad.len().min(5)]);
-}
-
-/// The name font is for the Stand name only: Basic Latin, Latin-1 and the brackets, not the kana, Greek or Cyrillic that the sans
-/// draws. The display font is the manga lettering: kana, the kanji of the labels, Basic Latin and 【】, not Greek or Cyrillic.
-#[test]
-fn the_display_fonts_keep_to_their_job() {
+fn the_card_fonts_keep_to_their_job() {
     let name = font(FontKind::Name);
-    assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '&-.,!?:\"「」…".chars().all(|c| name.has(c)));
+    assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '&-.,!?:\"「」…∞∅*".chars().all(|c| name.has(c)));
     assert!(!name.has('ひ') && !name.has('Ж'));
     let display = font(FontKind::Display);
-    assert!("ゴゴゴスピードニガテひらがな【】「」ABCDE".chars().all(|c| display.has(c)));
-    assert!(!display.has('Ж') && !display.has('ά'));
+    assert!("ゴスピードニガテひらがな【】「」破壊力".chars().all(|c| display.has(c)));
+    assert!(!display.has('Ж') && !display.has('ά') && !"ABCDEabcde0123456789".chars().any(|c| display.has(c)), "Dela Gothic One is for Japanese only");
+    let body = font(FontKind::Body);
+    assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 '&-.,!?:\"()·–—…%*".chars().all(|c| body.has(c)));
+    assert!(!body.has('ひ') && !body.has('★'));
+    let jp = font(FontKind::Jp);
+    assert!("本体―破壊力スピード射程距離持続力精密動作性成長性完成近距離パワー型遠隔自動操縦未分類".chars().all(|c| jp.has(c)));
 }
 
 /// A track-title Stand name is drawn in the name font inside 「」. Every character of every candidate title in names.json must

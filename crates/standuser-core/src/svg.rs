@@ -6,7 +6,7 @@
 //! ゴゴゴ, Archivo Black for the Stand name) with a black outline drawn as a second, thicker black path under the fill path, and the
 //! Part 5 stat chart: a hexagon with a ring per grade, circled A to E up the top axis, and a circled grade at each vertex.
 
-use crate::font::{font, Font, FontKind};
+use crate::font::{body_text, font, BodyText, Draw, Font, FontKind};
 use crate::palette::{self, Pal};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;
@@ -117,19 +117,38 @@ pub struct Run {
 }
 
 struct Ctx {
-    sans: Font,
+    /// Noto Sans JP Bold, Japanese below 48 px.
+    jp: Font,
+    /// Archivo 700, the Latin body text.
+    body: BodyText,
+    /// Archivo Black, the Stand name and the Latin display text.
     name: Font,
+    /// Dela Gothic One, Japanese at 48 px or larger.
     display: Font,
     els: Vec<String>,
     runs: Vec<Run>,
 }
 
+/// Japanese at this size or larger is lettering: Dela Gothic One with the black outline. Below it, Noto Sans JP Bold, plain.
+pub const JP_LETTERING_MIN: f64 = 48.0;
+
 impl Ctx {
-    fn face(&self, kind: FontKind) -> &Font {
+    fn face(&self, kind: FontKind) -> &dyn Draw {
         match kind {
-            FontKind::Sans => &self.sans,
+            FontKind::Jp => &self.jp,
+            FontKind::Body => &self.body,
             FontKind::Name => &self.name,
             FontKind::Display => &self.display,
+        }
+    }
+
+    /// Japanese text: lettering (Dela Gothic One, outlined) from JP_LETTERING_MIN px up, Noto Sans JP Bold below.
+    #[allow(clippy::too_many_arguments)]
+    fn jp_text(&mut self, s: &str, x: f64, y: f64, size: f64, cls: &str, anchor: &str) {
+        if size >= JP_LETTERING_MIN {
+            self.lettering(s, x, y, size, FontKind::Display, cls, anchor, 0.0, OUTLINE);
+        } else {
+            self.text(s, x, y, size, FontKind::Jp, cls, anchor, 0.0);
         }
     }
 
@@ -168,6 +187,13 @@ impl Ctx {
     fn centred(&mut self, s: &str, cx: f64, cy: f64, size: f64, kind: FontKind, cls: &str) {
         let (up, down) = self.face(kind).ink_extent(s, size);
         self.text(s, cx, cy + (up - down) / 2.0, size, kind, cls, "middle", 0.0);
+    }
+
+    /// Japanese `s` centred on (cx, cy) like `centred`.
+    fn centred_jp(&mut self, s: &str, cx: f64, cy: f64, size: f64, cls: &str) {
+        let kind = if size >= JP_LETTERING_MIN { FontKind::Display } else { FontKind::Jp };
+        let (up, down) = self.face(kind).ink_extent(s, size);
+        self.jp_text(s, cx, cy + (up - down) / 2.0, size, cls, "middle");
     }
 }
 
@@ -303,8 +329,8 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
 
 /// The card's SVG and every piece of text on it, as drawn (for the tests that measure the card).
 pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
-    use FontKind::{Display, Name, Sans};
-    let mut c = Ctx { sans: font(Sans), name: font(Name), display: font(Display), els: vec![], runs: vec![] };
+    use FontKind::{Body, Name};
+    let mut c = Ctx { jp: font(FontKind::Jp), body: body_text(), name: font(Name), display: font(FontKind::Display), els: vec![], runs: vec![] };
     let (cx, cy, r_chart) = (CX, CY, CHART_R);
 
     // ground, and the frame: the panel border in black, a fine line of the ink inside it
@@ -314,7 +340,7 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     // the ゴゴゴ of the scene, on a diagonal down the left side
     for (sz, gx, gy) in GOGOGO {
         let (up, down) = c.display.ink_extent("ゴ", sz);
-        c.lettering("ゴ", gx, gy + (up - down) / 2.0, sz, Display, "fill", "middle", 0.0, OUTLINE);
+        c.jp_text("ゴ", gx, gy + (up - down) / 2.0, sz, "fill", "middle");
     }
     // the Stand name: the card's one diagonal, largest size that keeps its tilted box in the header; the outline and the fill share the tilt
     let np = place_name(&c.name, &d.name);
@@ -337,12 +363,12 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     }
     // the Stand master (top left, above the name's low end) and the type in Japanese and English (right, under the name's high end)
     let label = "本体―";
-    c.text(label, MARGIN, MASTER_Y, MASTER_SIZE, Display, "ink", "start", 0.0);
-    let lw = c.display.width(label, MASTER_SIZE, 0.0);
-    let user = c.sans.fit(&d.user, MASTER_SIZE, 470.0 - lw - 10.0);
-    c.text(&user, MARGIN + lw + 10.0, MASTER_Y, MASTER_SIZE, Sans, "ink", "start", 0.0);
-    c.text(&d.type_jp, RIGHT, TYPE_JP_Y, TYPE_SIZE, Display, "ink", "end", 0.0);
-    c.text(&d.type_en, RIGHT, TYPE_EN_Y, TYPE_SIZE, Sans, "ink", "end", 0.0);
+    c.jp_text(label, MARGIN, MASTER_Y, MASTER_SIZE, "ink", "start");
+    let lw = c.jp.width(label, MASTER_SIZE, 0.0);
+    let user = c.body.fit(&d.user, MASTER_SIZE, 470.0 - lw - 10.0);
+    c.text(&user, MARGIN + lw + 10.0, MASTER_Y, MASTER_SIZE, Body, "ink", "start", 0.0);
+    c.jp_text(&d.type_jp, RIGHT, TYPE_JP_Y, TYPE_SIZE, "ink", "end");
+    c.text(&d.type_en, RIGHT, TYPE_EN_Y, TYPE_SIZE, Body, "ink", "end", 0.0);
 
     // the chart, after the Part 5 tailpiece: a paper hexagon, a ring per grade, three spokes, a dot on each spoke at each ring
     let outer = hex(cx, cy, r_chart);
@@ -392,32 +418,32 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
         let half = if pill { 46.0 } else { BADGE_R };
         if pill {
             c.els.push(format!("<rect x=\"{:.1}\" y=\"{:.1}\" width=\"{}\" height=\"{}\" rx=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>", bx - half, by - BADGE_R, 2.0 * half, 2.0 * BADGE_R));
-            c.centred(&g, bx, by, BADGE_TEXT - 4.0, Display, "bk");
+            c.centred_jp(&g, bx, by, BADGE_TEXT - 4.0, "bk");
         } else {
             c.els.push(format!("<circle cx=\"{bx:.1}\" cy=\"{by:.1}\" r=\"{BADGE_R}\" class=\"f-paper s-bk\" stroke-width=\"3\"/>"));
-            c.centred(&g, bx, by, BADGE_TEXT, Display, "bk");
+            c.centred(&g, bx, by, BADGE_TEXT, Name, "bk");
         }
-        let (up, down) = c.display.ink_extent(JP[i], LABEL_SIZE);
+        let (up, down) = c.jp.ink_extent(JP[i], LABEL_SIZE);
         let mid = (up - down) / 2.0;
         match i {
-            0..=3 => c.text(JP[i], bx + half + LABEL_GAP, by + mid, LABEL_SIZE, Display, "ink", "start", 0.0),
-            4 => c.text(JP[i], bx + BADGE_R * 0.8, by + BADGE_R + LABEL_GAP + up, LABEL_SIZE, Display, "ink", "end", 0.0),
-            _ => c.text(JP[i], bx + BADGE_R * 0.8, by - BADGE_R - LABEL_GAP, LABEL_SIZE, Display, "ink", "end", 0.0),
+            0..=3 => c.jp_text(JP[i], bx + half + LABEL_GAP, by + mid, LABEL_SIZE, "ink", "start"),
+            4 => c.jp_text(JP[i], bx + BADGE_R * 0.8, by + BADGE_R + LABEL_GAP + up, LABEL_SIZE, "ink", "end"),
+            _ => c.jp_text(JP[i], bx + BADGE_R * 0.8, by - BADGE_R - LABEL_GAP, LABEL_SIZE, "ink", "end"),
         }
     }
 
     // the ability: its name, then its one sentence
     let aname = if d.ability_name.is_empty() { "Ability" } else { d.ability_name.as_str() };
-    let rows: Vec<String> = c.sans.wrap(&d.ability_line, LINE_SIZE, LINE_WIDTH).into_iter().take(LINE_MAX_ROWS).collect();
+    let rows: Vec<String> = c.body.wrap(&d.ability_line, LINE_SIZE, LINE_WIDTH).into_iter().take(LINE_MAX_ROWS).collect();
     let (name_y, first_y) = ability_rows(rows.len());
     c.text(aname, MARGIN, name_y, ABILITY_SIZE, Name, "ink", "start", 0.0);
     for (i, ln) in rows.iter().enumerate() {
-        c.text(ln, MARGIN, first_y + i as f64 * LINE_PITCH, LINE_SIZE, Sans, "ink", "start", 0.0);
+        c.text(ln, MARGIN, first_y + i as f64 * LINE_PITCH, LINE_SIZE, Body, "ink", "start", 0.0);
     }
     // the nearest canon line, and the one footer line
-    let near = c.sans.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), NEAR_SIZE, RIGHT - MARGIN);
-    c.text(&near, MARGIN, NEAR_Y, NEAR_SIZE, Sans, "ink", "start", 0.0);
-    c.text(FOOTER, MARGIN, FOOT_Y, NEAR_SIZE, Sans, "mute", "start", 0.0);
+    let near = c.body.fit(&format!("Nearest canon: {}", d.nearest.join(" · ")), NEAR_SIZE, RIGHT - MARGIN);
+    c.text(&near, MARGIN, NEAR_Y, NEAR_SIZE, Body, "ink", "start", 0.0);
+    c.text(FOOTER, MARGIN, FOOT_Y, NEAR_SIZE, Body, "mute", "start", 0.0);
 
     // assemble
     let key = d.accent.as_deref();
@@ -623,7 +649,7 @@ mod tests {
     #[test]
     fn text_fits_the_frame() {
         // wrapping keeps lines inside the box
-        let f = font(FontKind::Sans);
+        let f = body_text();
         for ln in f.wrap(&sample().ability_line, LINE_SIZE, LINE_WIDTH) {
             assert!(f.width(&ln, LINE_SIZE, 0.0) <= LINE_WIDTH + 0.01);
         }
@@ -695,5 +721,38 @@ mod tests {
         let median = sizes[sizes.len() / 2];
         println!("{} names, drawn at {} px at the smallest, {median} px at the median, {} px at the largest", sizes.len(), sizes[0], sizes[sizes.len() - 1]);
         assert!(median >= 85.0 && sizes[0] >= NAME_MIN_SIZE, "median {median}");
+    }
+
+    #[test]
+    fn every_text_is_in_the_face_its_role_names() {
+        // Archivo Black for the Stand name and the Latin display text; Archivo 700 for all other Latin; Dela Gothic One with the black
+        // outline for Japanese at 48 px or larger; Noto Sans JP Bold, no outline, for Japanese below 48 px. No other face.
+        let mut d = sample();
+        d.grades[5] = "完成".into();
+        for theme in [Theme::Light, Theme::Dark] {
+            for run in card_build(&d, theme).1 {
+                let japanese = |c: char| c as u32 >= 0x2E80 && c != '「' && c != '」';
+                let all_jp = run.text.chars().all(|c| japanese(c) || c == '―');
+                match run.kind {
+                    FontKind::Display => assert!(run.size >= JP_LETTERING_MIN && run.outlined && all_jp, "{run:?}"),
+                    FontKind::Jp => assert!(run.size < JP_LETTERING_MIN && !run.outlined && all_jp, "{run:?}"),
+                    FontKind::Name => assert!(!run.text.chars().any(japanese) || run.text.starts_with('「'), "{run:?}"),
+                    FontKind::Body => assert!(!run.outlined && !run.text.chars().any(|c| c as u32 >= 0x2E80), "{run:?}"),
+                }
+            }
+        }
+        // the roles of the pieces the rule names
+        let runs = card_build(&d, Theme::Light).1;
+        let kind = |t: &str| runs.iter().find(|r| r.text.starts_with(t)).unwrap_or_else(|| panic!("{t}")).kind;
+        assert_eq!(kind("「DIRTY"), FontKind::Name);
+        assert_eq!(kind("Wind Reading"), FontKind::Name);
+        assert_eq!(kind("B*"), FontKind::Name);
+        assert_eq!(kind("It reads"), FontKind::Body);
+        assert_eq!(kind("standuser"), FontKind::Body);
+        assert_eq!(kind("Close-Range"), FontKind::Body);
+        assert_eq!(kind("ゴ"), FontKind::Display);
+        assert_eq!(kind("近距離"), FontKind::Jp);
+        assert_eq!(kind("本体"), FontKind::Jp);
+        assert_eq!(kind("完成"), FontKind::Jp);
     }
 }

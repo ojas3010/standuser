@@ -169,8 +169,8 @@ pub const CARD_LINE_WORDS: usize = 20;
 /// The card's one sentence for template `id`: the template's image and the one figure behind it (`ability_text` keeps the full line).
 fn card_line(id: u8, f: &Facts, top_label: &str, top_letter: &str, top_pct: &str) -> String {
     match id {
-        1 => format!("Every film it touches becomes a bomb: it rates {:.2}★ below the crowd on average.", f.b.abs()),
-        2 => format!("It heals what the crowd wounded: it rates {:.2}★ above the crowd on average.", f.b.abs()),
+        1 => format!("Every film it touches becomes a bomb: it rates {:.2} stars below the crowd on average.", f.b.abs()),
+        2 => format!("It heals what the crowd wounded: it rates {:.2} stars above the crowd on average.", f.b.abs()),
         3 => format!("A barrage too fast to follow: {:.1} films per active month.", f.pace),
         4 => format!("Time speeds up around it: {:.1} films per active month, a pace almost no one reaches.", f.pace),
         5 => format!("A slow mist drifts rather than strikes: {:.1} films per active month.", f.pace),
@@ -213,7 +213,19 @@ fn status_tag(s: Status) -> &'static str {
     if s == Status::Provisional { " [provisional]" } else { "" }
 }
 
-/// Every sentence the engine can put on the card, written with sample numbers (for the glyph-coverage test).
+/// Every sentence the card can carry under an ability name, written with sample numbers (for the glyph-coverage test).
+pub fn all_card_lines() -> Vec<String> {
+    let f = Facts {
+        b: -0.12, n_elig: 1234, pace: 6.5, peak_n: 14, peak_month: "Mar 2023".into(), months: 48, active: 40, streak: 17, start: "Jan 2023".into(),
+        silent: 8, silent_run: 3, d_range: 3.4, top_country: "the United States".into(), top_share: 0.62, n_films_cty: 500, pa25: 0.81, pairs: 70211,
+        dpa: 0.88, n1: 120, credits: 240, gt: 0.5, top_dir: "Director Seven".into(), top_dir_n: 6, ..Default::default()
+    };
+    let mut v: Vec<String> = (1..=17u8).map(|id| card_line(id, &f, "Precision", "A", "97.8th")).collect();
+    v.push("Too few stats could be graded to reveal an ability (?).".into());
+    v
+}
+
+/// Every sentence the engine can put on the page, written with sample numbers (for the glyph-coverage test).
 pub fn all_sample_sentences() -> Vec<String> {
     let f = Facts {
         b: -0.12, n_elig: 1234, pace: 6.5, peak_n: 14, peak_month: "Mar 2023".into(), months: 48, active: 40, streak: 17, start: "Jan 2023".into(),
@@ -225,7 +237,6 @@ pub fn all_sample_sentences() -> Vec<String> {
         ("PRC", "hi"), ("PRC", "lo"), ("DEV", "hi"), ("DEV", "lo"), ("DEV", "complete"), ("BAL", "bal")] {
         let t = template(stat, dir);
         v.push(format!("{}. {} [provisional]", t.name, ability_text(t.id, &f, "Precision", "A", "97.8th")));
-        v.push(card_line(t.id, &f, "Precision", "A", "97.8th"));
     }
     for stat in STATS {
         for tier in ["weak", "weak_lo", "weak_hi", "mid"] {

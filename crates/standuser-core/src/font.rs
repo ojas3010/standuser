@@ -5,16 +5,24 @@
 
 use ttf_parser::{Face, OutlineBuilder};
 
-static SANS: &[u8] = include_bytes!("../data/sans.ttf");
+static JP: &[u8] = include_bytes!("../data/sans.ttf");
+static BODY: &[u8] = include_bytes!("../data/body.ttf");
 static NAME: &[u8] = include_bytes!("../data/name.ttf");
 static DISPLAY: &[u8] = include_bytes!("../data/display.ttf");
 
+/// The card's four faces, all SIL OFL (licence texts in data/):
+/// Jp is Noto Sans JP Bold: Japanese below 48 px, no outline. Body is Archivo at weight 700: all the Latin text that is not display.
+/// Name is Archivo Black: the Stand name and the other Latin display text. Display is Dela Gothic One: Japanese at 48 px or larger, with
+/// the black outline. (sans.ttf also carries the Latin of Noto Sans JP; the card never draws it, the page's name choice measures with it.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FontKind {
-    Sans,
-    /// The Stand name (Archivo Black): Basic Latin, Latin-1, punctuation and 「」.
+    /// Noto Sans JP Bold.
+    Jp,
+    /// Archivo 700: Basic Latin, Latin-1, Latin Extended-A and punctuation.
+    Body,
+    /// The Stand name (Archivo Black): Basic Latin, Latin-1, punctuation, ∞ ∅ and 「」.
     Name,
-    /// The manga lettering (Dela Gothic One): kana, the kanji of the labels and types, Basic Latin, 【】.
+    /// Dela Gothic One: kana, the kanji of the labels and the Stand types, 【】「」・―.
     Display,
 }
 
@@ -25,13 +33,107 @@ pub struct Font {
 
 pub fn font(kind: FontKind) -> Font {
     let data = match kind {
-        FontKind::Sans => SANS,
+        FontKind::Jp => JP,
+        FontKind::Body => BODY,
         FontKind::Name => NAME,
         FontKind::Display => DISPLAY,
     };
     let face = Face::parse(data, 0).expect("embedded font");
     let upm = face.units_per_em() as f64;
     Font { face, upm }
+}
+
+/// What the card needs of a face: how wide a text is, the path of its outlines, and how far its ink reaches.
+pub trait Draw {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64;
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String;
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64);
+}
+
+/// The Latin body text: Archivo, and for a character Archivo does not have (a Cyrillic, Greek, Korean or Japanese letter in a director's
+/// name, say) Noto Sans JP Bold, so user-supplied names still draw.
+pub struct BodyText {
+    latin: Font,
+    jp: Font,
+}
+
+pub fn body_text() -> BodyText {
+    BodyText { latin: font(FontKind::Body), jp: font(FontKind::Jp) }
+}
+
+impl BodyText {
+    fn pick(&self, c: char) -> &Font {
+        if self.latin.has(c) || !self.jp.has(c) {
+            &self.latin
+        } else {
+            &self.jp
+        }
+    }
+
+    fn adv(&self, c: char, size: f64) -> f64 {
+        self.pick(c).adv(c, size)
+    }
+
+    /// The faces `s` is drawn in, as (text, is the Noto fallback) runs.
+    pub fn runs(&self, s: &str) -> Vec<(String, bool)> {
+        let mut out: Vec<(String, bool)> = vec![];
+        for c in s.chars() {
+            let fallback = !std::ptr::eq(self.pick(c), &self.latin);
+            match out.last_mut() {
+                Some((t, f)) if *f == fallback => t.push(c),
+                _ => out.push((c.to_string(), fallback)),
+            }
+        }
+        out
+    }
+
+    pub fn wrap(&self, text: &str, size: f64, maxw: f64) -> Vec<String> {
+        wrap_by(text, maxw, |c| self.adv(c, size))
+    }
+
+    pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
+        fit_by(s, maxw, |t| self.width(t, size, 0.0))
+    }
+}
+
+impl Draw for BodyText {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64 {
+        if s.is_empty() {
+            return 0.0;
+        }
+        s.chars().map(|c| self.adv(c, size) + ls).sum::<f64>() - ls
+    }
+
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
+        let mut out = String::new();
+        let mut cx = x;
+        for c in s.chars() {
+            let f = self.pick(c);
+            let t = c.to_string();
+            out.push_str(&f.path(&t, cx, y, size, 0.0));
+            cx += f.adv(c, size) + ls;
+        }
+        out
+    }
+
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        s.chars().fold((0.0f64, 0.0f64), |(u, d), c| {
+            let (cu, cd) = self.pick(c).ink_extent(&c.to_string(), size);
+            (u.max(cu), d.max(cd))
+        })
+    }
+}
+
+impl Draw for Font {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64 {
+        Font::width(self, s, size, ls)
+    }
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
+        Font::path(self, s, x, y, size, ls)
+    }
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        Font::ink_extent(self, s, size)
+    }
 }
 
 fn num(v: f64) -> String {
@@ -128,50 +230,7 @@ impl Font {
 
     /// Greedy wrap: break on spaces for Latin, anywhere for CJK.
     pub fn wrap(&self, text: &str, size: f64, maxw: f64) -> Vec<String> {
-        let mut toks: Vec<String> = Vec::new();
-        let mut cur = String::new();
-        for ch in text.chars() {
-            if (ch as u32) > 0x2E80 {
-                if !cur.is_empty() {
-                    toks.push(std::mem::take(&mut cur));
-                }
-                toks.push(ch.to_string());
-            } else if ch == ' ' {
-                if !cur.is_empty() {
-                    toks.push(std::mem::take(&mut cur));
-                }
-                toks.push(" ".into());
-            } else {
-                cur.push(ch);
-            }
-        }
-        if !cur.is_empty() {
-            toks.push(cur);
-        }
-        // the width of the line is kept as it grows: re-measuring the whole line for every token made wrapping quadratic
-        let mut lines = Vec::new();
-        let mut line = String::new();
-        let (mut w, mut trail) = (0.0, 0.0); // advance of the line, and of the spaces at its end
-        for t in toks {
-            let tw: f64 = t.chars().map(|c| self.adv(c, size)).sum();
-            let blank = t.chars().all(|c| c == ' ');
-            if (if blank { w - trail } else { w + tw }) <= maxw {
-                line.push_str(&t);
-                w += tw;
-                trail = if blank { trail + tw } else { 0.0 };
-            } else {
-                if !line.trim().is_empty() {
-                    lines.push(line.trim_end().to_string());
-                }
-                line = t.trim_start().to_string();
-                w = line.chars().map(|c| self.adv(c, size)).sum();
-                trail = 0.0;
-            }
-        }
-        if !line.trim().is_empty() {
-            lines.push(line.trim_end().to_string());
-        }
-        lines
+        wrap_by(text, maxw, |c| self.adv(c, size))
     }
 
     /// Fit a film line "Title: Subtitle (Country)" to `maxw` without cutting a word in half. Order: the line as it is; the part after
@@ -230,19 +289,72 @@ impl Font {
 
     /// Cut `s` to fit `maxw`, ending with an ellipsis.
     pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
-        if self.width(s, size, 0.0) <= maxw {
-            return s.to_string();
-        }
-        let mut t: Vec<char> = s.chars().collect();
-        while !t.is_empty() {
-            t.pop();
-            let cand: String = t.iter().collect::<String>().trim_end().to_string() + "…";
-            if self.width(&cand, size, 0.0) <= maxw {
-                return cand;
-            }
-        }
-        "…".into()
+        fit_by(s, maxw, |t| self.width(t, size, 0.0))
     }
+}
+
+/// Greedy wrap of `text` to `maxw` (the advance of a character is `adv`): break on spaces for Latin, anywhere for CJK.
+pub fn wrap_by(text: &str, maxw: f64, adv: impl Fn(char) -> f64) -> Vec<String> {
+    let mut toks: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    for ch in text.chars() {
+        if (ch as u32) > 0x2E80 {
+            if !cur.is_empty() {
+                toks.push(std::mem::take(&mut cur));
+            }
+            toks.push(ch.to_string());
+        } else if ch == ' ' {
+            if !cur.is_empty() {
+                toks.push(std::mem::take(&mut cur));
+            }
+            toks.push(" ".into());
+        } else {
+            cur.push(ch);
+        }
+    }
+    if !cur.is_empty() {
+        toks.push(cur);
+    }
+    // the width of the line is kept as it grows: re-measuring the whole line for every token made wrapping quadratic
+    let mut lines = Vec::new();
+    let mut line = String::new();
+    let (mut w, mut trail) = (0.0, 0.0); // advance of the line, and of the spaces at its end
+    for t in toks {
+        let tw: f64 = t.chars().map(|c| adv(c)).sum();
+        let blank = t.chars().all(|c| c == ' ');
+        if (if blank { w - trail } else { w + tw }) <= maxw {
+            line.push_str(&t);
+            w += tw;
+            trail = if blank { trail + tw } else { 0.0 };
+        } else {
+            if !line.trim().is_empty() {
+                lines.push(line.trim_end().to_string());
+            }
+            line = t.trim_start().to_string();
+            w = line.chars().map(|c| adv(c)).sum();
+            trail = 0.0;
+        }
+    }
+    if !line.trim().is_empty() {
+        lines.push(line.trim_end().to_string());
+    }
+    lines
+}
+
+/// Cut `s` to fit `maxw` (`width` measures a text), ending with an ellipsis.
+pub fn fit_by(s: &str, maxw: f64, width: impl Fn(&str) -> f64) -> String {
+    if width(s) <= maxw {
+        return s.to_string();
+    }
+    let mut t: Vec<char> = s.chars().collect();
+    while !t.is_empty() {
+        t.pop();
+        let cand: String = t.iter().collect::<String>().trim_end().to_string() + "…";
+        if width(&cand) <= maxw {
+            return cand;
+        }
+    }
+    "…".into()
 }
 
 #[cfg(test)]
@@ -291,7 +403,7 @@ mod title_tests {
 
     #[test]
     fn wrap_is_unchanged_by_the_incremental_width() {
-        let f = font(FontKind::Sans);
+        let f = font(FontKind::Jp);
         let mut texts: Vec<String> = crate::ability::all_sample_sentences();
         texts.push("Why 「DIRTY WEATHER」: verbatim: \"DIRTY WEATHER\", track 3 of Some Band's Lighthouse score (2019); Lighthouse is one of your Favourite Films (4.5★). \"weather\" fits your Wind Reading ability.".into());
         texts.push("日本語の文章と English words mixed together 久石譲 달파란  with  double  spaces and a verylongunbrokenwordthatcannotbebrokenanywhereatallbecauseithasnospaces ".repeat(3));
@@ -306,7 +418,7 @@ mod title_tests {
 
     /// The fitting rules run on the card's body text, which is the sans.
     fn sans() -> Font {
-        font(FontKind::Sans)
+        font(FontKind::Jp)
     }
 
     #[test]

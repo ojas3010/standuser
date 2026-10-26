@@ -1,0 +1,4976 @@
+[
+ {
+  "key": "dancerinthedark|2000",
+  "year": 2000,
+  "titles": [
+   "Dancer in the Dark",
+   "Dancer in the Dark"
+  ],
+  "composers": [
+   "Bj\u00f6rk"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "amostwantedman|2014",
+  "year": 2014,
+  "titles": [
+   "A Most Wanted Man",
+   "A Most Wanted Man"
+  ],
+  "composers": [
+   "Herbert Gr\u00f6nemeyer"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "3b28952a-5e20-4d35-a21d-1f0d7cedaa05",
+   "title": "A Most Wanted Man (A Motion Picture Soundtrack)",
+   "year": 2014,
+   "artist": "Herbert Gr\u00f6nemeyer"
+  },
+  "rejected": [],
+  "tracks": [
+   "Opening Theme",
+   "After the Prayer Meeting",
+   "Leyla",
+   "Annabel Meets Issa",
+   "Text From Jamal",
+   "You're My Ears Jamal",
+   "Tommy Checks the Account",
+   "Enlisting Tommy",
+   "They're Closing In",
+   "Annabel Collects Issa",
+   "Jumping the U-Bahn",
+   "Florian's Appartment",
+   "Abduction",
+   "Annabel in Cell",
+   "We're the Solution",
+   "Up On the Roof",
+   "Chess",
+   "Drive to Abdullah's",
+   "Where Did the Money Come From?",
+   "Minister of the Interior",
+   "Make the World A Safer Place",
+   "Bachmann at Home",
+   "Abdullah Arrives",
+   "Signing the Agreement",
+   "Stuck in Traffic",
+   "Closing Theme"
+  ]
+ },
+ {
+  "key": "mafiamamma|2023",
+  "year": 2023,
+  "titles": [
+   "Mafia Mamma",
+   "Mafia Mamma"
+  ],
+  "composers": [
+   "Alex Heffes"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "1c12f687-7ae0-4d54-825a-389e68a2783e",
+   "title": "Mafia Mamma: Original Motion Picture Soundtrack",
+   "year": 2023,
+   "artist": "Alex Heffes"
+  },
+  "rejected": [],
+  "tracks": [
+   "This Means War",
+   "Earthbound",
+   "U Really Got It Goin\u2019 On",
+   "Don\u2019t Want to Miss a Thing",
+   "Un Amore a Roma",
+   "Via",
+   "The Balbano Villa",
+   "Non So Dimenticare",
+   "Balbano Family Theme (Piano Solo)",
+   "I Am",
+   "Funeral Shootout",
+   "The Romanos",
+   "He\u2019s Gorgeous",
+   "Don Carlo Is Up To No Good",
+   "Limoncello Poisoning",
+   "Finger Food",
+   "Bruno",
+   "We Are The Mafia",
+   "Bruno Meets His Match",
+   "Kristen In The Mirror",
+   "Rispetto",
+   "Be The Leopard",
+   "Back To The Villa",
+   "Muffins",
+   "Restaurant Shootout",
+   "Courtroom",
+   "I Inherited A Vineyard",
+   "Dante Shot",
+   "Winery Showdown",
+   "Kissing The Ring"
+  ]
+ },
+ {
+  "key": "kingarthur|2004",
+  "year": 2004,
+  "titles": [
+   "King Arthur",
+   "King Arthur"
+  ],
+  "composers": [
+   "Hans Zimmer"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "334d0c5e-cf2e-3568-9c54-b282a1bfd61b",
+   "title": "King Arthur (Original Score)",
+   "year": 2004,
+   "artist": "Hans Zimmer"
+  },
+  "rejected": [],
+  "tracks": [
+   "Tell Me Now (What You See)",
+   "Woad to Ruin",
+   "Do You Think I\u2019m Saxon?",
+   "Hold the Ice",
+   "Another Brick in Hadrian's Wall",
+   "Budget Meeting",
+   "All of Them!"
+  ]
+ },
+ {
+  "key": "inthehouse|2012",
+  "year": 2012,
+  "titles": [
+   "In the House",
+   "Dans la maison"
+  ],
+  "composers": [
+   "Philippe Rombi"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "eatdrinkmanwoman|1994",
+  "year": 1994,
+  "titles": [
+   "Eat Drink Man Woman",
+   "\u98f2\u98df\u7537\u5973"
+  ],
+  "composers": [
+   "Mader"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "compliance|2012",
+  "year": 2012,
+  "titles": [
+   "Compliance",
+   "Compliance"
+  ],
+  "composers": [
+   "Heather McIntosh"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "abe09c2f-db0b-44f5-bc11-1e1dc487cc05",
+   "title": "Compliance",
+   "year": 2012,
+   "artist": "Heather McIntosh"
+  },
+  "rejected": [],
+  "tracks": [
+   "Compliance Theme",
+   "Chorale for Low Strings pt. 1",
+   "The Investigation",
+   "Sandra's Walk",
+   "Largo for Decaying Piano",
+   "Van Arrives",
+   "Caller's Introduction",
+   "You Have 10 Seconds Left",
+   "Sounds for Diffused Light",
+   "Becky's Lament",
+   "It's Been a Very Hard Day",
+   "Chorale for Low Strings pt. 2",
+   "Detective Neals' Drive",
+   "Compliance Theme (Reprise)"
+  ]
+ },
+ {
+  "key": "thisfilmisnotyetrated|2006",
+  "year": 2006,
+  "titles": [
+   "This Film Is Not Yet Rated",
+   "This Film Is Not Yet Rated"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "carlsdate|2023",
+  "year": 2023,
+  "titles": [
+   "Carl's Date",
+   "Carl's Date"
+  ],
+  "composers": [
+   "Andrea Datzman"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "wrongturn|2021",
+  "year": 2021,
+  "titles": [
+   "Wrong Turn",
+   "Wrong Turn"
+  ],
+  "composers": [
+   "Stephen Lukach"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "superstar|1999",
+  "year": 1999,
+  "titles": [
+   "Superstar",
+   "Superstar"
+  ],
+  "composers": [
+   "Michael Gore"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "apageofmadness|1926",
+  "year": 1926,
+  "titles": [
+   "A Page of Madness",
+   "\u72c2\u3063\u305f\u4e00\u9801"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "annie|2014",
+  "year": 2014,
+  "titles": [
+   "Annie",
+   "Annie"
+  ],
+  "composers": [
+   "Greg Kurstin",
+   "Charles Strouse"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "591f5fac-d078-4a09-8261-21a83f098aee",
+    "title": "Annie: Original Motion Picture Soundtrack",
+    "year": 2014,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "childrenofthesea|2019",
+  "year": 2019,
+  "titles": [
+   "Children of the Sea",
+   "\u6d77\u7363\u306e\u5b50\u4f9b"
+  ],
+  "composers": [
+   "Joe Hisaishi"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "inavalleyofviolence|2016",
+  "year": 2016,
+  "titles": [
+   "In a Valley of Violence",
+   "In a Valley of Violence"
+  ],
+  "composers": [
+   "Jeff Grace"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "7129fec1-0188-42e7-be60-edddc8624f01",
+   "title": "In a Valley of Violence",
+   "year": 2016,
+   "artist": "Jeff Grace"
+  },
+  "rejected": [],
+  "tracks": [
+   "Priests and Sinners",
+   "Opening Titles",
+   "To Denton",
+   "Gilly",
+   "Leaving Town",
+   "Finding Abby",
+   "Homestead",
+   "Hesitation Will Get You Killed",
+   "Returning To Town",
+   "Rooftop",
+   "Surrender and Standoff",
+   "Marshal's Goodbye",
+   "Ending"
+  ]
+ },
+ {
+  "key": "jayandsilentbobreboot|2019",
+  "year": 2019,
+  "titles": [
+   "Jay and Silent Bob Reboot",
+   "Jay and Silent Bob Reboot"
+  ],
+  "composers": [
+   "James L. Venable"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thenightofthehunter|1955",
+  "year": 1955,
+  "titles": [
+   "The Night of the Hunter",
+   "The Night of the Hunter"
+  ],
+  "composers": [
+   "Walter Schumann"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "9d5e7a25-d67d-3e4b-9f36-1c5dc34c4daa",
+   "title": "The Night of the Hunter",
+   "year": 1955,
+   "artist": "Walter Schumann"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Night of the Hunter, Part 1",
+   "The Night of the Hunter, Part 2"
+  ]
+ },
+ {
+  "key": "andhadhun|2018",
+  "year": 2018,
+  "titles": [
+   "Andhadhun",
+   "\u0905\u0902\u0927\u093e\u0927\u0941\u0928"
+  ],
+  "composers": [
+   "Girish Nakod",
+   "Amit Trivedi",
+   "Raftaar"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "de26d024-05e7-40f8-8cce-df72e1160b38",
+   "title": "Andhadhun",
+   "year": 2018,
+   "artist": "Amit Trivedi & Raftaar"
+  },
+  "rejected": [],
+  "tracks": [
+   "Naina Da Kya Kasoor",
+   "Aap Se Milkar",
+   "Wo Ladki",
+   "Laila Laila",
+   "Oh Bhai Re",
+   "Andhadhun Title Track",
+   "Andhadhun Theme 01",
+   "Andhadhun Theme 02",
+   "Naina Da Kya Kasoor (Electronic)",
+   "Aap Se Milkar - Reprise",
+   "Naina Da Kya Kasoor - Unplugged"
+  ]
+ },
+ {
+  "key": "twistedpair|2018",
+  "year": 2018,
+  "titles": [
+   "Twisted Pair",
+   "Twisted Pair"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "hellraiserbloodline|1996",
+  "year": 1996,
+  "titles": [
+   "Hellraiser: Bloodline",
+   "Hellraiser: Bloodline"
+  ],
+  "composers": [
+   "Daniel Licht"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "600117b9-d5b7-3575-acb2-6fda70b95f41",
+   "title": "Hellraiser: Bloodline: Original Soundtrack From the Dimension Film",
+   "year": 1996,
+   "artist": "Daniel Licht"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Title",
+   "Chez la r\u00eave",
+   "Back to the Past / Present Tense",
+   "The Virtual Box Opens",
+   "Bloodlines",
+   "The Twins",
+   "Dreams of Angelique",
+   "Solar Alignment",
+   "Angelique Montage",
+   "Sharpe at the Gates of Hell",
+   "A New Box of Gold",
+   "Pain Has a Face",
+   "Back Into the Box",
+   "Finale",
+   "End Title"
+  ]
+ },
+ {
+  "key": "thinner|1996",
+  "year": 1996,
+  "titles": [
+   "Thinner",
+   "Thinner"
+  ],
+  "composers": [
+   "Daniel Licht"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "cad0fcb8-a9df-379d-8ba8-79b498b030a9",
+   "title": "Thinner: Original Motion Picture Soundtrack",
+   "year": 1996,
+   "artist": "Daniel Licht"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Title",
+   "Duncan's Curse",
+   "Lizard!",
+   "Honey I'm Home",
+   "Always You",
+   "A Whole New Wardrobe",
+   "Tracking the Gypsies",
+   "A Time to Move On",
+   "Billy Doll",
+   "Committal in Absentia",
+   "Are You Awake or Dead",
+   "End Credits",
+   "Universal Love"
+  ]
+ },
+ {
+  "key": "summerof69|2025",
+  "year": 2025,
+  "titles": [
+   "Summer of 69",
+   "Summer of 69"
+  ],
+  "composers": [
+   "Matt Bowen"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "ingridgoeswest|2017",
+  "year": 2017,
+  "titles": [
+   "Ingrid Goes West",
+   "Ingrid Goes West"
+  ],
+  "composers": [
+   "Jonathan Sadoff",
+   "Nick Thorburn"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "a0f286e0-f1f0-4b7c-9a05-0d6b95e0a05c",
+   "title": "Ingrid Goes West",
+   "year": 2017,
+   "artist": "Jonathan Sadoff & Nick Thorburn"
+  },
+  "rejected": [],
+  "tracks": [
+   "Opening",
+   "Dear Charlotte",
+   "Hello Taylor",
+   "Taylors Instagram",
+   "Restraining Order / Ingrid Goes West",
+   "Following Taylor's Footsteps",
+   "Kidnapping Rothko",
+   "Snapping Bathroom",
+   "Bffs",
+   "Dear Charlotte Pt.2",
+   "Tiki Time",
+   "Playtime",
+   "Ingrid Ignored",
+   "Ingrid in Trouble",
+   "Kidnapping Nicky",
+   "Fight",
+   "Escape to Joshua Tree",
+   "Calling Taylor",
+   "Twenty Two Flamingo Lane",
+   "Outcast",
+   "Suicide",
+   "You Went Viral"
+  ]
+ },
+ {
+  "key": "thechaser|2008",
+  "year": 2008,
+  "titles": [
+   "The Chaser",
+   "\ucd94\uaca9\uc790"
+  ],
+  "composers": [
+   "Kim Jun-seok",
+   "Choi Yong-rock"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "9efb3fcd-fa27-4001-bdb5-89535565089b",
+   "title": "The Chaser",
+   "year": 2008,
+   "artist": "Kim Jun-Seok"
+  },
+  "rejected": [],
+  "tracks": [
+   "Sarangjin Jiyong",
+   "Chugyeogja",
+   "4485",
+   "Sal-Inma Yeongmin",
+   "Nobubu-Ui Jug-Eum",
+   "Choso Ap",
+   "Chugyeog 1",
+   "Chugyeog 2",
+   "Bi-Oneun Bam 1",
+   "Bi-Oneun Bam 2",
+   "Chugyeog 3",
+   "Meol-Eojineun Eunji",
+   "Chwijogwangwa Yeongmin",
+   "Eunji-Ui Sago",
+   "Bunno",
+   "Talchul",
+   "Gaemisyupeo",
+   "Minji-Ui Jug-Eum 1",
+   "Minji-Ui Jug-Eum 2",
+   "Mang-Wongyuhoi",
+   "Jo-U",
+   "Jikiji Moshanja",
+   "Yeojeonhi Binaelineun Bam"
+  ]
+ },
+ {
+  "key": "worldoftomorrowepisodethreetheabsentdestinationsofdavidprime|2020",
+  "year": 2020,
+  "titles": [
+   "World of Tomorrow Episode Three: The Absent Destinations of David Prime",
+   "World of Tomorrow Episode Three: The Absent Destinations of David Prime"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "manhunter|1986",
+  "year": 1986,
+  "titles": [
+   "Manhunter",
+   "Manhunter"
+  ],
+  "composers": [
+   "Michel Rubini",
+   "The Reds"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "6679e12f-198b-3971-96e5-710719341c65",
+    "title": "Manhunter",
+    "year": 1986,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "abadmomschristmas|2017",
+  "year": 2017,
+  "titles": [
+   "A Bad Moms Christmas",
+   "A Bad Moms Christmas"
+  ],
+  "composers": [
+   "Christopher Lennertz"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "701ae049-84eb-47c8-b600-28a54aa7fbbf",
+    "title": "A Bad Moms Christmas",
+    "year": 2017,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "firedup|2009",
+  "year": 2009,
+  "titles": [
+   "Fired Up!",
+   "Fired Up!"
+  ],
+  "composers": [
+   "Richard Gibbs"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "93ecebd2-a6cd-4637-8f56-4059dcf765d8",
+    "title": "Fired Up!",
+    "year": 2009,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "suzannescareer|1963",
+  "year": 1963,
+  "titles": [
+   "Suzanne's Career",
+   "La Carri\u00e8re de Suzanne"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "phoenix|2014",
+  "year": 2014,
+  "titles": [
+   "Phoenix",
+   "Phoenix"
+  ],
+  "composers": [
+   "Stefan Will"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "mandibles|2020",
+  "year": 2020,
+  "titles": [
+   "Mandibles",
+   "Mandibules"
+  ],
+  "composers": [
+   "Quentin Dupieux"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "fastfurious|2009",
+  "year": 2009,
+  "titles": [
+   "Fast & Furious",
+   "Fast & Furious"
+  ],
+  "composers": [
+   "Brian Tyler"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "1a4aa3f2-1a49-4877-9a39-54bb65f0bfbb",
+   "title": "Fast & Furious",
+   "year": 2009,
+   "artist": "Brian Tyler"
+  },
+  "rejected": [
+   {
+    "id": "fc0f2cae-3e5a-33cd-a8e4-c067e223ddfe",
+    "title": "Fast & Furious",
+    "year": 2009,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": [
+   "Landtrain",
+   "Fast and Furious",
+   "The Border",
+   "Letty",
+   "The Tunnel",
+   "Amends",
+   "Dom vs. Brian",
+   "Hanging With Dom",
+   "Suite",
+   "Revenge",
+   "Accelerator",
+   "Vaya Con Dios",
+   "In the Name of the Father",
+   "Outta Sight",
+   "Brian and Mia",
+   "Tracer",
+   "Letty\u2019s Cell Phone",
+   "Real Drivers",
+   "Fate",
+   "The Exchange",
+   "No Goodbyes",
+   "Vengeance",
+   "Memorial",
+   "The Showdown",
+   "Judgment"
+  ]
+ },
+ {
+  "key": "identity|2003",
+  "year": 2003,
+  "titles": [
+   "Identity",
+   "Identity"
+  ],
+  "composers": [
+   "Alan Silvestri"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "ed56c88a-5b90-3fe9-a63f-484124f5823f",
+   "title": "Identity (Original Motion Picture Soundtrack)",
+   "year": 2003,
+   "artist": "Alan Silvestri"
+  },
+  "rejected": [],
+  "tracks": [
+   "Prologue",
+   "What Have You Done?",
+   "Settling In",
+   "Lou is Dead",
+   "Suicide Jumper",
+   "It Was an Accident",
+   "Bodies Disappear",
+   "May 10th",
+   "Rhode's Secret",
+   "Showdown",
+   "Orange Grove",
+   "No Second Chance",
+   "Identity End Credits"
+  ]
+ },
+ {
+  "key": "paycheck|2003",
+  "year": 2003,
+  "titles": [
+   "Paycheck",
+   "Paycheck"
+  ],
+  "composers": [
+   "John Powell"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "65eee50a-0f2b-3b45-8b8f-ad2353f0b2bf",
+   "title": "Paycheck",
+   "year": 2004,
+   "artist": "John Powell"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Title",
+   "20 Items",
+   "Wolfe Pack",
+   "Crystal Balls",
+   "Mirror Message",
+   "Imposter",
+   "Hog Chase Part 1",
+   "Hog Chase Part 2",
+   "I Don't Remember",
+   "Tomorrow's Headlines",
+   "Future Tense",
+   "Fait Accompli",
+   "The Finger",
+   "Rachel's Party"
+  ]
+ },
+ {
+  "key": "comingout|2020",
+  "year": 2020,
+  "titles": [
+   "Coming Out",
+   "Coming Out"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "chennaiexpress|2013",
+  "year": 2013,
+  "titles": [
+   "Chennai Express",
+   "Chennai Express"
+  ],
+  "composers": [
+   "Vishal Dadlani",
+   "Shekhar Ravjiani"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "6582788b-9c72-4f14-8a09-775cfc187681",
+    "title": "Chennai Express",
+    "year": 2013,
+    "artist": "Vishal\u2013Shekhar"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "scoobydoocampscare|2010",
+  "year": 2010,
+  "titles": [
+   "Scooby-Doo! Camp Scare",
+   "Scooby-Doo! Camp Scare"
+  ],
+  "composers": [
+   "Robert J. Kral"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "citizenkane|1941",
+  "year": 1941,
+  "titles": [
+   "Citizen Kane",
+   "Citizen Kane"
+  ],
+  "composers": [
+   "Bernard Herrmann"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "rearwindow|1954",
+  "year": 1954,
+  "titles": [
+   "Rear Window",
+   "Rear Window"
+  ],
+  "composers": [
+   "Franz Waxman"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "playdirty|2025",
+  "year": 2025,
+  "titles": [
+   "Play Dirty",
+   "Play Dirty"
+  ],
+  "composers": [
+   "Alan Silvestri"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "013fa19a-0a82-4f6f-a89c-c3664116f38c",
+   "title": "Play Dirty: Original Motion Picture Soundtrack",
+   "year": 2025,
+   "artist": "Alan Silvestri"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Title",
+   "My Real Name's Parker",
+   "Robbing the Robbers",
+   "What Have You Done?",
+   "Room 12",
+   "A Bit of a Problem",
+   "Shootout",
+   "Rob an Entire Country",
+   "Welcome to New York",
+   "Bosco's Plan",
+   "Life Goes On",
+   "What a Surprise",
+   "The Train, Part 1",
+   "The Train, Part 2",
+   "The Train, Part 3",
+   "Plan B",
+   "Parker at Work",
+   "A Christmas Chase",
+   "A Real Lady",
+   "The Vault",
+   "Aftermath"
+  ]
+ },
+ {
+  "key": "lolita|1962",
+  "year": 1962,
+  "titles": [
+   "Lolita",
+   "Lolita"
+  ],
+  "composers": [
+   "Nelson Riddle"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "f31301e7-d196-3151-9cdd-13dd1539758b",
+   "title": "Lolita",
+   "year": 1962,
+   "artist": "Nelson Riddle"
+  },
+  "rejected": [],
+  "tracks": [
+   "Love Theme From Lolita",
+   "Quilty's Theme",
+   "Arrival in Town",
+   "Lolita Ya Ya",
+   "Love Theme From Lolita",
+   "Humbert Contemplates Killing Wife",
+   "Discovery of a Diary",
+   "Two Beat Society",
+   "Thoughts of Lolita",
+   "School Dance",
+   "Mother and Humbert at Dinner",
+   "Love Theme From Lolita"
+  ]
+ },
+ {
+  "key": "aworkingman|2025",
+  "year": 2025,
+  "titles": [
+   "A Working Man",
+   "A Working Man"
+  ],
+  "composers": [
+   "Jared Michael Fry"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "35a92299-1628-4a4d-8e7d-11ad5cf65f3b",
+   "title": "A Working Man: Original Motion Picture Soundtrack",
+   "year": 2025,
+   "artist": "Jared Michael Fry"
+  },
+  "rejected": [],
+  "tracks": [
+   "A Working Man Main Title",
+   "Captain Save A Hoe",
+   "Father and Daughter",
+   "She Looks Like You",
+   "Attrition Warfare",
+   "New Apartment",
+   "Apartment Cade Theme",
+   "Creepers",
+   "Abduction",
+   "Find Jenny",
+   "Fire Pit Talk",
+   "Gunny and Levon Talk",
+   "Moonlight Sonata Recital",
+   "Steakout at Skips",
+   "Pearl Earing",
+   "Do You Lie Johnny",
+   "Blanket of Accomplishments",
+   "Dead Russians",
+   "Follow Volo",
+   "Cade Hikes",
+   "Who Are You Dimi",
+   "Father, Condolences",
+   "Jenny Eat Your Food",
+   "Pervert",
+   "Cade Invited to Meeting",
+   "Forces of Good Work Quietly",
+   "Big Potatoes",
+   "Levon Leaves With Case",
+   "Levon Gets Hunted",
+   "Van Fight",
+   "Morgue",
+   "Stitches",
+   "We Met For Five Minutes",
+   "Yoga",
+   "House Fire",
+   "All Roads",
+   "Love You Daddy",
+   "Jenny Escapes",
+   "Bodyguard Slayer",
+   "Why Her",
+   "Say That Again",
+   "Cade Moving In",
+   "Seraphins",
+   "Free Jenny",
+   "197 Bluetooth",
+   "Jenny and Levon Ride Off",
+   "We Will Kill You",
+   "Family Reunion",
+   "Welcome Home"
+  ]
+ },
+ {
+  "key": "thedrillerkiller|1979",
+  "year": 1979,
+  "titles": [
+   "The Driller Killer",
+   "The Driller Killer"
+  ],
+  "composers": [
+   "Joe Delia"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "theuntouchables|1987",
+  "year": 1987,
+  "titles": [
+   "The Untouchables",
+   "The Untouchables"
+  ],
+  "composers": [
+   "Ennio Morricone"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "eda3b11f-4191-3cca-92c1-9b891e3986f8",
+   "title": "The Untouchables: Original Motion Picture Soundtrack",
+   "year": 1987,
+   "artist": "Ennio Morricone"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Untouchables (end title)",
+   "Al Capone",
+   "Waiting at the Border",
+   "Death Theme",
+   "On the Rooftops",
+   "Victorious",
+   "The Man With the Matches",
+   "The Strength of the Righteous (main title)",
+   "Ness and His Family",
+   "False Alarm",
+   "The Untouchables",
+   "Four Friends",
+   "Machine Gun Lullaby"
+  ]
+ },
+ {
+  "key": "diaryofawimpykid|2021",
+  "year": 2021,
+  "titles": [
+   "Diary of a Wimpy Kid",
+   "Diary of a Wimpy Kid"
+  ],
+  "composers": [
+   "John Paesano"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "ec2c5c60-d934-4d9d-914f-077079519886",
+   "title": "Diary of a Wimpy Kid (Original Soundtrack)",
+   "year": 2021,
+   "artist": "John Paesano"
+  },
+  "rejected": [],
+  "tracks": [
+   "Diary of a Wimpy Kid",
+   "Pep Talk",
+   "The Cheese Touch",
+   "Cut Him Loose",
+   "First Day of School",
+   "What Do We Do",
+   "What's Cool Now",
+   "Come Over and Play",
+   "Trick or Treat",
+   "Snake Road",
+   "Bully Chase",
+   "Do the Right Thing",
+   "New Cast at School",
+   "Cartooning",
+   "Zoo-We-Mama",
+   "If It Wasn't for Me",
+   "Fregly",
+   "Down and Out",
+   "Cheesy Revenge",
+   "Better Than Good"
+  ]
+ },
+ {
+  "key": "scarymovie4|2006",
+  "year": 2006,
+  "titles": [
+   "Scary Movie 4",
+   "Scary Movie 4"
+  ],
+  "composers": [
+   "James L. Venable"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "bright|2017",
+  "year": 2017,
+  "titles": [
+   "Bright",
+   "Bright"
+  ],
+  "composers": [
+   "David Sardy"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "tokyo|2008",
+  "year": 2008,
+  "titles": [
+   "Tokyo!",
+   "TOKYO!"
+  ],
+  "composers": [
+   "\u00c9tienne Charry",
+   "Lee Byung-woo"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "6ebd373b-055b-49be-b9cd-f3fa043aef51",
+    "title": "TOKYO! \u30aa\u30ea\u30b8\u30ca\u30eb\u30fb\u30b5\u30a6\u30f3\u30c9\u30c8\u30e9\u30c3\u30af",
+    "year": 2008,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "misscongeniality2armedandfabulous|2005",
+  "year": 2005,
+  "titles": [
+   "Miss Congeniality 2: Armed and Fabulous",
+   "Miss Congeniality 2: Armed and Fabulous"
+  ],
+  "composers": [
+   "John Van Tongeren"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "0b205a27-3a42-30ce-b151-c556fc80eb58",
+    "title": "Miss Congeniality 2: Armed and Fabulous",
+    "year": 2005,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "reignoffire|2002",
+  "year": 2002,
+  "titles": [
+   "Reign of Fire",
+   "Reign of Fire"
+  ],
+  "composers": [
+   "Edward Shearmur"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "184aad61-6685-3a99-a080-38e1fa90085f",
+   "title": "Reign of Fire: Original Motion Picture Soundtrack",
+   "year": 2002,
+   "artist": "Edward Shearmur"
+  },
+  "rejected": [],
+  "tracks": [
+   "Prologue",
+   "Enter the Dragon",
+   "An Early Harvest",
+   "Field Attack",
+   "Marauders",
+   "Meet Van Zan",
+   "Archangels",
+   "Dawn Burial",
+   "A Battle of Wills",
+   "The Ruins at Pembury",
+   "Inferno",
+   "Return to London",
+   "Magic Hour",
+   "Rebirth"
+  ]
+ },
+ {
+  "key": "welcometome|2014",
+  "year": 2014,
+  "titles": [
+   "Welcome to Me",
+   "Welcome to Me"
+  ],
+  "composers": [
+   "David Robbins"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "happiness|2017",
+  "year": 2017,
+  "titles": [
+   "Happiness",
+   "Happiness"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "bliss|2019",
+  "year": 2019,
+  "titles": [
+   "Bliss",
+   "Bliss"
+  ],
+  "composers": [
+   "Steve Moore"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "b9c736bc-6fe7-48bd-888d-ad2446f3a0c4",
+   "title": "Bliss (Original Motion Picture Soundtrack)",
+   "year": 2020,
+   "artist": "Steve Moore"
+  },
+  "rejected": [],
+  "tracks": [
+   "Incremental Progress",
+   "You Holding!",
+   "Diablo",
+   "The Bite",
+   "The Hangover",
+   "My Masterpiece",
+   "You're Not Going To Die",
+   "Nobody Comes",
+   "You'll Never Know What It Is Like",
+   "You Don't Look Too Good",
+   "First Kill",
+   "I'm Scared",
+   "You Don't Give It Up",
+   "Murderer",
+   "Back To Life",
+   "Immortal Combat",
+   "Finishing Touches",
+   "Sunlight"
+  ]
+ },
+ {
+  "key": "badgenius|2017",
+  "year": 2017,
+  "titles": [
+   "Bad Genius",
+   "\u0e09\u0e25\u0e32\u0e14\u0e40\u0e01\u0e21\u0e2a\u0e4c\u0e42\u0e01\u0e07"
+  ],
+  "composers": [
+   "Vichaya Vatanasapt"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "itchaptertwo|2019",
+  "year": 2019,
+  "titles": [
+   "It Chapter Two",
+   "It Chapter Two"
+  ],
+  "composers": [
+   "Benjamin Wallfisch"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "752ca9e0-7925-4dde-89da-ac832857b7b8",
+   "title": "IT Chapter Two (Original Motion Picture Soundtrack)",
+   "year": 2019,
+   "artist": "Benjamin Wallfisch"
+  },
+  "rejected": [],
+  "tracks": [
+   "27 Years Later",
+   "Memory",
+   "Come Home",
+   "I Swear, Bill",
+   "Beverly Escapes",
+   "Henry Bowers",
+   "Firefly",
+   "Losers Reunited",
+   "Echo",
+   "Fortune Cookies",
+   "You Knew",
+   "The Library",
+   "Shokopiwah",
+   "The Barrens",
+   "The Clubhouse",
+   "Perfume",
+   "Mrs. Kersh",
+   "Miss Me, Richie?",
+   "Dirty Little Secret",
+   "Silver Bullet",
+   "Why Georgie?",
+   "Your Hair Is Winter Fire",
+   "Eddie and the Leper",
+   "Festival Pursuit",
+   "Hall of Mirrors",
+   "Bar Mitzvah",
+   "Bowers Attack",
+   "Back to Neibolt",
+   "Home At Last",
+   "It's Stan",
+   "This Is Where It Happened",
+   "The Place of It",
+   "Artifacts",
+   "The Ritual of Ch\u00fcd",
+   "Very Scary",
+   "Scary",
+   "Not Scary At All",
+   "You Lied and I Died",
+   "My Heart Burns There Too",
+   "Spider Attack",
+   "You're All Grown Up",
+   "Neibolt Escape",
+   "Nothing Lasts Forever",
+   "Goodbye",
+   "Stan's Letter"
+  ]
+ },
+ {
+  "key": "microhabitat|2017",
+  "year": 2017,
+  "titles": [
+   "Microhabitat",
+   "\uc18c\uacf5\ub140"
+  ],
+  "composers": [
+   "Kwun Hyun-jeong"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "brokenarrow|1996",
+  "year": 1996,
+  "titles": [
+   "Broken Arrow",
+   "Broken Arrow"
+  ],
+  "composers": [
+   "Hans Zimmer"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "571e0fe6-29f5-3595-a116-e1f90ff1cb17",
+   "title": "Broken Arrow: Original Motion Picture Soundtrack",
+   "year": 1996,
+   "artist": "Hans Zimmer"
+  },
+  "rejected": [],
+  "tracks": [
+   "Brothers",
+   "Secure",
+   "Stealth",
+   "Mine",
+   "Nuke",
+   "Greed",
+   "Hammerhead",
+   "Broken Arrow"
+  ]
+ },
+ {
+  "key": "jeannedielman23quaiducommerce1080bruxelles|1975",
+  "year": 1975,
+  "titles": [
+   "Jeanne Dielman, 23, quai du Commerce, 1080 Bruxelles",
+   "Jeanne Dielman, 23, quai du Commerce, 1080 Bruxelles"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "coldmountain|2003",
+  "year": 2003,
+  "titles": [
+   "Cold Mountain",
+   "Cold Mountain"
+  ],
+  "composers": [
+   "Gabriel Yared"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "af4714cf-0f06-398d-a0aa-bfddc08a13ce",
+    "title": "Cold Mountain",
+    "year": 2003,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "scoobydoomeetstheboobrothers|1987",
+  "year": 1987,
+  "titles": [
+   "Scooby-Doo! Meets the Boo Brothers",
+   "Scooby-Doo! Meets the Boo Brothers"
+  ],
+  "composers": [
+   "Sven Libaek"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "mangrove|2020",
+  "year": 2020,
+  "titles": [],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thecroods|2013",
+  "year": 2013,
+  "titles": [
+   "The Croods",
+   "The Croods"
+  ],
+  "composers": [
+   "Alan Silvestri"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "cb0c77e4-6f4f-4e2b-a316-c0977514f4ab",
+   "title": "The Croods: Music From the Motion Picture",
+   "year": 2013,
+   "artist": "Alan Silvestri"
+  },
+  "rejected": [],
+  "tracks": [
+   "Shine Your Way",
+   "Prologue",
+   "Smash and Grab",
+   "Bear Owl Escape",
+   "Eep and the Warthog",
+   "Teaching Fire to Tiger Girl",
+   "Exploring New Dangers",
+   "Piranhakeets",
+   "Fire and Corn",
+   "Turkey Fish Follies",
+   "Going Guys Way",
+   "Story Time",
+   "Family Maze",
+   "Star Canopy",
+   "Grug Flips His Lid",
+   "Planet Collapse",
+   "We'll Die If We Stay Here",
+   "Cave Painting",
+   "Big Idea",
+   "Epilogue",
+   "Cave Painting Theme",
+   "The Crood's Family Theme",
+   "Cantina Croods"
+  ]
+ },
+ {
+  "key": "revolver|2005",
+  "year": 2005,
+  "titles": [
+   "Revolver",
+   "Revolver"
+  ],
+  "composers": [
+   "Nathaniel M\u00e9chaly"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "f7a0126a-f0a4-3260-aea7-37b0a75d0d53",
+    "title": "Revolver",
+    "year": 2005,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "flyingpadre|1951",
+  "year": 1951,
+  "titles": [
+   "Flying Padre",
+   "Flying Padre"
+  ],
+  "composers": [
+   "Nathaniel Shilkret"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "roma|2018",
+  "year": 2018,
+  "titles": [
+   "Roma",
+   "Roma"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "da6a017d-2023-41e6-8fee-a4d97f5a2b4a",
+    "title": "Roma: Original Motion Picture Soundtrack",
+    "year": 2018,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "rabbitofseville|1950",
+  "year": 1950,
+  "titles": [
+   "Rabbit of Seville",
+   "Rabbit of Seville"
+  ],
+  "composers": [
+   "Carl W. Stalling"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "houseonhauntedhill|1999",
+  "year": 1999,
+  "titles": [
+   "House on Haunted Hill",
+   "House on Haunted Hill"
+  ],
+  "composers": [
+   "Don Davis"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "b8f16957-f110-35f4-b1f4-96a20fcc63dc",
+   "title": "House on Haunted Hill (Original Motion Picture Score)",
+   "year": 1999,
+   "artist": "Don Davis"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Title",
+   "Pencil Neck",
+   "Hans Verbosemann",
+   "House Humongous",
+   "Piano Quartet No. 1 in G minor, Op. 25 (Excerpt)",
+   "Funky Old House",
+   "No Exit",
+   "Gun Control",
+   "Surprise",
+   "Price Pestiferous",
+   "Misty Misogamy",
+   "Coagulatory Calamity",
+   "Melissa in Wonderland",
+   "Sorry, Tulip",
+   "Struggling to Escape",
+   "Soiree a Saturation",
+   "On the House",
+   "Dead but Nice",
+   "Blackburn's Surprise",
+   "Encountering Mr. Blackburn",
+   "The Price Petard",
+   "Epiphanic Evelyn",
+   "The Corpus Delicti Committee Meeting",
+   "Price in Perpetuity",
+   "The Beast With the Least"
+  ]
+ },
+ {
+  "key": "louderthanbombs|2015",
+  "year": 2015,
+  "titles": [
+   "Louder Than Bombs",
+   "Louder Than Bombs"
+  ],
+  "composers": [
+   "Ola Fl\u00f8ttum"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "18985938-df9f-48f0-883a-71749da21722",
+   "title": "Louder Than Bombs",
+   "year": 2016,
+   "artist": "Ola Fl\u00f8ttum"
+  },
+  "rejected": [],
+  "tracks": [
+   "Walking With Melanie",
+   "Following",
+   "Levitation",
+   "Isabelle Documentary",
+   "New York Times",
+   "JFK",
+   "Damaskus",
+   "Looking For Conrad",
+   "Home",
+   "Louder Than Bombs"
+  ]
+ },
+ {
+  "key": "bluejean|2022",
+  "year": 2022,
+  "titles": [
+   "Blue Jean",
+   "Blue Jean"
+  ],
+  "composers": [
+   "Chris Roe"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "15cd5907-7170-4d53-8ded-5b196a2c8e88",
+   "title": "Blue Jean: Original Motion Picture Soundtrack",
+   "year": 2023,
+   "artist": "Chris Roe"
+  },
+  "rejected": [],
+  "tracks": [
+   "Bleach (Prologue)",
+   "Whitley Bay",
+   "Still as a Hunted Deer",
+   "Viv's Motorbike",
+   "Dreamscape",
+   "Fishbowl",
+   "Blue",
+   "The Staff Room",
+   "\u201cYou'd be a great mum\u201d",
+   "Wild Horses",
+   "Deer in the Headlights",
+   "Battle"
+  ]
+ },
+ {
+  "key": "funnygirl|1968",
+  "year": 1968,
+  "titles": [
+   "Funny Girl",
+   "Funny Girl"
+  ],
+  "composers": [
+   "Jule Styne"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "2adc6aeb-a25d-3925-8db1-f16808cb21c6",
+   "title": "Funny Girl",
+   "year": 1968,
+   "artist": "Jule Styne"
+  },
+  "rejected": [],
+  "tracks": [
+   "Overture",
+   "I\u2019m the Greatest Star",
+   "If a Girl Isn\u2019t Pretty",
+   "Roller Skate Rag",
+   "I\u2019d Rather Be Blue Over You (Than Be Happy With Somebody Else)",
+   "His Love Makes Me Beautiful",
+   "People",
+   "You Are Woman, I Am Man",
+   "Don\u2019t Rain on My Parade",
+   "Sadie, Sadie",
+   "The Swan",
+   "Funny Girl",
+   "My Man",
+   "Finale"
+  ]
+ },
+ {
+  "key": "thetrial|1962",
+  "year": 1962,
+  "titles": [
+   "The Trial",
+   "Le Proc\u00e8s"
+  ],
+  "composers": [
+   "Jean Ledrut"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "kindsofkindness|2024",
+  "year": 2024,
+  "titles": [
+   "Kinds of Kindness",
+   "Kinds of Kindness"
+  ],
+  "composers": [
+   "Jerskin Fendrix"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "0e991e6e-9b62-4a67-bf2a-dec5f83c9a4b",
+   "title": "Kinds of Kindness: Original Motion Picture Soundtrack",
+   "year": 2024,
+   "artist": "Jerskin Fendrix"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Death of R.M.F.",
+   "Sweet Dreams (Are Made of This) - Remastered",
+   "Hotel Cheval",
+   "Hymn - Matia Ponos Stoma Fthonos",
+   "How Deep is Your Love",
+   "R.M.F. is Flying",
+   "Le Marteau",
+   "Maritime Achievement Awards",
+   "Kindness (Dream)",
+   "Hymn - Matia Vlemma Stoma Psema",
+   "Rainbow in the Dark",
+   "R.M.F. Eats a Sandwich",
+   "Dream (Pool)",
+   "The Little One",
+   "Kindness (Pool)",
+   "Hymn - Me Skotosan Oloi Oi Chori",
+   "BRAND NEW BITCH",
+   "King Lear (Demo)"
+  ]
+ },
+ {
+  "key": "footloose|2011",
+  "year": 2011,
+  "titles": [
+   "Footloose",
+   "Footloose"
+  ],
+  "composers": [
+   "Deborah Lurie"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "517a4544-3a2e-43c8-ae77-7463da49c25b",
+    "title": "Footloose: Music From the Motion Picture",
+    "year": 2011,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "theexpendables|2010",
+  "year": 2010,
+  "titles": [
+   "The Expendables",
+   "The Expendables"
+  ],
+  "composers": [
+   "Brian Tyler"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "d07e6a68-afce-4039-83c7-2f5a73160476",
+   "title": "The Expendables",
+   "year": 2010,
+   "artist": "Brian Tyler"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Expendables",
+   "Aerial",
+   "Ravens and Skulls",
+   "Lee and Lacy",
+   "Massive",
+   "The Gulf of Aden",
+   "Lifeline",
+   "Confession",
+   "Royal Rumble",
+   "Scanning the Enemy",
+   "The Contact",
+   "Surveillance",
+   "Warriors",
+   "Trinity",
+   "Waterboard",
+   "Losing His Mind",
+   "Take Your Money",
+   "Giant With a Shotgun",
+   "Time to Leave",
+   "Mayhem and Finale"
+  ]
+ },
+ {
+  "key": "scoobydooandthecyberchase|2001",
+  "year": 2001,
+  "titles": [
+   "Scooby-Doo and the Cyber Chase",
+   "Scooby-Doo and the Cyber Chase"
+  ],
+  "composers": [
+   "Louis Febre"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "lovedeathrobotsthreerobotsexitstrategies|2022",
+  "year": 2022,
+  "titles": [],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "transporter3|2008",
+  "year": 2008,
+  "titles": [
+   "Transporter 3",
+   "Transporter 3"
+  ],
+  "composers": [
+   "Alexandre Azaria"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "ae5b2b85-be48-3e5a-b549-3ec74417ba8d",
+    "title": "Transporter 3",
+    "year": 2008,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "indianajonesandthekingdomofthecrystalskull|2008",
+  "year": 2008,
+  "titles": [
+   "Indiana Jones and the Kingdom of the Crystal Skull",
+   "Indiana Jones and the Kingdom of the Crystal Skull"
+  ],
+  "composers": [
+   "John Williams"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "768db7f1-0046-3f18-8f1c-4ceb11097b32",
+   "title": "Indiana Jones and the Kingdom of the Crystal Skull",
+   "year": 2008,
+   "artist": "John Williams"
+  },
+  "rejected": [],
+  "tracks": [
+   "Raiders March",
+   "Call of the Crystal",
+   "The Adventures of Mutt",
+   "Irina's Theme",
+   "The Snake Pit",
+   "The Spell of the Skull",
+   "The Journey to Akator",
+   "A Whirl Through Academe",
+   "\"Return\"",
+   "The Jungle Chase",
+   "Orellana's Cradle",
+   "Grave Robbers",
+   "Hidden Treasure and the City of Gold",
+   "Secret Doors and Scorpions",
+   "Oxley's Dilemma",
+   "Ants!",
+   "Temple Ruins and the Secret Revealed",
+   "The Departure",
+   "Finale"
+  ]
+ },
+ {
+  "key": "ondangerousground|1951",
+  "year": 1951,
+  "titles": [
+   "On Dangerous Ground",
+   "On Dangerous Ground"
+  ],
+  "composers": [
+   "Bernard Herrmann"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "beckett|2021",
+  "year": 2021,
+  "titles": [
+   "Beckett",
+   "Beckett"
+  ],
+  "composers": [
+   "Ryuichi Sakamoto"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "c17302a6-0220-484d-8f83-c71f933f24e8",
+    "title": "Beckett",
+    "year": 2021,
+    "artist": "\u5742\u672c\u9f8d\u4e00"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "itssuchabeautifulday|2012",
+  "year": 2012,
+  "titles": [
+   "It's Such a Beautiful Day",
+   "It's Such a Beautiful Day"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "aperfectworld|1993",
+  "year": 1993,
+  "titles": [
+   "A Perfect World",
+   "A Perfect World"
+  ],
+  "composers": [
+   "Lennie Niehaus"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "ninetyfivesenses|2022",
+  "year": 2022,
+  "titles": [
+   "Ninety-Five Senses",
+   "Ninety-Five Senses"
+  ],
+  "composers": [
+   "Mark Orton",
+   "John Hancock"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "soimarriedanaxemurderer|1993",
+  "year": 1993,
+  "titles": [
+   "So I Married an Axe Murderer",
+   "So I Married an Axe Murderer"
+  ],
+  "composers": [
+   "Bruce Broughton"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "6031b39c-c348-3ed4-ac21-5a0dc11af757",
+    "title": "So I Married an Axe Murderer",
+    "year": 1993,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "lovedeathrobotsalternatehistories|2019",
+  "year": 2019,
+  "titles": [],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "blackmirrorlochhenry|2023",
+  "year": 2023,
+  "titles": [],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "howtomakeakilling|2026",
+  "year": 2026,
+  "titles": [
+   "How to Make a Killing",
+   "How to Make a Killing"
+  ],
+  "composers": [
+   "Emile Mosseri"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "b1d11633-7341-4b72-9939-921094ab5b23",
+   "title": "How To Make a Killing: Original Soundtrack",
+   "year": 2026,
+   "artist": "Emile Mosseri"
+  },
+  "rejected": [],
+  "tracks": [
+   "Habitat",
+   "The Note",
+   "Redfellow",
+   "Torpedo",
+   "Time and Silence",
+   "The Life You Deserve",
+   "Lord Mary",
+   "First Kill",
+   "Get Me Alone",
+   "Whiteclaw",
+   "Dinner With Grandpa",
+   "Uncle Warren"
+  ]
+ },
+ {
+  "key": "vacation|2015",
+  "year": 2015,
+  "titles": [
+   "Vacation",
+   "Vacation"
+  ],
+  "composers": [
+   "Mark Mothersbaugh"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "71f2bdc3-80c1-43df-a73a-5e99dbe9d18d",
+    "title": "Vacation (Original Motion Picture Soundtrack)",
+    "year": 2015,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "nightsofcabiria|1957",
+  "year": 1957,
+  "titles": [
+   "Nights of Cabiria",
+   "Le notti di Cabiria"
+  ],
+  "composers": [
+   "Nino Rota"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "husbands|1970",
+  "year": 1970,
+  "titles": [
+   "Husbands",
+   "Husbands"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "themasterofdisguise|2002",
+  "year": 2002,
+  "titles": [
+   "The Master of Disguise",
+   "The Master of Disguise"
+  ],
+  "composers": [
+   "Marc Ellis"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "f24f81ea-4187-4c78-9ed9-2dbfd948affc",
+    "title": "The Master of Disguise (Music from the Motion Picture)",
+    "year": 2002,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "sixdayssevennights|1998",
+  "year": 1998,
+  "titles": [
+   "Six Days Seven Nights",
+   "Six Days Seven Nights"
+  ],
+  "composers": [
+   "Randy Edelman"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "a44f77c6-412e-3b8b-a98d-3f0e36c42785",
+   "title": "Six Days Seven Nights: Original Soundtrack",
+   "year": 1998,
+   "artist": "Randy Edelman"
+  },
+  "rejected": [],
+  "tracks": [
+   "Into the Mist",
+   "Maketea",
+   "Pink Kawala",
+   "Crashdance",
+   "Floating Pontoons",
+   "Fixing the Old Beaver",
+   "Robin",
+   "A Ray of Hope",
+   "Quinn\u2019s Brilliant Idea",
+   "Saying Goodbye",
+   "Panorama",
+   "Discovery",
+   "Lunching With Peacocks",
+   "Subways and Skyscrapers",
+   "Pirates",
+   "Just a Small Snake",
+   "End of a Journey",
+   "Flying Injured",
+   "On the Edge",
+   "Six Days and Seven Nights",
+   "The Calypsonians (Performed by Taj Mahal)"
+  ]
+ },
+ {
+  "key": "thedivingbellandthebutterfly|2007",
+  "year": 2007,
+  "titles": [
+   "The Diving Bell and the Butterfly",
+   "Le Scaphandre et le Papillon"
+  ],
+  "composers": [
+   "Paul Cantelon"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "46bea3f8-6788-4376-8fc5-a8c9fcf1ff23",
+    "title": "The Diving Bell and the Butterfly",
+    "year": 2007,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "elsur|1983",
+  "year": 1983,
+  "titles": [
+   "El Sur",
+   "El sur"
+  ],
+  "composers": [
+   "Enric Granados"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "lonewolfandcubbabycartattheriverstyx|1972",
+  "year": 1972,
+  "titles": [
+   "Lone Wolf and Cub: Baby Cart at the River Styx",
+   "\u5b50\u9023\u308c\u72fc \u4e09\u9014\u306e\u5ddd\u306e\u4e73\u6bcd\u8eca"
+  ],
+  "composers": [
+   "Hideaki Sakurai"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "eatenalive|1976",
+  "year": 1976,
+  "titles": [
+   "Eaten Alive",
+   "Eaten Alive"
+  ],
+  "composers": [
+   "Wayne Bell",
+   "Tobe Hooper"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "knifeinthewater|1962",
+  "year": 1962,
+  "titles": [
+   "Knife in the Water",
+   "N\u00f3\u017c w wodzie"
+  ],
+  "composers": [
+   "Krzysztof Komeda"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "twister|1996",
+  "year": 1996,
+  "titles": [
+   "Twister",
+   "Twister"
+  ],
+  "composers": [
+   "Mark Mancina"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "2103f72e-b6eb-3f1f-93cc-7c4394113361",
+   "title": "Twister: Motion Picture Score",
+   "year": 1996,
+   "artist": "Mark Mancina"
+  },
+  "rejected": [
+   {
+    "id": "ae512c27-23a4-3f4f-a0d3-f1de08eb5ef1",
+    "title": "Twister: Music From the Motion Picture Soundtrack",
+    "year": 1995,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": [
+   "Wheatfield",
+   "Where\u2019s My Truck?",
+   "Futility",
+   "Downdraft",
+   "Drive In",
+   "The Big Suck",
+   "Going Green",
+   "Sculptures",
+   "Cow",
+   "Ditch",
+   "Wakita",
+   "Bob\u2019s Road",
+   "We\u2019re Almost There",
+   "Dorothy IV",
+   "Mobile Home",
+   "God\u2019s Finger",
+   "William Tell Overture / Oklahoma Medley",
+   "End Title / Respect the Wind"
+  ]
+ },
+ {
+  "key": "thewayofthedragon|1972",
+  "year": 1972,
+  "titles": [
+   "The Way of the Dragon",
+   "\u731b\u9f8d\u904e\u6c5f"
+  ],
+  "composers": [
+   "Joseph Koo"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "littlemonsters|1989",
+  "year": 1989,
+  "titles": [
+   "Little Monsters",
+   "Little Monsters"
+  ],
+  "composers": [
+   "David Newman"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "wildlife|2018",
+  "year": 2018,
+  "titles": [
+   "Wildlife",
+   "Wildlife"
+  ],
+  "composers": [
+   "David Lang"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "taylorswiftspeaknowworldtourlive|2011",
+  "year": 2011,
+  "titles": [
+   "Taylor Swift: Speak Now World Tour Live",
+   "Taylor Swift: Speak Now World Tour Live"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "whokilledcaptainalex|2010",
+  "year": 2010,
+  "titles": [
+   "Who Killed Captain Alex?",
+   "Who Killed Captain Alex?"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "smilingfriends|2020",
+  "year": 2020,
+  "titles": [],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "relay|2024",
+  "year": 2024,
+  "titles": [
+   "Relay",
+   "Relay"
+  ],
+  "composers": [
+   "Tony Doogan"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "438befc9-c15c-4e8a-8aed-f4ff76d4d7d2",
+   "title": "Relay: Original Motion Picture Soundtrack",
+   "year": 2025,
+   "artist": "Tony Doogan"
+  },
+  "rejected": [],
+  "tracks": [
+   "Opening",
+   "Hoffman",
+   "Apartment",
+   "The House of the Famous Poet",
+   "Relay TTY",
+   "Package",
+   "Airport",
+   "Too Many Creeps",
+   "Going Out",
+   "Times Square",
+   "Handoff",
+   "Far From Home",
+   "Van",
+   "Betrayed",
+   "Escape",
+   "Dumpsters",
+   "Face 2 Face",
+   "Cold Caf\u00e9"
+  ]
+ },
+ {
+  "key": "incredibles2|2018",
+  "year": 2018,
+  "titles": [
+   "Incredibles 2",
+   "Incredibles 2"
+  ],
+  "composers": [
+   "Michael Giacchino"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "ee5784b9-30d3-4460-a14c-9e4b4178f256",
+   "title": "Incredibles 2",
+   "year": 2018,
+   "artist": "Michael Giacchino"
+  },
+  "rejected": [],
+  "tracks": [
+   "Episode 2",
+   "A Tony Perspective",
+   "Consider Yourselves Undermined!",
+   "A Matter of Perception",
+   "Diggin' the New Digs",
+   "This Ain't My Super-Suit?",
+   "Elastigirl Is Back",
+   "Train of Taut",
+   "Rocky vs. Jack-Jack",
+   "Ambassador Ambush",
+   "Hero Worship",
+   "Searching for a Screenslaver",
+   "Super Legal Again",
+   "Renouncing the Renunciation",
+   "World's Worst Babysitters",
+   "Helen of Ploy",
+   "A Dash of Reality",
+   "Hydrofoiled Again",
+   "Jack Splat",
+   "A Bridge Too Parr",
+   "Together Forever and Deavor",
+   "Elastigirl's Got a Plane to Catch",
+   "Looks Like I Picked the Wrong Week to Quit Oxygen",
+   "Happily After-Deavor",
+   "Out and a Bout",
+   "Incredits 2",
+   "Here Comes Elastigirl - Elastigirl's Theme",
+   "Chill or Be Chilled - Frozone's Theme",
+   "Pow! Pow! Pow! - Mr. Incredible's Theme",
+   "Devtechno!",
+   "Chad Tonight Talk Show Theme",
+   "Chad Tonight Newscast Bumper",
+   "Here Comes Elastigirl - Elastigirl's Theme (A Cappella)",
+   "Chill or Be Chilled - Frozone's Theme (A Cappella)",
+   "Pow! Pow! Pow! - Mr. Incredible's Theme (A Cappella)",
+   "The Glory Days (A Cappella)"
+  ]
+ },
+ {
+  "key": "duneparttwo|2024",
+  "year": 2024,
+  "titles": [
+   "Dune: Part Two",
+   "Dune: Part Two"
+  ],
+  "composers": [
+   "Hans Zimmer"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "8d636319-e0bf-425b-aa12-1c3a13e4488a",
+   "title": "Dune: Part Two: Original Motion Picture Soundtrack",
+   "year": 2024,
+   "artist": "Hans Zimmer"
+  },
+  "rejected": [],
+  "tracks": [
+   "Beginnings Are Such Delicate Times",
+   "Eclipse",
+   "The Sietch",
+   "Water of Life",
+   "A Time of Quiet Between the Storms",
+   "Harvester Attack",
+   "Worm Ride",
+   "Ornithopter Attack",
+   "Each Man Is a Little War",
+   "Harkonnen Arena",
+   "Spice",
+   "Seduction",
+   "Never Lose Me",
+   "Travel South",
+   "Paul Drinks",
+   "Resurrection",
+   "Arrival",
+   "Southern Messiah",
+   "The Emperor",
+   "Worm Army",
+   "Gurney Battle",
+   "You Fought Well",
+   "Kiss the Ring",
+   "Only I Will Remain",
+   "Lisan al Gaib"
+  ]
+ },
+ {
+  "key": "theparty|2017",
+  "year": 2017,
+  "titles": [
+   "The Party",
+   "The Party"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thelobster|2015",
+  "year": 2015,
+  "titles": [
+   "The Lobster",
+   "The Lobster"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "889ab67c-9430-4d79-a6d4-03eb5c3da623",
+    "title": "The Lobster",
+    "year": 2016,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "chainreaction|1996",
+  "year": 1996,
+  "titles": [
+   "Chain Reaction",
+   "Chain Reaction"
+  ],
+  "composers": [
+   "Jerry Goldsmith"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "73a93fe1-da1d-3dea-90a8-afd103cdf002",
+   "title": "Chain Reaction",
+   "year": 1996,
+   "artist": "Jerry Goldsmith"
+  },
+  "rejected": [],
+  "tracks": [
+   "Meet Eddie",
+   "Assassins",
+   "Open Minds",
+   "Ice Chase",
+   "No Solution",
+   "System Down",
+   "Open Door",
+   "Out of the Hole"
+  ]
+ },
+ {
+  "key": "bagman|2024",
+  "year": 2024,
+  "titles": [
+   "Bagman",
+   "Bagman"
+  ],
+  "composers": [
+   "Tim Williams"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "curseofchucky|2013",
+  "year": 2013,
+  "titles": [
+   "Curse of Chucky",
+   "Curse of Chucky"
+  ],
+  "composers": [
+   "Joseph LoDuca"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "4223a28e-0a7f-4f96-a596-c55fdb5a86c5",
+   "title": "Curse of Chucky",
+   "year": 2013,
+   "artist": "Joseph LoDuca"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Title (Chucky Theme)",
+   "Special Delivery",
+   "Screams in the Night / Quite Enough Pity",
+   "Kitchen Prep / Round Table",
+   "Too Much Oregano",
+   "Suddenly Seeking Chucky",
+   "Up Elevator / Coming / Can't Feel a Thing",
+   "Only a Storm / You Should Be",
+   "Unsolved",
+   "No Time For Games",
+   "Sunflowers in the Attic",
+   "The Curse",
+   "Slo-Mo Escape",
+   "Silenced",
+   "Some Assembly Required / The Haunted",
+   "Fiend of the Family / Last One Standing",
+   "Framed",
+   "Under His Spell",
+   "Curse of Chucky End Titles"
+  ]
+ },
+ {
+  "key": "fallenleaves|2023",
+  "year": 2023,
+  "titles": [
+   "Fallen Leaves",
+   "Kuolleet lehdet"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "fireworks|1947",
+  "year": 1947,
+  "titles": [
+   "Fireworks",
+   "Fireworks"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "supportthegirls|2018",
+  "year": 2018,
+  "titles": [
+   "Support the Girls",
+   "Support the Girls"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "zombieflesheaters|1979",
+  "year": 1979,
+  "titles": [
+   "Zombie Flesh Eaters",
+   "Zombi 2"
+  ],
+  "composers": [
+   "Fabio Frizzi",
+   "Giorgio Cascio"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "biutiful|2010",
+  "year": 2010,
+  "titles": [
+   "Biutiful",
+   "Biutiful"
+  ],
+  "composers": [
+   "Gustavo Santaolalla"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "48c16455-bdbc-467f-b06d-a0a17820658d",
+   "title": "Biutiful",
+   "year": 2011,
+   "artist": "Gustavo Santaolalla"
+  },
+  "rejected": [],
+  "tracks": [
+   "Blak Butterflies",
+   "Rein",
+   "Kat\u2019s Gut",
+   "Wud Box",
+   "Negrosantolallismo",
+   "Como te extra\u00f1o mi amor",
+   "Raval",
+   "Floid",
+   "As It Chud Be",
+   "Meditaci\u00f3n, #9",
+   "Shudder/King of Snake",
+   "Lait",
+   "The Beech",
+   "Epilogue",
+   "Piano Concerto in G: II. Adagio assai",
+   "Almost Eir (remix by Sebastien Escofet)",
+   "Seedz",
+   "Maler",
+   "But... Guai?",
+   "Davis",
+   "...And It Mooves",
+   "Gedeik",
+   "Tin Can Gitar",
+   "Migraine",
+   "Almost Agein",
+   "Elegiac"
+  ]
+ },
+ {
+  "key": "sevenpounds|2008",
+  "year": 2008,
+  "titles": [
+   "Seven Pounds",
+   "Seven Pounds"
+  ],
+  "composers": [
+   "Angelo Milli"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "d9a035ac-2310-36c9-a35c-188e1f72c8d9",
+   "title": "Seven Pounds",
+   "year": 2008,
+   "artist": "Angelo Milli"
+  },
+  "rejected": [],
+  "tracks": [
+   "Seven Days, Seven Seconds",
+   "Seven Names",
+   "Sarah",
+   "Assisted Living",
+   "Inez",
+   "I Thought I Was Strong",
+   "Leaving Home",
+   "I Am Nowhere",
+   "A Good Man",
+   "New Life",
+   "Shower Flashback",
+   "The Field",
+   "Love Theme",
+   "Requiem",
+   "Surgery",
+   "Tim's Eyes",
+   "Seven Pounds"
+  ]
+ },
+ {
+  "key": "se7en|1995",
+  "year": 1995,
+  "titles": [
+   "Se7en",
+   "Se7en"
+  ],
+  "composers": [
+   "Howard Shore"
+  ],
+  "check": true,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "eb6ecc14-b3b2-370c-914d-2e440ad87a73",
+    "title": "Se7en",
+    "year": 1995,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "zeroday|2002",
+  "year": 2002,
+  "titles": [
+   "Zero Day",
+   "Zero Day"
+  ],
+  "composers": [
+   "Benji Cossa"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thegardenofwords|2013",
+  "year": 2013,
+  "titles": [
+   "The Garden of Words",
+   "\u8a00\u306e\u8449\u306e\u5ead"
+  ],
+  "composers": [
+   "Daisuke Kashiwa"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thesupermariobrosmovie|2023",
+  "year": 2023,
+  "titles": [
+   "The Super Mario Bros. Movie",
+   "The Super Mario Bros. Movie"
+  ],
+  "composers": [
+   "Brian Tyler"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "a29a250c-5e55-4424-82e4-4310826c878f",
+   "title": "The Super Mario Bros. Movie: Original Motion Picture Soundtrack",
+   "year": 2023,
+   "artist": "Brian Tyler"
+  },
+  "rejected": [],
+  "tracks": [
+   "Super Mario Bros. Opus",
+   "Press Start",
+   "King of the Koopas",
+   "Plumbin\u2019 Ain\u2019t Easy",
+   "It\u2019s a Dog Eat Plumber World",
+   "Saving Brooklyn",
+   "The Warp Pipe",
+   "Strange New World",
+   "The Darklands",
+   "Welcome to the Mushroom Kingdom",
+   "2 Player Game",
+   "The Mushroom Council",
+   "The Plumber and the Peach",
+   "Platforming Princess",
+   "World 1-1",
+   "The Adventure Begins",
+   "Peaches",
+   "Lost and Crowned",
+   "Imprisoned",
+   "Courting the Kongs",
+   "Drivin\u2019 Me Bananas",
+   "Rumble in the Jungle",
+   "Karts!",
+   "Practice Makes Perfect",
+   "Buckle Up",
+   "Rainbow Road Rage",
+   "Blue Shelled",
+   "An Indecent Proposal",
+   "The Belly of the Beast",
+   "Fighting Tooth and Veil",
+   "Tactical Tanooki",
+   "Mario Brothers Rap",
+   "Grapple in the Big Apple",
+   "Superstars",
+   "The Super Mario Brothers",
+   "Bonus Level",
+   "Level Complete"
+  ]
+ },
+ {
+  "key": "lamplife|2020",
+  "year": 2020,
+  "titles": [
+   "Lamp Life",
+   "Lamp Life"
+  ],
+  "composers": [
+   "Jake Monaco"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "10b5e2c4-b311-413b-8b25-2ba28ede41cd",
+   "title": "Lamp Life (Original Score)",
+   "year": 2020,
+   "artist": "Jake Monaco"
+  },
+  "rejected": [],
+  "tracks": [
+   "Bo's Music Box",
+   "Suite from Lamp Life",
+   "Off the Shelf",
+   "Leave the Light On"
+  ]
+ },
+ {
+  "key": "toomanycooks|2014",
+  "year": 2014,
+  "titles": [
+   "Too Many Cooks",
+   "Too Many Cooks"
+  ],
+  "composers": [
+   "Shawn Coleman",
+   "Michael Kohler"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "adventuresinbabysitting|2016",
+  "year": 2016,
+  "titles": [
+   "Adventures in Babysitting",
+   "Adventures in Babysitting"
+  ],
+  "composers": [
+   "Richard Gibbs"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "c92ba1ed-5789-4cd1-a356-a2770fb5eef8",
+    "title": "Adventures in Babysitting",
+    "year": 2015,
+    "artist": "Michael Kamen"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "dayfornight|1973",
+  "year": 1973,
+  "titles": [
+   "Day for Night",
+   "La Nuit am\u00e9ricaine"
+  ],
+  "composers": [
+   "Georges Delerue"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thevillainess|2017",
+  "year": 2017,
+  "titles": [
+   "The Villainess",
+   "\uc545\ub140"
+  ],
+  "composers": [
+   "Koo Ja-wan"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "lostladies|2023",
+  "year": 2023,
+  "titles": [
+   "Lost Ladies",
+   "\u0932\u093e\u092a\u0924\u093e \u0932\u0947\u0921\u0940\u091c\u093c"
+  ],
+  "composers": [
+   "Ram Sampath"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "phineasandferbthemoviecandaceagainsttheuniverse|2020",
+  "year": 2020,
+  "titles": [
+   "Phineas and Ferb the Movie: Candace Against the Universe",
+   "Phineas and Ferb the Movie: Candace Against the Universe"
+  ],
+  "composers": [
+   "Danny Jacob"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "dangal|2016",
+  "year": 2016,
+  "titles": [
+   "Dangal",
+   "\u0926\u0902\u0917\u0932"
+  ],
+  "composers": [
+   "Pritam Chakraborty"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "7cd4fafe-78ee-4b3d-8820-e759a96734f6",
+    "title": "Dangal",
+    "year": 2016,
+    "artist": "Pritam & Amitabh Bhattacharya"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "missionimpossibledeadreckoning|2023",
+  "year": 2023,
+  "titles": [
+   "Mission: Impossible - Dead Reckoning Part One",
+   "Mission: Impossible - Dead Reckoning Part One"
+  ],
+  "composers": [
+   "Lorne Balfe"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "086bad23-52e6-4c9a-be3e-12fca74842fe",
+   "title": "Mission: Impossible - Dead Reckoning Part One: Music From the Motion Picture",
+   "year": 2023,
+   "artist": "Lorne Balfe"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Sevastopol",
+   "The Phantom",
+   "Collision Alarm",
+   "A Ghost in the Machine",
+   "The Sum of Our Choices",
+   "Dead Reckoning Opening Titles",
+   "The Entity",
+   "Your Mission\u2026",
+   "This Is Not a Drill",
+   "The Plot Thickens",
+   "You Are Dunn",
+   "Get Out Now",
+   "A Colourful Past",
+   "Rush Hour in Rome",
+   "Roman Getaway",
+   "You\u2019re Driving",
+   "Hit It",
+   "He Calls Himself Gabriel",
+   "A Most Probable Next",
+   "Run as Far as You Can",
+   "You Are Done",
+   "Chasing Grace",
+   "I Was Hoping It\u2019d Be You",
+   "Ponte Dei Conzafelzi",
+   "To Be a Ghost",
+   "What Is Your Objective",
+   "Murder and the Orient Express",
+   "Mask of Lies",
+   "I Missed the Train",
+   "Key Details",
+   "The Moment of Truth",
+   "Should You Choose to Accept",
+   "Leap of Faith",
+   "Consequences",
+   "You Stop the Train",
+   "Chaos on the Line",
+   "Countdown",
+   "This Was the Plan",
+   "Curtain Call"
+  ]
+ },
+ {
+  "key": "theaeronauts|2019",
+  "year": 2019,
+  "titles": [
+   "The Aeronauts",
+   "The Aeronauts"
+  ],
+  "composers": [
+   "Steven Price"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "6daa27a9-f418-4aef-a19a-e6edb61afa84",
+   "title": "The Aeronauts: Original Motion Picture Soundtrack",
+   "year": 2019,
+   "artist": "Steven Price"
+  },
+  "rejected": [],
+  "tracks": [
+   "She's Late",
+   "We Will Break that Record",
+   "Anything Can Happen in this Weather",
+   "You'll Get Your Chance",
+   "And So it Begins",
+   "We Rose Above it",
+   "Have You Noticed",
+   "Of All the Amazing Things",
+   "We Have a Policy",
+   "Dancing in a Parachute",
+   "Do You Have Faith",
+   "An Obligation",
+   "Imagine that Story Again",
+   "Somewhere I Belong",
+   "I Can\u2019t Let this Happen Again",
+   "And Now Snow",
+   "For Science",
+   "The Sky Lies Open",
+   "We Took to the Skies",
+   "Home to You"
+  ]
+ },
+ {
+  "key": "fieldofdreams|1989",
+  "year": 1989,
+  "titles": [
+   "Field of Dreams",
+   "Field of Dreams"
+  ],
+  "composers": [
+   "James Horner"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "dd34ce90-4f28-3c6e-a470-1af042a43be6",
+   "title": "Field of Dreams",
+   "year": 1989,
+   "artist": "James Horner"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Cornfield",
+   "Deciding to Build the Field",
+   "Shoeless Joe",
+   "The Timeless Street",
+   "Old Ball Players",
+   "The Drive Home",
+   "Field of Dreams",
+   "The Library",
+   "Moonlight Graham",
+   "Night Mists",
+   "Doc\u2019s Memories",
+   "The Place Where Dreams Come True",
+   "End Credits"
+  ]
+ },
+ {
+  "key": "thecrush|1993",
+  "year": 1993,
+  "titles": [
+   "The Crush",
+   "The Crush"
+  ],
+  "composers": [
+   "Graeme Revell"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "28yearslaterthebonetemple|2026",
+  "year": 2026,
+  "titles": [
+   "28 Years Later: The Bone Temple",
+   "28 Years Later: The Bone Temple"
+  ],
+  "composers": [
+   "Hildur Gu\u00f0nad\u00f3ttir"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "liveflesh|1997",
+  "year": 1997,
+  "titles": [
+   "Live Flesh",
+   "Carne tr\u00e9mula"
+  ],
+  "composers": [
+   "Alberto Iglesias"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "270fcd75-dbca-365c-926d-fe6bd854e9df",
+    "title": "Live Flesh",
+    "year": 1997,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "themidnightmeattrain|2008",
+  "year": 2008,
+  "titles": [
+   "The Midnight Meat Train",
+   "The Midnight Meat Train"
+  ],
+  "composers": [
+   "Johannes Kobilke",
+   "Robb Williamson"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "c3d43521-2e05-454a-8f4a-ae0fdbdd7d79",
+   "title": "The Midnight Meat Train (Original Motion Picture Score)",
+   "year": 2008,
+   "artist": "Robert Williamson & Johannes Kobilke"
+  },
+  "rejected": [
+   {
+    "id": "db22ebec-808e-4e16-aba5-c3d6de337369",
+    "title": "The Midnight Meat Train (Original Motion Picture Soundtrack)",
+    "year": 2008,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": [
+   "Blood Train",
+   "Leon and Maya",
+   "Leon\u2019s Scary Dream",
+   "Mahogany\u2019s Iron Hammer",
+   "Leon Follows Mahogany",
+   "Guardian Angel",
+   "Engaged to Be Engaged",
+   "Leon\u2019s Obsession",
+   "I Love You \u2013 Taking Photos",
+   "Leaving the Diner",
+   "Mahogany and Leon",
+   "Leon Wakes Up",
+   "I\u2019ve Been Caught",
+   "Retrieving the Camera",
+   "\u201cI Have a Train to Catch\u2026\u201d",
+   "Leon Jumps on Train",
+   "Train Fight",
+   "Im Untergrund",
+   "Final Kampf",
+   "Maya Dies",
+   "Leon the Butcher"
+  ]
+ },
+ {
+  "key": "gladiatorii|2024",
+  "year": 2024,
+  "titles": [
+   "Gladiator II",
+   "Gladiator II"
+  ],
+  "composers": [
+   "Harry Gregson-Williams"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "8d7758da-0719-47d7-a970-1ad0e47b6fbb",
+   "title": "Gladiator II: Music From The Motion Picture",
+   "year": 2024,
+   "artist": "Harry Gregson\u2010Williams"
+  },
+  "rejected": [],
+  "tracks": [
+   "Gladiator II Overture",
+   "Lucius, Arishat And The Roman Invasion",
+   "I\u2019ll Wait For You",
+   "Ostia",
+   "Angry Baboons",
+   "Strength And Honor",
+   "Acacius Returns",
+   "City Of Rome",
+   "Defiance",
+   "I See Him In You",
+   "Acacius In The Colosseum",
+   "Let The Gods Decide",
+   "Macrinus\u2019 Plan",
+   "I Need You To Do This",
+   "Smooth Is The Descent",
+   "Now That I Have Found You",
+   "Echoes In Eternity",
+   "War, Real War",
+   "The Dream Is Lost",
+   "Now We Are Free"
+  ]
+ },
+ {
+  "key": "theotherguys|2010",
+  "year": 2010,
+  "titles": [
+   "The Other Guys",
+   "The Other Guys"
+  ],
+  "composers": [
+   "Jon Brion"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "creedii|2018",
+  "year": 2018,
+  "titles": [
+   "Creed II",
+   "Creed II"
+  ],
+  "composers": [
+   "Ludwig G\u00f6ransson"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "7d7b6f0a-8ab2-4229-ad75-ba82ee940a4f",
+   "title": "Creed II",
+   "year": 2018,
+   "artist": "Ludwig G\u00f6ransson"
+  },
+  "rejected": [],
+  "tracks": [
+   "Drago",
+   "Wheeler Fight",
+   "Yo? Is That a Yes?",
+   "The Public Challenge",
+   "Time Tick",
+   "You Think I\u2019m Going to Lose",
+   "Balanced Breakfast",
+   "Ice Cold",
+   "Under Water",
+   "Adonis and Amara",
+   "You Might Find Me",
+   "Runnin",
+   "Drago\u2019s Walk Out",
+   "I Will Go to War",
+   "Fight in Moscow",
+   "It\u2019s Your Time",
+   "Family Visit"
+  ]
+ },
+ {
+  "key": "moonwalker|1988",
+  "year": 1988,
+  "titles": [
+   "Moonwalker",
+   "Moonwalker"
+  ],
+  "composers": [
+   "Bruce Broughton"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "hellraiserdeader|2005",
+  "year": 2005,
+  "titles": [
+   "Hellraiser: Deader",
+   "Hellraiser: Deader"
+  ],
+  "composers": [
+   "Henning Lohner"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "safehaven|2013",
+  "year": 2013,
+  "titles": [
+   "Safe Haven",
+   "Safe Haven"
+  ],
+  "composers": [
+   "Deborah Lurie"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "41875ce9-ac59-4da2-86c3-e4ee1495cca3",
+    "title": "Safe Haven (Original Motion Picture Soundtrack)",
+    "year": 2013,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "fleshblood|1985",
+  "year": 1985,
+  "titles": [
+   "Flesh + Blood",
+   "Flesh + Blood"
+  ],
+  "composers": [
+   "Basil Poledouris"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "theweddingbanquet|2025",
+  "year": 2025,
+  "titles": [
+   "The Wedding Banquet",
+   "The Wedding Banquet"
+  ],
+  "composers": [
+   "Jay Wadley"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thetale|2018",
+  "year": 2018,
+  "titles": [
+   "The Tale",
+   "The Tale"
+  ],
+  "composers": [
+   "Ariel Marx"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "47504588-a078-464b-8ad3-fbbb37f78cfe",
+   "title": "The Tale: Original Motion Picture Soundtrack",
+   "year": 2018,
+   "artist": "Ariel Marx"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Story You Are About to See is True, as Far as I Know",
+   "The First Descent",
+   "A Woman Who's Married; a Man Who's Divorced",
+   "Driving to Mrs. G",
+   "Jenny, Jenny, Jenny with All Your Questions",
+   "I Have Made a Decision",
+   "History Erased in a Flash",
+   "I Got Something Else",
+   "Jenny & Jennifer",
+   "Funny How You Live with People in Your Mind",
+   "No Bad Horses, Only Bad Riders",
+   "How Do People Change",
+   "My Dear Jenny",
+   "First Place",
+   "I'm Not the Victim, I'm the Hero",
+   "I'd Like to Begin This Story by Telling You Something so Beautiful",
+   "Wait on Me"
+  ]
+ },
+ {
+  "key": "12angrymen|1997",
+  "year": 1997,
+  "titles": [
+   "12 Angry Men",
+   "12 Angry Men"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "onceuponatimeinthewest|1968",
+  "year": 1968,
+  "titles": [
+   "Once Upon a Time in the West",
+   "C'era una volta il West"
+  ],
+  "composers": [
+   "Ennio Morricone"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thelasthouseontheleft|1972",
+  "year": 1972,
+  "titles": [
+   "The Last House on the Left",
+   "The Last House on the Left"
+  ],
+  "composers": [
+   "David Hess"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "allthecoloursofthedark|1972",
+  "year": 1972,
+  "titles": [
+   "All the Colours of the Dark",
+   "Tutti i colori del buio"
+  ],
+  "composers": [
+   "Bruno Nicolai"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "dangerousminds|1995",
+  "year": 1995,
+  "titles": [
+   "Dangerous Minds",
+   "Dangerous Minds"
+  ],
+  "composers": [
+   "Lisa Coleman",
+   "Wendy Melvoin"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "a9beb5e6-394c-301d-9f7d-3a86dfcccf42",
+    "title": "Dangerous Minds: Music From the Motion Picture",
+    "year": 1995,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "repulsion|1965",
+  "year": 1965,
+  "titles": [
+   "Repulsion",
+   "Repulsion"
+  ],
+  "composers": [
+   "Chico Hamilton"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "mysteryofthewaxmuseum|1933",
+  "year": 1933,
+  "titles": [
+   "Mystery of the Wax Museum",
+   "Mystery of the Wax Museum"
+  ],
+  "composers": [
+   "Bernhard Kaun"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "jurassicworldfallenkingdom|2018",
+  "year": 2018,
+  "titles": [
+   "Jurassic World: Fallen Kingdom",
+   "Jurassic World: Fallen Kingdom"
+  ],
+  "composers": [
+   "Michael Giacchino"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "9dab6534-1cc4-43d9-a686-245ad9e99bd6",
+   "title": "Jurassic World: Fallen Kingdom: Original Motion Picture Soundtrack",
+   "year": 2018,
+   "artist": "Michael Giacchino"
+  },
+  "rejected": [],
+  "tracks": [
+   "This Title Makes Me Jurassic",
+   "The Theropod Preservation Society",
+   "Maisie and the Island",
+   "March of the Wheatley Cavalcade",
+   "Nostalgia-Saurus",
+   "Lava Land",
+   "Keep Calm and Baryonyx",
+   "Go With the Pyroclastic Flow",
+   "Raiders of the Lost Isla Nublar",
+   "Volcano to Death",
+   "Operation Blue Blood",
+   "Jurassic Pillow Talk",
+   "How to Pick a Lockwood",
+   "Wilting Iris",
+   "Shock and Auction",
+   "Thus Begins the Indo-Rapture",
+   "You Can Be So Hard-Headed",
+   "Between the Devil and the Deep Blue Free",
+   "There\u2019s Something About Maisie",
+   "World\u2019s Worst Bedtime Storyteller",
+   "Declaration of Indo-Pendence",
+   "To Free or Not to Free",
+   "The Neo-Jurassic Age",
+   "At Jurassic World\u2019s End Credits/Suite"
+  ]
+ },
+ {
+  "key": "beingthere|1979",
+  "year": 1979,
+  "titles": [
+   "Being There",
+   "Being There"
+  ],
+  "composers": [
+   "Johnny Mandel"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "justmyluck|2006",
+  "year": 2006,
+  "titles": [
+   "Just My Luck",
+   "Just My Luck"
+  ],
+  "composers": [
+   "Teddy Castellucci"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "30c8b47e-216a-3099-87bc-dd6d9edf32ad",
+    "title": "Just My Luck",
+    "year": 2006,
+    "artist": "McFly"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "valentine|2001",
+  "year": 2001,
+  "titles": [
+   "Valentine",
+   "Valentine"
+  ],
+  "composers": [
+   "Don Davis"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "4a95e77a-c27c-3b34-83b8-057f07b63d56",
+    "title": "Valentine",
+    "year": 2001,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "brightstar|2009",
+  "year": 2009,
+  "titles": [
+   "Bright Star",
+   "Bright Star"
+  ],
+  "composers": [
+   "Mark Bradshaw"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "8867bb4d-2daa-420b-bc72-15969af09edf",
+   "title": "Bright Star",
+   "year": 2009,
+   "artist": "Mark Bradshaw"
+  },
+  "rejected": [],
+  "tracks": [
+   "Negative Capability",
+   "La belle dame sans merci",
+   "Return",
+   "Human Orchestra",
+   "Convulsion",
+   "Bright Star",
+   "Letters",
+   "Yearning",
+   "Ode to a Nightingale"
+  ]
+ },
+ {
+  "key": "capefear|1962",
+  "year": 1962,
+  "titles": [
+   "Cape Fear",
+   "Cape Fear"
+  ],
+  "composers": [
+   "Bernard Herrmann"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thekillingofasacreddeer|2017",
+  "year": 2017,
+  "titles": [
+   "The Killing of a Sacred Deer",
+   "The Killing of a Sacred Deer"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "48720389-7b38-4735-a4ce-6aee9324b4d5",
+    "title": "The Killing of a Sacred Deer: Original Motion Picture Soundtrack",
+    "year": 2017,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "blended|2014",
+  "year": 2014,
+  "titles": [
+   "Blended",
+   "Blended"
+  ],
+  "composers": [
+   "Rupert Gregson-Williams"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "3aa90682-f908-4d0f-8ac4-61c67d0b0dcc",
+    "title": "Blended: Original Motion Picture Soundtrack",
+    "year": 2014,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "thetiggermovie|2000",
+  "year": 2000,
+  "titles": [
+   "The Tigger Movie",
+   "The Tigger Movie"
+  ],
+  "composers": [
+   "Harry Gregson-Williams"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "c4b2939d-711c-381c-9568-8d8fa2781df8",
+   "title": "The Tigger Movie",
+   "year": 2000,
+   "artist": "Harry Gregson\u2010Williams"
+  },
+  "rejected": [],
+  "tracks": [
+   "Opening Title",
+   "Tigger\u2019s Theme",
+   "The Adventure Begins",
+   "Sadly, the Only One",
+   "Rabbit Gets Involved",
+   "The Letter",
+   "Roo Dreams of a Brother",
+   "The Exposition",
+   "Big Band",
+   "The Seasons Change",
+   "Rabbit\u2019s Melodrama",
+   "Tigger Leaves",
+   "Eeyore Has a Word",
+   "Together Again",
+   "All\u2019s Well That Ends Well"
+  ]
+ },
+ {
+  "key": "dilchahtahai|2001",
+  "year": 2001,
+  "titles": [
+   "Dil Chahta Hai",
+   "\u0926\u093f\u0932 \u091a\u093e\u0939\u0924\u093e \u0939\u0948"
+  ],
+  "composers": [
+   "Shankar Mahadevan",
+   "Ehsaan Noorani",
+   "Loy Mendonsa"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "49193507-8fc7-39fb-87b2-4f0f70b5c4da",
+    "title": "Dil Chahta Hai",
+    "year": 2001,
+    "artist": "Shankar-Ehsaan-Loy"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "doctorwhotheendoftime|2009",
+  "year": 2009,
+  "titles": [],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "thehauntedhouse|1921",
+  "year": 1921,
+  "titles": [
+   "The Haunted House",
+   "The Haunted House"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "tinkerbellandthegreatfairyrescue|2010",
+  "year": 2010,
+  "titles": [
+   "Tinker Bell and the Great Fairy Rescue",
+   "Tinker Bell and the Great Fairy Rescue"
+  ],
+  "composers": [
+   "Joel McNeely"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "fourrooms|1995",
+  "year": 1995,
+  "titles": [
+   "Four Rooms",
+   "Four Rooms"
+  ],
+  "composers": [
+   "Combustible Edison"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "9599970e-0f6a-373a-93b7-63c5a008c1dd",
+   "title": "Four Rooms",
+   "year": 1995,
+   "artist": "Combustible Edison"
+  },
+  "rejected": [],
+  "tracks": [
+   "Vertigogo (Opening Theme)",
+   "Junglero",
+   "Four Rooms Swing",
+   "Bewitched",
+   "Tea and Eva in the Elevator",
+   "Invocation",
+   "Breakfast at Denny\u2019s",
+   "Strange Brew",
+   "Coven of Witches",
+   "The Earthly Diana",
+   "Eva Seduces Ted",
+   "Hallway Ted",
+   "Headshake Rhumba",
+   "Skippen, Pukin, Sigfried",
+   "Angela",
+   "Punch Drunk",
+   "Male Bonding",
+   "Mariachi",
+   "Antes de Medianoche",
+   "Sentimental Journey",
+   "Kids Watch T.V.",
+   "Champagne and Needles",
+   "Bullseye",
+   "Harlem Nocturne",
+   "The Millionaire\u2019s Holiday",
+   "Ted\u2010O\u2010Vater",
+   "Vertigogo (Closing Credits)",
+   "\u201cD\u201d in the Hallway",
+   "Torchy"
+  ]
+ },
+ {
+  "key": "longlegs|2024",
+  "year": 2024,
+  "titles": [
+   "Longlegs",
+   "Longlegs"
+  ],
+  "composers": [
+   "Elvis Perkins"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "ad53b584-5093-402f-9776-cce4fe6c15ea",
+    "title": "Longlegs: Original Motion Picture Soundtrack",
+    "year": 2024,
+    "artist": "Zilgi"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "thestepfather|2009",
+  "year": 2009,
+  "titles": [
+   "The Stepfather",
+   "The Stepfather"
+  ],
+  "composers": [
+   "Charlie Clouser"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "6f4742fc-14df-4d81-bb6e-159dd6ddd21c",
+    "title": "The Stepfather",
+    "year": 2009,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "swat|2003",
+  "year": 2003,
+  "titles": [
+   "S.W.A.T.",
+   "S.W.A.T."
+  ],
+  "composers": [
+   "Elliot Goldenthal"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "b3ed5bda-6324-3c52-94c8-df8abb14c0e2",
+   "title": "S.W.A.T. (Original Motion Picture Soundtrack)",
+   "year": 2003,
+   "artist": "Elliot Goldenthal"
+  },
+  "rejected": [],
+  "tracks": [
+   "Bullet Frenzy",
+   "Don\u2019t Shoot Me Baby",
+   "My Big Black Assault Weapon",
+   "AK\u201047 Scherzo",
+   "Three Chords in Two Minutes",
+   "Run for Your Life",
+   "The Fascist Shuffle",
+   "S.W.A.T. 911",
+   "Crash Landing",
+   "That Cop Stole My Car",
+   "S.W.A.T. Sticker",
+   "Bullet Frenzy II",
+   "Time Is Running Out",
+   "Samuel Jackson"
+  ]
+ },
+ {
+  "key": "hulk|2003",
+  "year": 2003,
+  "titles": [
+   "Hulk",
+   "Hulk"
+  ],
+  "composers": [
+   "Danny Elfman"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "50c9e08a-f7db-31ac-a630-5fff96786d58",
+   "title": "Hulk",
+   "year": 2003,
+   "artist": "Danny Elfman"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Titles",
+   "Prologue",
+   "Betty's Dream",
+   "Bruce's Memories",
+   "Captured",
+   "Dad's Visit",
+   "Hulk Out!",
+   "Father Knows Best",
+   "...Making Me Angry",
+   "Gentle Giant",
+   "Hounds of Hell",
+   "The Truth Revealed",
+   "Hulk's Freedom",
+   "A Man Again",
+   "The Lake Battle",
+   "The Aftermath",
+   "The Phone Call",
+   "End Credits",
+   "Set Me Free"
+  ]
+ },
+ {
+  "key": "theweb|2013",
+  "year": 2013,
+  "titles": [
+   "The Web",
+   "The Web"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "highflyingbird|2019",
+  "year": 2019,
+  "titles": [
+   "High Flying Bird",
+   "High Flying Bird"
+  ],
+  "composers": [
+   "David Wilder Savage"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "neworder|2020",
+  "year": 2020,
+  "titles": [
+   "New Order",
+   "Nuevo orden"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "smarthouse|1999",
+  "year": 1999,
+  "titles": [
+   "Smart House",
+   "Smart House"
+  ],
+  "composers": [
+   "Barry Goldberg"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "rustin|2023",
+  "year": 2023,
+  "titles": [
+   "Rustin",
+   "Rustin"
+  ],
+  "composers": [
+   "Branford Marsalis"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "5e868b1c-caac-4615-978b-eeb873c4bfca",
+   "title": "Rustin (Soundtrack from the Netflix Film)",
+   "year": 2023,
+   "artist": "Branford Marsalis"
+  },
+  "rejected": [],
+  "tracks": [
+   "Black Strength",
+   "Who Said You\u2019re Not Our Man",
+   "Pasadena",
+   "Chief Wells Redux",
+   "Bayard Bush Flashback",
+   "Show Me Your Ideas",
+   "Rustin Walks Home",
+   "Makes You Want To Believe",
+   "Bayard Breaks Down the Meeting",
+   "I Ne\u2019r Didst Dream",
+   "King to March",
+   "Work As One, Move As One",
+   "The Rustin Shuffle",
+   "Dinner Music Cha\u2010Cha",
+   "Louis Reads the Pledge",
+   "Bayard Cruising",
+   "The Day Of, Part III",
+   "How I Got Over",
+   "Meeting at the Mall",
+   "Fingertips Redux",
+   "King to March, Version 2",
+   "The Day Of, Part I",
+   "The Day Of, Part II",
+   "Moving to Utopia",
+   "Elias\u2019 Song",
+   "Press Conference",
+   "Roy Has Issues with Me",
+   "Heres Comes the People",
+   "Bayard Breaks Down the Meeting, Version 1",
+   "Bayard Goes to See Martin",
+   "MLK Jr.",
+   "Didn\u2019t It Rain",
+   "The Knowing"
+  ]
+ },
+ {
+  "key": "thebabysitter|2017",
+  "year": 2017,
+  "titles": [
+   "The Babysitter",
+   "The Babysitter"
+  ],
+  "composers": [
+   "Douglas Pipes"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "theressomethingwrongwiththechildren|2023",
+  "year": 2023,
+  "titles": [
+   "There's Something Wrong with the Children",
+   "There's Something Wrong with the Children"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "theconference|2023",
+  "year": 2023,
+  "titles": [
+   "The Conference",
+   "Konferensen"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "demonlover|2002",
+  "year": 2002,
+  "titles": [
+   "Demonlover",
+   "Demonlover"
+  ],
+  "composers": [
+   "Steve Shelley",
+   "Lee Ranaldo",
+   "Thurston Moore",
+   "Jim O'Rourke",
+   "Kim Gordon"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "567e1b34-e7d0-3ec9-bf85-ee93ff21d474",
+    "title": "Demonlover",
+    "year": 2002,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "kraventhehunter|2024",
+  "year": 2024,
+  "titles": [
+   "Kraven the Hunter",
+   "Kraven the Hunter"
+  ],
+  "composers": [
+   "Benjamin Wallfisch",
+   "Sacha Galperine",
+   "Evgueni Galperine"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "87f86456-da3f-436d-9434-5f4bbe00bc4e",
+   "title": "Kraven The Hunter: Original Motion Picture Soundtrack",
+   "year": 2024,
+   "artist": "Benjamin Wallfisch, Evgueni Galperine & Sacha Galperine"
+  },
+  "rejected": [],
+  "tracks": [
+   "Prison Break",
+   "Motherland (Kraven\u2019s Theme)",
+   "Three Cards Spread",
+   "Reborn",
+   "Nikola\u00ef",
+   "Serge\u00ef and Dima",
+   "Lullaby",
+   "Kraven\u2019s Origin",
+   "Calypso",
+   "We Have a Winner",
+   "The Threat",
+   "Kidnapped",
+   "The Foreigner",
+   "Monastery",
+   "Forest Hallucination",
+   "Final Showdown",
+   "Never Fear Death",
+   "It\u2019s All Just There For The Taking",
+   "Embrace Who You Really Are",
+   "Kraven the Hunter",
+   "I Hunt You"
+  ]
+ },
+ {
+  "key": "intrusion|2021",
+  "year": 2021,
+  "titles": [
+   "Intrusion",
+   "Intrusion"
+  ],
+  "composers": [
+   "Alex Heffes"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "blackcatwhitecat|1998",
+  "year": 1998,
+  "titles": [
+   "Black Cat, White Cat",
+   "Crna ma\u010dka, beli ma\u010dor"
+  ],
+  "composers": [
+   "dr Nele Karajli\u0107",
+   "Vojislav Aralica",
+   "Dejan \u0160paravalo"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "periodendofsentence|2018",
+  "year": 2018,
+  "titles": [
+   "Period. End of Sentence.",
+   "Period. End of Sentence."
+  ],
+  "composers": [
+   "Dan Romer",
+   "Osei Essed",
+   "Giosu\u00e8 Greco"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "alucarda|1977",
+  "year": 1977,
+  "titles": [
+   "Alucarda",
+   "Alucarda, la hija de las tinieblas"
+  ],
+  "composers": [
+   "Anthony Guefen"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "wonderwoman1984|2020",
+  "year": 2020,
+  "titles": [
+   "Wonder Woman 1984",
+   "Wonder Woman 1984"
+  ],
+  "composers": [
+   "Hans Zimmer"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "bd92c0cb-bfa0-4527-91d7-8b2dda30beaa",
+   "title": "Wonder Woman 1984",
+   "year": 2020,
+   "artist": "Hans Zimmer"
+  },
+  "rejected": [],
+  "tracks": [
+   "Themyscira",
+   "Games",
+   "1984",
+   "Black Gold",
+   "Wish We Had More Time",
+   "The Stone",
+   "Cheetah",
+   "Fireworks",
+   "Anything You Want",
+   "Open Road",
+   "Without Armor",
+   "The White House",
+   "Already Gone",
+   "Radio Waves",
+   "Lord of Desire",
+   "The Beauty in What Is",
+   "Truth",
+   "Lost and Found"
+  ]
+ },
+ {
+  "key": "torncurtain|1966",
+  "year": 1966,
+  "titles": [
+   "Torn Curtain",
+   "Torn Curtain"
+  ],
+  "composers": [
+   "John Addison"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "jackandjill|2011",
+  "year": 2011,
+  "titles": [
+   "Jack and Jill",
+   "Jack and Jill"
+  ],
+  "composers": [
+   "Rupert Gregson-Williams",
+   "Waddy Wachtel"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "wonder|2017",
+  "year": 2017,
+  "titles": [
+   "Wonder",
+   "Wonder"
+  ],
+  "composers": [
+   "Marcelo Zarvos"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "3e0ff0d2-bc98-433b-b9a9-8c8bbc417b25",
+   "title": "Wonder: Original Soundtrack Album",
+   "year": 2017,
+   "artist": "Marcelo Zarvos"
+  },
+  "rejected": [],
+  "tracks": [
+   "We\u2019re Going to Be Friends",
+   "Ordinary Kid",
+   "The First Day",
+   "Darker",
+   "Shoes",
+   "Class Photo",
+   "Pop Quiz",
+   "Halloween",
+   "Monster Mash",
+   "Winter",
+   "Via",
+   "Coney Island",
+   "Break the Rules",
+   "The Other First Day",
+   "Letters",
+   "Spring",
+   "We\u2019re Going to Be Friends",
+   "Camera Obscura",
+   "Graduation",
+   "Moth\u2019s Wings",
+   "Wonder"
+  ]
+ },
+ {
+  "key": "infinitypool|2023",
+  "year": 2023,
+  "titles": [
+   "Infinity Pool",
+   "Infinity Pool"
+  ],
+  "composers": [
+   "Tim Hecker"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "c9c4c8c6-c41e-4977-acf2-49a327a2604a",
+   "title": "Infinity Pool (Original Motion Picture Soundtrack)",
+   "year": 2023,
+   "artist": "Tim Hecker"
+  },
+  "rejected": [],
+  "tracks": [
+   "Spiral Walk",
+   "In the Club",
+   "Joy Ride",
+   "An Accident",
+   "Hit and Run",
+   "The Arrest",
+   "Doubling Part 1",
+   "Doubling Part 2",
+   "Execution",
+   "Masquerade",
+   "Home Invasion",
+   "Ekki Gate",
+   "Orgy",
+   "Abduction",
+   "Humiliation",
+   "Shuttle to Nowhere",
+   "Through the Forest",
+   "Fever Dream",
+   "Killing the Dog",
+   "Consolation",
+   "The Infinity Pool",
+   "Here to Stay"
+  ]
+ },
+ {
+  "key": "abittersweetlife|2005",
+  "year": 2005,
+  "titles": [
+   "A Bittersweet Life",
+   "\ub2ec\ucf64\ud55c \uc778\uc0dd"
+  ],
+  "composers": [
+   "Dalpalan",
+   "Jang Young-gyu"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "920fbb25-a17a-4219-b4df-5f3a6e7810fb",
+    "title": "A Bittersweet Life",
+    "year": 2005,
+    "artist": "\ub2ec\ud30c\ub780, \uc7a5\uc601\uaddc"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "bluebeetle|2023",
+  "year": 2023,
+  "titles": [
+   "Blue Beetle",
+   "Blue Beetle"
+  ],
+  "composers": [
+   "Bobby Krlic"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "04522c7b-75d6-4f8a-8335-d7e9e43334c9",
+   "title": "Blue Beetle: Original Motion Picture Soundtrack",
+   "year": 2023,
+   "artist": "Bobby Krlic"
+  },
+  "rejected": [],
+  "tracks": [
+   "The Sphere",
+   "Victoria Kord",
+   "Stealing the Scarab",
+   "The Transformation",
+   "Stratosphere Flight",
+   "Jaime Wakes Up",
+   "Breaking into Kord",
+   "Kord Tower Fight",
+   "Ted Kord\u2019s Lair",
+   "Healing",
+   "Jenny\u2019s Childhood",
+   "Good News and Bad News",
+   "Before the Raid",
+   "Manifest Fight",
+   "Reyes House Attack",
+   "Heart Attack",
+   "Activating the Bug Ship",
+   "Dad\u2019s Gadgets",
+   "Nana Leads",
+   "Bug Ship to the Island",
+   "Leaving the Bug Ship",
+   "The Cosmic Realm",
+   "Rebooting",
+   "Nana\u2019s Theme",
+   "Blue Beetle vs Carapax Pt 1",
+   "Blue Beetle vs Carapax Pt 2",
+   "Sacrifices for the Greater Good",
+   "Now We Can Cry",
+   "Blue Beetle Suite",
+   "Ser\u00e1 Que No Me Amas (Blame It on the Boogie)",
+   "T\u00fa Ser\u00e1s Mi Baby (Be My Baby)"
+  ]
+ },
+ {
+  "key": "benditlikebeckham|2002",
+  "year": 2002,
+  "titles": [
+   "Bend It Like Beckham",
+   "Bend It Like Beckham"
+  ],
+  "composers": [
+   "Craig Pruess"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "1f90e50b-d7b7-37d4-8f0e-5712a2f53b8f",
+    "title": "Bend It Like Beckham",
+    "year": 2002,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ },
+ {
+  "key": "itsonlytheendoftheworld|2016",
+  "year": 2016,
+  "titles": [
+   "It's Only the End of the World",
+   "Juste la fin du monde"
+  ],
+  "composers": [
+   "Gabriel Yared"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "blackpanthers|1968",
+  "year": 1968,
+  "titles": [
+   "Black Panthers",
+   "Black Panthers"
+  ],
+  "composers": [],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "antz|1998",
+  "year": 1998,
+  "titles": [
+   "Antz",
+   "Antz"
+  ],
+  "composers": [
+   "John Powell",
+   "Harry Gregson-Williams"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "f99f5d0e-3df9-36bc-885d-c3c7f64c2c0b",
+   "title": "Antz",
+   "year": 1998,
+   "artist": "Harry Gregson\u2010Williams & John Powell"
+  },
+  "rejected": [],
+  "tracks": [
+   "I Can See Clearly Now",
+   "Opening Titles \u2013 Z\u2019s Theme",
+   "The Colony",
+   "General Mandible",
+   "Princess Bala",
+   "The Bar",
+   "There is a better place",
+   "Guantanamera \u2013 Time To Dance",
+   "The Antz Go Marching To War",
+   "Weaver and Azteca Flirt",
+   "The Death of Barbados",
+   "The Antz Marching Band",
+   "The Magnifying Glass",
+   "Ant Revolution",
+   "Mandible and Cutter Plot",
+   "The Picnic Table",
+   "The Big Shoe",
+   "Romance in Insectopia",
+   "Back to the Colony",
+   "Z to the Rescue",
+   "Z\u2019s Alive!"
+  ]
+ },
+ {
+  "key": "outoftime|2003",
+  "year": 2003,
+  "titles": [
+   "Out of Time",
+   "Out of Time"
+  ],
+  "composers": [
+   "Graeme Revell"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "940aa4b3-fad9-347f-ba92-9c15e264fe0b",
+   "title": "Out of Time",
+   "year": 2003,
+   "artist": "Graeme Revell"
+  },
+  "rejected": [],
+  "tracks": [
+   "Out of Time Theme",
+   "Matt's House Boat",
+   "Out of Time Main Titles",
+   "Domestic Violence",
+   "Banyan Quay",
+   "One Step Ahead",
+   "Out of Time Theme (guitar mix)",
+   "Night Beat",
+   "Hot on the Trail",
+   "Buddies / Matt and Chae",
+   "Conned by Ann Merai",
+   "Still in Love? (Alex and Matt)",
+   "Saying Goodbye",
+   "The Fire",
+   "It's Never Over Till It's Over",
+   "Out of Time Theme (trumpet mix)"
+  ]
+ },
+ {
+  "key": "blowup|1966",
+  "year": 1966,
+  "titles": [
+   "Blow-Up",
+   "Blow-Up"
+  ],
+  "composers": [
+   "Herbie Hancock"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "89c2edc5-b5be-3400-a402-da615d6f3ee6",
+   "title": "Blow-Up",
+   "year": 1966,
+   "artist": "Herbie Hancock"
+  },
+  "rejected": [],
+  "tracks": [
+   "Main Title Blow-Up",
+   "Verushka, Part 1",
+   "Verushka, Part 2",
+   "The Naked Camera",
+   "Bring Down the Birds",
+   "Jane's Theme",
+   "Stroll On",
+   "The Thief",
+   "The Kiss",
+   "Curiosity",
+   "Thomas Studies Photos",
+   "The Bed",
+   "End Title Blow-Up"
+  ]
+ },
+ {
+  "key": "theprincessswitchswitchedagain|2020",
+  "year": 2020,
+  "titles": [
+   "The Princess Switch: Switched Again",
+   "The Princess Switch: Switched Again"
+  ],
+  "composers": [
+   "Alan Ari Lazar"
+  ],
+  "check": false,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "julieta|2016",
+  "year": 2016,
+  "titles": [
+   "Julieta",
+   "Julieta"
+  ],
+  "composers": [
+   "Alberto Iglesias"
+  ],
+  "check": false,
+  "accepted": {
+   "id": "02a117cb-ec61-4e26-a468-d053a9de21ef",
+   "title": "Julieta",
+   "year": 2016,
+   "artist": "Alberto Iglesias"
+  },
+  "rejected": [],
+  "tracks": [
+   "La tela roja",
+   "La esquina",
+   "En el mismo lugar II",
+   "Tren de invierno, 1985",
+   "Cortejo f\u00fanebre en la nieve",
+   "Ant\u00eda concebida",
+   "Rumbo a lo desconocido",
+   "La madre andaluza",
+   "Tatuaje",
+   "El origen del hombre",
+   "Tempestad",
+   "El cad\u00e1ver incompleto",
+   "Silencio",
+   "Camin\u00e9 como un zombie I",
+   "En el mismo lugar I",
+   "Julieta y las ni\u00f1as",
+   "La casa blanca",
+   "Despedida de Ant\u00eda",
+   "Ava en el hospital",
+   "Camin\u00e9 como un zombie II",
+   "Los cuadernos del silencio",
+   "Si no te vas",
+   "Ep\u00edlogo"
+  ]
+ },
+ {
+  "key": "thelighthouse|2019",
+  "year": 2019,
+  "titles": [
+   "The Lighthouse",
+   "The Lighthouse"
+  ],
+  "composers": [
+   "Mark Korven"
+  ],
+  "check": true,
+  "accepted": {
+   "id": "c79d2272-1d24-4e4a-beba-54efa152ab6c",
+   "title": "The Lighthouse",
+   "year": 2019,
+   "artist": "Mark Korven"
+  },
+  "rejected": [],
+  "tracks": [
+   "Arrival",
+   "Sonovabitch",
+   "Cistern / Old on Lens",
+   "Swab Dog Swab / Seagull / Winslow's Story",
+   "Curse Your Name / Dirty Weather",
+   "Murder / Mermaid / Heavy Labour",
+   "Stranded",
+   "The Sea King's Fury",
+   "Mermaid Lust / Stabbing the Charm",
+   "Why'd Ya Spill Yer Beans?",
+   "Filthy Dog",
+   "The Light Belongs to Me",
+   "Into the Light"
+  ]
+ },
+ {
+  "key": "chungkingexpress|1994",
+  "year": 1994,
+  "titles": [
+   "Chungking Express",
+   "\u91cd\u6176\u68ee\u6797"
+  ],
+  "composers": [
+   "Michael Galasso",
+   "Roel A. Garc\u00eda",
+   "Frankie Chan Fan-kei"
+  ],
+  "check": true,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "anotherround|2020",
+  "year": 2020,
+  "titles": [
+   "Another Round",
+   "Druk"
+  ],
+  "composers": [],
+  "check": true,
+  "accepted": null,
+  "rejected": [],
+  "tracks": null
+ },
+ {
+  "key": "callmebyyourname|2017",
+  "year": 2017,
+  "titles": [
+   "Call Me by Your Name",
+   "Call Me by Your Name"
+  ],
+  "composers": [
+   "Sufjan Stevens"
+  ],
+  "check": true,
+  "accepted": null,
+  "rejected": [
+   {
+    "id": "e209b2ce-577c-42f5-b0e0-ef5ffbd92544",
+    "title": "Call Me by Your Name: Original Motion Picture Soundtrack",
+    "year": 2017,
+    "artist": "Various Artists"
+   }
+  ],
+  "tracks": null
+ }
+]

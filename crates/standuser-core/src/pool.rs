@@ -443,7 +443,7 @@ pub fn why_rows(f: &crate::font::Font, why: &str) -> Vec<String> {
 
 fn why_rows_needed(text: &str) -> usize {
     use crate::font::{font, FontKind};
-    font(FontKind::Sans).wrap(text, WHY_SIZE, WHY_WIDTH).len()
+    font(FontKind::Jp).wrap(text, WHY_SIZE, WHY_WIDTH).len()
 }
 
 #[cfg(test)]
@@ -727,7 +727,7 @@ mod tests {
         use crate::font::{font, FontKind};
         let mut lk = Lookup::from_json(include_str!("../data/films.json")).unwrap();
         lk.load_names(include_str!("../data/names.json")).unwrap();
-        let f = font(FontKind::Sans);
+        let f = font(FontKind::Jp);
         let ability = (1..=17u8).max_by(|a, b| f.width(template_by_id(*a).name, 20.0, 0.0).total_cmp(&f.width(template_by_id(*b).name, 20.0, 0.0))).unwrap();
         let film = |tmdb: u32, title: &str, year: i32, a: f64| UserFilm { tmdb, title: title.into(), year, rating: Some(5.0), crowd: None, fav: false, rewatch: 0, composer: None, a, composers: vec![] };
         let others: Vec<UserFilm> = (0..7).map(|i| film(1000 + i, "x", 2000, 1.0)).collect();
