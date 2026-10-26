@@ -55,10 +55,20 @@
   <p id="status" role="status" aria-live="polite"></p>
 
   <section id="result" hidden>
+    <h2>Why these grades</h2>
+    <p class="small">Each stat is graded against 34,523 Letterboxd users. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
+    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Film</th><th>Graded on</th><th>Status</th></tr></thead><tbody></tbody></table>
+    <dl id="why">
+      <dt>Ability</dt><dd id="why-ability"></dd>
+      <dt>Weakness</dt><dd id="why-weakness"></dd>
+      <dt>The name</dt><dd id="why-name"></dd>
+      <dt>Signature film</dt><dd id="why-film"></dd>
+      <dt>The type</dt><dd id="why-type"></dd>
+      <dt>Data credits</dt><dd id="why-credit"></dd>
+    </dl>
+
     <h2>How the card was built</h2>
     <p class="downloads">Download the card as <a id="dl-svg" href="#" download="card.svg">SVG</a> or the stats as <a id="dl-json" href="#" download="stand.json">JSON</a>.</p>
-    <p class="small">Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
-    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Graded on</th><th>Status</th></tr></thead><tbody></tbody></table>
     <ul id="notes"></ul>
   </section>
 

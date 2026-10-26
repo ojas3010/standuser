@@ -74,6 +74,12 @@ button:active { transform: scale(.97); }
 #card.land { animation: land 200ms ease-out; }
 @keyframes land { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
 
+/* why these grades */
+td small { display: block; color: var(--mute); font-size: .8125rem; }
+#why { margin: 24px 0 0; }
+#why dt { margin: 16px 0 0; font-weight: 700; }
+#why dd { margin: 2px 0 0; max-width: 40em; color: var(--mute); }
+
 /* method */
 table { width: 100%; border-collapse: collapse; font-size: .9375rem; }
 th, td { text-align: left; padding: 8px 8px 8px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
@@ -94,7 +100,7 @@ footer .small { margin: 0 0 8px; max-width: 40em; }
   td { padding: 0; border: 0; }
   td:nth-child(1) { font-weight: 600; }
   td:nth-child(2), td:nth-child(3) { text-align: right; }
-  td:nth-child(4), td:nth-child(5) { grid-column: 1 / -1; color: var(--mute); font-size: .875rem; }
+  td:nth-child(n+4) { grid-column: 1 / -1; color: var(--mute); font-size: .875rem; }
   tbody { border-top: 2px solid var(--accent); transition: border-color 250ms ease-out; }
 }
 @media (prefers-reduced-motion: reduce) {

@@ -150,16 +150,28 @@ function showCard(svg, label, alt) {
 
 function show(a, svg) {
   showCard(svg, 'Your card', 'Your Stand card');
+  // Why these grades: for each stat its value, its film, what it was graded on and its status
   const tb = $('stats').tBodies[0];
   tb.replaceChildren();
   const names = ['Power', 'Speed', 'Range', 'Stamina', 'Precision', 'Potential'];
   const g = a.stats;
+  const card = a.card;
   [g.power, g.speed, g.range, g.stamina, g.precision, g.potential].forEach((s, i) => {
     const tr = tb.insertRow();
     const val = s.value == null ? '' : Number(s.value).toFixed(3);
     const cov = a.coverage.per_stat[i];
-    [names[i], s.letter, val, `${cov.used} of ${cov.of} ${cov.unit}${cov.meets_minimum ? '' : ` (needs ${cov.minimum})`}`, s.status + (s.note ? `: ${s.note}` : '')].forEach((t) => (tr.insertCell().textContent = t));
+    const [metric, film] = card.evidence[i];
+    const cells = [names[i], s.letter + (card.prov[i] ? '*' : ''), val, film || '–', `${cov.used} of ${cov.of} ${cov.unit}${cov.meets_minimum ? '' : ` (needs ${cov.minimum})`}`, s.status + (s.note ? `: ${s.note}` : '')];
+    cells.forEach((t) => (tr.insertCell().textContent = t));
+    // the line the stat was shown with on the card before: what the value means
+    if (metric) tr.cells[2].append(Object.assign(document.createElement('small'), { textContent: metric }));
   });
+  $('why-ability').textContent = card.ability;
+  $('why-weakness').textContent = card.weakness;
+  $('why-name').textContent = a.name.why || card.why || 'No name line.';
+  $('why-film').textContent = card.signature;
+  $('why-type').textContent = `${card.type_jp} · ${card.type_en}. ${card.type_note}`;
+  $('why-credit').textContent = `${card.credit}. Grades marked * are provisional.`;
   const notes = $('notes');
   notes.replaceChildren();
   const c = a.coverage;

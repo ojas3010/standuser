@@ -73,9 +73,14 @@ try {
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
   out('rows', rows.length, 6);
-  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), 'Power | C | -0.049 | 210 of 250 films | measured: 210 rated films with crowd data');
+  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*? \| -0\.049.+ \| .+ \| 210 of 250 films \| measured: 210 rated films with crowd data$/);
+  out('Why these grades: six stats, each with value, film, graded on, status', [...rows].every((r) => r.cells.length === 6 && r.cells[0].textContent && r.cells[2].textContent && r.cells[3].textContent && r.cells[4].textContent && r.cells[5].textContent), true);
+  for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type', 'why-credit']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
+  out('Why these grades: the credits', document.getElementById('why-credit').textContent, /^Data: Letterboxd, TMDB, MusicBrainz\./);
+  out('Why these grades: the archetype note', document.getElementById('why-type').textContent.includes('archetype by stats'), true);
+  out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
   out('notes', document.getElementById('notes').children.length, 2);
-  out('coverage cell', rows[0].cells[3].textContent, '210 of 250 films');
+  out('coverage cell', rows[0].cells[4].textContent, '210 of 250 films');
   const img = document.getElementById('card');
   await img.decode();
   out('img', `${img.naturalWidth}x${img.naturalHeight} ${img.src.slice(0, 5)}`, '1080x1350 blob:');
