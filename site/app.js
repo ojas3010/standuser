@@ -179,9 +179,10 @@ function show(a, svg) {
   });
   $('why-ability').textContent = card.ability;
   $('why-weakness').textContent = card.weakness;
-  $('why-name').textContent = a.name.why || card.why || 'No name line.';
+  // the card's corner brackets are card lettering; the page quotes the name in plain quotes
+  $('why-name').textContent = (a.name.why || card.why || 'No name line.').replace(/「/g, '“').replace(/」/g, '”');
   $('why-film').textContent = card.signature;
-  $('why-type').textContent = `${card.type_jp} · ${card.type_en}. ${card.type_note}`;
+  $('why-type').textContent = `${card.type_en}. ${card.type_note}`;
   $('why-credit').textContent = `${card.credit}. Grades marked * are provisional.`;
   const notes = $('notes');
   notes.replaceChildren();

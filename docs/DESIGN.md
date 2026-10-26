@@ -22,15 +22,20 @@ Sources: emilkowal.ski (motion), the ui-skills Scandinavian design skill (restra
 ## 2. Rules for the site
 
 1. The card stays loud and the page chrome goes quiet. Only the card carries JoJo identity.
-2. Colour per user: derive the page's one accent from the user's card, for example a complementary pair from Araki's palette keyed to the signature stat.
-3. Ground: muted and slightly warm, not pure neutral grey. Flat fills only. Ban: gradients, glows, shadows.
-4. One colour event at the reveal: the card lands, holds, then one palette shift. It is off under prefers-reduced-motion.
-5. Type: the card's Mincho-style serif is for display only. Interface sans is Overpass, replacing Inter. The wordmark gets one decisive tilt; nothing else tilts.
-6. Layout order: stage first (drop zone), then subject (card), then method. One sculpted object, centre kept clear, right angles, at most one diagonal. Single column on mobile.
-7. Ban in the chrome: ゴゴゴ (card only), the To Be Continued arrow, the Menacing overlay.
-8. Motion: under 300 ms, ease-out for entrances. Card reveal: opacity 0 and scale 0.98 to 1 in about 200 ms. Buttons: scale(0.97) on :active in about 120 ms. Drag-over state is instant. Ban: hover lifts, scroll fades, animated radar.
-9. Anti-slop bans: emoji or icon sprinkles, gradient text, uniform rounded cards with shadows, "unleash", "seamless" and "powered by AI" copy, a centred hero with three feature cards. Copy uses real numbers (9,842 films, 34,525 users).
-10. Every rule and every ban in this section gets a before and after screenshot at desktop width and phone width.
+2. Colour per user: the page's one accent is the exact ground colour of the card on show (read back from the card's own SVG, so the two cannot differ), and the text on it is the card's own ink, which the card palette keeps at 4.5:1 or better on that ground. It follows the Light card or Dark card choice. Before a drop the accent is the ink colour. It is used as a fill, never as small text: the filled button (with a black outline), the rule under the wordmark, the rule over each heading, the table header rule.
+3. Ground: neutral with zero hue. Light #ffffff, dark #0e0e0e; every grey in the chrome has equal channels (#f4f4f4, #595959, #d4d4d4 light; #1a1a1a, #b3b3b3, #3a3a3a dark). No warm, brown or beige tone anywhere in the chrome before a drop (design_check.py measures every computed colour). An error is bold and barred, not red. Flat fills only. Ban: gradients, glows, shadows.
+4. One colour event at the reveal: the card lands, holds, then one palette shift (the accent from ink to the card's ground). It is off under prefers-reduced-motion.
+5. Type: Archivo Black for the wordmark and the headings, Archivo (weights 400 to 800) for body text; both SIL OFL, self-hosted in site/fonts. Overpass is gone. The wordmark gets one decisive tilt; nothing else tilts.
+6. Layout order: header; the card; the drop zone. Before a drop the card is a sample made from synthetic data (site/sample.json), labelled "Sample", above the drop zone. After a drop the drop zone gives way to one line (file name, number of films read, a "Change file" button) and the card scrolls into view. Then, in this order: the share bar, "Why these grades", "How the card was built". One sculpted object, right angles, at most one diagonal. Single column on mobile.
+7. Ban in the chrome: ゴゴゴ (card only), the To Be Continued arrow, the Menacing overlay. No kana, kanji or corner brackets in page text.
+8. Motion: under 300 ms, ease-out for entrances. Card reveal: opacity 0 and scale 0.98 to 1 in about 200 ms. Buttons: scale(0.97) on :active in about 120 ms. Drag-over state is instant. Scrolling the card into view is instant. Ban: hover lifts, scroll fades, animated radar.
+9. Anti-slop bans: emoji or icon sprinkles, gradient text, uniform rounded cards with shadows, "unleash", "seamless" and "powered by AI" copy, a centred hero with three feature cards. Copy uses real numbers (9,787 films, 34,523 users). The ★ in a data line is the Letterboxd rating unit, not an icon.
+10. Share bar, under the card: Download PNG is the one filled button, then Copy image (the PNG on the clipboard), Share (the Web Share API with the PNG file; hidden where the API cannot share files) and Copy link. Download SVG and Download stats (JSON) are text links in the method section.
+11. Share link: Copy link writes `#c=<base64url>` after the page's address: the data the card needs (name, username, type, six grades with asterisks and chart steps, ability name and sentence, nearest canon, accent), about 400 characters, built by `share.rs` and checked on decoding. Next to the button the page says the link contains the username and grades. Opening such a link renders the card from the fragment alone (a fragment is never sent to a server); the "Why these grades" section is not shown, since the link carries no stats. A malformed fragment shows the normal page. Tests: round trip and malformed cases in share.rs, tests/share.rs, the wasm lib and selftest.js.
+12. "Why these grades": for each stat its value, its film, what it was graded on and its status; then the ability and the weakness, why the Stand has its name, the signature film, the archetype note and the data credits. These are the items the card no longer draws (section 4).
+13. Card theme: the options are "Light card" and "Dark card"; the card starts in the system's theme and follows it until the user picks one.
+14. Requests: the page loads its own files only (including sample.json); 0 requests after a drop and when a share link is opened.
+15. Every rule and every ban in this section gets a before and after screenshot at desktop width and phone width.
 
 ## 3. Card-level fixes
 

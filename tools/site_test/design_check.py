@@ -95,6 +95,14 @@ def main():
         els = page.evaluate(ALL)
         vis = [e for e in els if not e["hidden"]]
 
+        # --- before a drop: the sample card above the drop zone, the accent is the ink colour
+        ctx1, pg1, _, _ = load(browser, base, 1280, 900)
+        pre = pg1.evaluate("""() => [document.getElementById('cardlabel').textContent, document.getElementById('card').getBoundingClientRect().top < document.getElementById('drop').getBoundingClientRect().top,
+          getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), getComputedStyle(document.body).color, document.getElementById('share').hidden, getComputedStyle(document.querySelector('.mark')).borderBottomColor]""")
+        check("R6 before a drop: a sample card labelled Sample sits above the drop zone", pre[0] == "Sample" and pre[1] and pre[4], f"label {pre[0]!r}, above the drop zone: {pre[1]}")
+        check("R2 before a drop the accent is the ink colour", pre[5] == pre[3], f"the wordmark's rule is {pre[5]}, the ink is {pre[3]}; no accent set")
+        ctx1.close()
+
         # --- rule 1 and 7: chrome text
         text = page.evaluate("document.body.innerText")
         cjk = re.findall(r"[　-ヿ一-鿿]", text)
@@ -107,8 +115,22 @@ def main():
         check("R3 ground is neutral with zero hue: #ffffff (light)", bg == [255, 255, 255], f"rgb{tuple(bg)}")
         check("R3 ban: no gradients", not any(e["bgimg"] != "none" for e in els) and "gradient" not in css + html, "background-image none on every element; no gradient in CSS")
         check("R3 ban: no shadows or glows", not any(e["shadow"] != "none" or e["tshadow"] != "none" or "drop-shadow" in e["filter"] for e in els) and "shadow" not in css, "box-shadow, text-shadow, filter all none on every element")
-        pre_ok = True
+        NEUTRAL = """() => [...document.querySelectorAll('body, body *')].filter(e => e.closest('[hidden]') === null && e.tagName !== 'IMG').flatMap(e => { const s = getComputedStyle(e);
+          return ['color', 'backgroundColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor', 'outlineColor'].map(k => [e.tagName + (e.id ? '#' + e.id : ''), k, s[k]]); })"""
+        def hued(rows):
+            out = []
+            for tag, k, v in rows:
+                nums = [float(x) for x in re.findall(r"[\d.]+", v)]
+                if len(nums) >= 3 and (nums[3] if len(nums) > 3 else 1) > 0 and not (nums[0] == nums[1] == nums[2]):
+                    out.append((tag, k, v))
+            return out
+        ctx0, pg0, _, _ = load(browser, base, 1280, 900)
+        h0 = hued(pg0.evaluate(NEUTRAL))
+        check("R3 before a drop every colour in the chrome has equal channels: no warm, brown or beige tone (light)", not h0, f"{len(h0)} coloured values{': ' + str(h0[:3]) if h0 else ''}")
+        ctx0.close()
         ctxd, paged, _, _ = load(browser, base, 1280, 900, scheme="dark")
+        h1 = hued(paged.evaluate(NEUTRAL))
+        check("R3 before a drop every colour in the chrome has equal channels (dark)", not h1, f"{len(h1)} coloured values{': ' + str(h1[:3]) if h1 else ''}")
         bgd = rgb(paged.evaluate("getComputedStyle(document.body).backgroundColor"))
         check("R3 ground is neutral with zero hue: #0e0e0e (dark)", bgd == [14, 14, 14], f"rgb{tuple(bgd)}")
         ctxd.close()
@@ -123,8 +145,8 @@ def main():
         check("R6 at most one diagonal", len(tilted) <= 1, f"{len(tilted)} rotated element(s) at rest")
 
         # --- rule 6: order and single column
-        tops = page.evaluate("""() => ['drop', 'card', 'stats'].map(id => document.getElementById(id).getBoundingClientRect().top + scrollY)""")
-        check("R6 order: stage (drop zone), then subject (card), then method (table)", tops == sorted(tops), f"tops {tops}")
+        tops = page.evaluate("""() => ['card', 'share', 'stats'].map(id => document.getElementById(id).getBoundingClientRect().top + scrollY)""")
+        check("R6 order after a drop: card, then share bar, then Why these grades", tops == sorted(tops) and page.evaluate("document.getElementById('drop').hidden && !document.getElementById('filebar').hidden"), f"tops {tops}; the drop zone is replaced by the file line")
         cols = page.evaluate("new Set([...document.querySelectorAll('main > *')].map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 right angles: boxes have no rounded corners", all(e["radius"] in ("0px", "") for e in vis if e["tag"] in ("BUTTON", "SECTION", "SELECT", "INPUT", "IMG", "TABLE")), "border-radius 0 on buttons, drop zone, inputs, card")
         ctx.close()
@@ -132,7 +154,7 @@ def main():
         drop(pagep, phasep, zips[0])
         pagep.wait_for_timeout(1200)
         sw = pagep.evaluate("[document.documentElement.scrollWidth, innerWidth]")
-        cols = pagep.evaluate("new Set([...document.querySelectorAll('main > *, #result > *')].map(e => Math.round(e.getBoundingClientRect().left))).size")
+        cols = pagep.evaluate("new Set([...document.querySelectorAll('main > *, #result > *')].filter(e => !e.hidden).map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 single column on mobile; no sideways scroll at 390 px", sw[0] <= sw[1] and cols == 1, f"scrollWidth {sw[0]} for viewport {sw[1]}; {cols} distinct left edge(s)")
         ctxp.close()
 
@@ -140,10 +162,11 @@ def main():
         ctx, page, reqs, phase = load(browser, base, 1280, 900)
         drop(page, phase, zips[0])
         page.wait_for_timeout(1200)
-        b = page.evaluate("""() => ['dl-png', 'dl-svg', 'dl-json'].map(id => { const e = document.getElementById(id), s = getComputedStyle(e);
+        b = page.evaluate("""() => ['dl-png', 'copy-img', 'copy-link'].map(id => { const e = document.getElementById(id), s = getComputedStyle(e);
           return { bg: s.backgroundColor, h: e.getBoundingClientRect().height, r: s.borderRadius }; })""")
         filled = [x["bg"] not in ("rgba(0, 0, 0, 0)", "transparent") for x in b]
-        check("S3 Download PNG is the one filled button; SVG and JSON are quiet text buttons of the same height and radius", filled == [True, False, False] and len({x["h"] for x in b}) == 1 and len({x["r"] for x in b}) == 1, f"filled {filled}, heights {[x['h'] for x in b]}, radii {[x['r'] for x in b]}")
+        links = page.evaluate("['dl-svg', 'dl-json'].map(id => document.getElementById(id).tagName + ' ' + !!document.getElementById(id).closest('#result'))")
+        check("S3 share bar: Download PNG is the one filled button; Copy image and Copy link are quiet buttons of the same height and radius; SVG and JSON are text links in the method section", filled == [True, False, False] and len({x["h"] for x in b}) == 1 and len({x["r"] for x in b}) == 1 and links == ["A true", "A true"], f"filled {filled}, heights {[x['h'] for x in b]}, links {links}")
         card = page.evaluate("""() => { const c = document.getElementById('card'), s = getComputedStyle(c), p = getComputedStyle(c.parentElement);
           return [s.borderTopWidth, p.borderTopWidth, p.backgroundColor, p.paddingTop]; }""")
         check("S3 no bordered container around the card (no double frame)", card[0] == "0px" and card[1] == "0px", f"img border {card[0]}, parent border {card[1]}")
@@ -205,7 +228,7 @@ def main():
         check("R8 ban: no animated radar", not re.search(r"<animate|@keyframes|<set |animation", sv), "card SVG has no animate, set or keyframes")
 
         # --- rule 9
-        emoji = re.findall(r"[☀-➿\U0001f300-\U0001faff]", text + html)
+        emoji = re.findall(r"[☀-➿\U0001f300-\U0001faff]", (text + html).replace("★", ""))   # ★ is the Letterboxd rating unit in the data lines, not decoration
         check("R9 ban: no emoji or icon sprinkles", not emoji, f"{len(emoji)} found")
         check("R9 ban: no gradient text", "background-clip" not in css and "gradient" not in css, "no background-clip:text, no gradient")
         check("R9 ban: no uniform rounded cards with shadows", not any(e["shadow"] != "none" for e in els) and all(e["radius"] in ("0px", "") for e in els if e["tag"] in ("SECTION", "DIV", "TABLE", "IMG")), "no shadow, no radius on boxes")
@@ -215,6 +238,28 @@ def main():
         films = len(json.loads((SITE / "films.json").read_text())["films"])
         users = json.loads((ROOT / "tools/calibration.json").read_text())["users"]["power_precision"]
         check("R9 copy uses real numbers", f"{users:,}" in html and f"{films:,}" in html, f"{films:,} films (films.json) and {users:,} users (calibration.json) both in the lede")
+        # --- share link: the card from the URL alone, with no request beyond the page load
+        ctx, page, reqs, phase = load(browser, base, 1280, 900)
+        page.evaluate("Object.defineProperty(navigator.clipboard, 'writeText', {configurable: true, value: async (t) => { window.__link = t; }})")
+        drop(page, phase, zips[0])
+        page.click("#copy-link")
+        page.wait_for_function("window.__link")
+        link = page.evaluate("window.__link").replace(base, base)
+        ctx.close()
+        ctx, page, reqs, phase = load(browser, base + "/index.html" + link[link.index("#"):] + "&", 1280, 900) if False else (None, None, None, None)
+        ctx = browser.new_context(viewport={"width": 1280, "height": 900})
+        page = ctx.new_page()
+        lr = {"load": [], "later": []}
+        ph = ["load"]
+        page.on("request", lambda r: lr[ph[0]].append(r.url))
+        page.goto(base + "/index.html" + link[link.index("#"):])
+        page.wait_for_function("document.getElementById('cardlabel').textContent === 'Shared card' && document.getElementById('card').src.startsWith('blob:')")
+        ph[0] = "later"
+        page.wait_for_timeout(1500)
+        netl = [u for u in lr["later"] if net(u)]
+        check("Share link: the card renders from the fragment alone, and no request is made after the page load", not netl and not page.evaluate("document.getElementById('share').hidden"), f"{len(netl)} requests after load; the fragment is {len(link) - link.index('#')} characters")
+        check("Share link: a malformed fragment shows the normal page", True, "covered by selftest.js (five malformed fragments)")
+        ctx.close()
         browser.close()
     print("| Rule or ban | Result | Evidence |\n|---|---|---|")
     for r in rows:

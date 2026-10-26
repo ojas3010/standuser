@@ -29,6 +29,7 @@ main { max-width: 720px; margin: 0 auto; padding: 40px 16px 64px; }
 h2 { margin: 48px 0 8px; padding-top: 12px; border-top: 4px solid var(--accent); transition: border-color 250ms ease-out; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; font-weight: 400; }
 .small { color: var(--mute); font-size: .875rem; }
 code { font-size: .9em; }
+a { color: inherit; }   /* links are ink, not the browser's blue */
 
 /* stage */
 #drop { padding: 32px 24px; border: 2px dashed var(--mute); background: var(--ground2); cursor: pointer; }
