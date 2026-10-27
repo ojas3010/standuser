@@ -82,7 +82,7 @@ try {
   out('Why these grades: six stats, each with value, film, graded on, status', [...rows].every((r) => r.cells.length === 6 && r.cells[0].textContent && r.cells[2].textContent && r.cells[3].textContent && r.cells[4].textContent && r.cells[5].textContent), true);
   for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type', 'why-credit']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
   out('Why these grades: the credits', document.getElementById('why-credit').textContent, /^Data: Letterboxd, TMDB, MusicBrainz\./);
-  out('Why these grades: the archetype note', document.getElementById('why-type').textContent.includes('archetype by stats'), true);
+  out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
   out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
   out('notes', document.getElementById('notes').children.length, 2);
   out('coverage cell', rows[0].cells[4].textContent, '210 of 250 films');

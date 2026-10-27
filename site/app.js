@@ -193,7 +193,10 @@ function show(a, svg) {
   // the section's own heading says it is the signature film, so the line drops its label
   const sig = card.signature.replace(/^Signature film:\s*/, '');
   $('why-film').textContent = sig.startsWith('not enough') ? sig[0].toUpperCase() + sig.slice(1) : sig;
-  $('why-type').textContent = `${card.type_en}. ${card.type_note}`;
+  // a sentence: the type, where it comes from, how often it matches canon (the figure is read from the note, not repeated here)
+  const agree = (card.type_note.match(/about (\d+)%/) || [])[1];
+  $('why-type').textContent = `${card.type_en}. The type comes from your stats; it matches the canon Stand type about ${agree || 60}% of the time.` +
+    (card.type_note.includes('low confidence') ? ' Confidence is low for this type.' : '');
   $('why-credit').textContent = `${card.credit}. Grades marked * are provisional.`;
   const notes = $('notes');
   notes.replaceChildren();
