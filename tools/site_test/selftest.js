@@ -62,7 +62,10 @@ try {
   out('before a drop the field is the sample card\'s ground', rs0.getPropertyValue('--field').trim(), cardColours(sampleSvg).ground);
   out('the field paints that colour, with dots 7 px apart', `${getComputedStyle(fieldEl).backgroundColor === 'rgb(' + [1, 3, 5].map((i) => parseInt(cardColours(sampleSvg).ground.slice(i, i + 2), 16)).join(', ') + ')'} ${/radial-gradient/.test(getComputedStyle(fieldEl).backgroundImage)} ${getComputedStyle(fieldEl).backgroundSize}`, 'true true 7px 7px');
   out('the field holds six big faint ゴ, made from the card\'s own path', `${fieldEl.querySelectorAll('svg.ghost path').length} ${fieldEl.getAttribute('aria-hidden')}`, '6 true');
-  out('the field behind the header and the stage ends under the stage', Math.abs(fieldEl.getBoundingClientRect().bottom - (document.getElementById('stage').getBoundingClientRect().bottom + 24)) < 2, true);
+  // the band follows the layout through a ResizeObserver, one frame after the layout changes (fonts swapping in, the card image decoding)
+  const fieldEnds = () => Math.abs(fieldEl.getBoundingClientRect().bottom - (document.getElementById('stage').getBoundingClientRect().bottom + 24)) < 2;
+  await until('the field to follow the stage', fieldEnds, 3000).catch(() => {});
+  out('the field behind the header and the stage ends under the stage', fieldEnds(), true);
   const v0 = (k) => rs0.getPropertyValue(k).trim();
   out('text on the field keeps 4.5:1: the ink and the muted ink on the ground, on the dots and on the ghost ゴ', [[v0('--field'), v0('--field-ink')], [v0('--field'), v0('--field-mute')], [v0('--dot'), v0('--field-ink')], [v0('--ghost'), v0('--field-ink')], [v0('--ghost'), v0('--field-mute')]].every(([a, b]) => contrast(a, b) >= 4.5), true);
   // the drop zone: ゴゴゴ beside it only while a file is dragged over it, the To Be Continued arrow in it only while a file is read

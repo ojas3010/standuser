@@ -195,6 +195,7 @@ function paintGlyphs(svg) {
 const fieldHeight = () => root.style.setProperty('--field-h', `${Math.round($('stage').getBoundingClientRect().bottom + scrollY + 24)}px`);
 new ResizeObserver(fieldHeight).observe(document.querySelector('main'));
 addEventListener('load', fieldHeight);
+document.fonts.ready.then(fieldHeight); // the headings change height when the web fonts swap in
 
 // The reveal, at most 2.2 s, after the To Be Continued arrow (docs/DESIGN.md rule 8). At the drop the field flashes to the card's ground colour and the accent shifts with it.
 // The card's own parts (data-part in its SVG) are played from an inline copy laid over the card (#cardlive; the PNG and the SVG that are
