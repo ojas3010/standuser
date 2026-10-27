@@ -211,7 +211,7 @@ impl Ctx {
         let th = GOGOGO_TILT.to_radians();
         let (ex, ey) = (hw * th.cos().abs() + hh * th.sin().abs(), hw * th.sin().abs() + hh * th.cos().abs());
         self.runs.push(Run { text: "ゴ".into(), size, kind: FontKind::Display, outlined: true, rotated: true, bbox: [cx - ex, cy - ey, cx + ex, cy + ey] });
-        self.els.push(format!("<g transform=\"rotate({GOGOGO_TILT} {} {})\"><path d=\"{d}\" class=\"o\" stroke-width=\"{OUTLINE}\"/><path d=\"{d}\" class=\"f-fill\"/></g>", n1(cx), n1(cy)));
+        self.els.push(format!("<g data-part=\"go\"><g transform=\"rotate({GOGOGO_TILT} {} {})\"><path d=\"{d}\" class=\"o\" stroke-width=\"{OUTLINE}\"/><path d=\"{d}\" class=\"f-fill\"/></g></g>", n1(cx), n1(cy)));
     }
 }
 
@@ -376,8 +376,10 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     // the Stand name as in the eyecatch: 【STAND NAME】 over it, both level, plain, in the serif
     let np = place_name(&c.serif, &d.name);
     // the brackets carry blank at their sides: the labels are set so the ink of the bracket lines up with the margin
+    c.els.push("<g data-part=\"name\">".into());
     c.bracket_label(NAME_LABEL, MARGIN, np.label_y, LABEL_SIZE_HEAD, "start");
     c.text(&np.text, np.x, np.y, np.size, Serif, "ink", "start", 0.0);
+    c.els.push("</g>".into());
     // the type in Japanese and English, right, under the name
     c.jp_text(&d.type_jp, RIGHT, TYPE_JP_Y, TYPE_SIZE, "ink", "end");
     c.text(&d.type_en, RIGHT, TYPE_EN_Y, TYPE_SIZE, Body, "ink", "end", 0.0);
@@ -399,6 +401,8 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
             (cx + r * a.sin(), cy - r * a.cos())
         })
         .collect();
+    // the value polygon and its "?" marks are one part (data-part="fill"): the page's reveal grows it from the centre
+    c.els.push("<g data-part=\"fill\">".into());
     c.els.push(format!("<polygon points=\"{}\" class=\"f-fill s-bk r\" stroke-width=\"3.5\"/>", pts(&vals)));
     for i in 0..6 {
         if d.unknown[i] {
@@ -412,6 +416,7 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
             c.els.push(format!("<circle cx=\"{:.1}\" cy=\"{:.1}\" r=\"7\" class=\"f-paper s-bk\" stroke-width=\"2.5\"/>", vals[i].0, vals[i].1));
         }
     }
+    c.els.push("</g>".into());
     // the grade on each vertex (outlined lettering, centred on the vertex by its letter; an asterisk hangs to the right of the letter), and
     // the label beside it: to the right at the top and the bottom, above or below the grade at the four side vertices, so the label stays
     // off the card's edge (破壊力 top, スピード upper right, 射程距離 lower right, 持続力 bottom, 精密動作性 lower left, 成長性 upper left)
@@ -425,7 +430,10 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
         let (up, down) = c.face(kind).ink_extent(&g, size);
         let y = by + (up - down) / 2.0;
         let x0 = bx - lw / 2.0;
+        // each grade is a part (data-part="grade", data-i clockwise from the top): the page's reveal pops them in that order
+        c.els.push(format!("<g data-part=\"grade\" data-i=\"{i}\">"));
         c.lettering(&g, x0, y, size, kind, "fill", "start", 0.0, OUTLINE);
+        c.els.push("</g>".into());
         let (top, bottom, right) = (y - up - OUTLINE / 2.0, y + down + OUTLINE / 2.0, x0 + w + OUTLINE / 2.0);
         let (lup, ldown) = c.jp.ink_extent(JP[i], LABEL_SIZE);
         let mid = (lup - ldown) / 2.0;
@@ -967,6 +975,28 @@ mod tests {
             }
             assert!(svg.matches("class=\"o\" stroke-width=\"6\"").count() >= 6 + 6, "an outline under each grade and each ゴ");
         }
+    }
+
+    #[test]
+    fn the_parts_the_pages_reveal_animates_are_marked() {
+        // the page inlines the card while it plays the reveal and animates these groups by CSS: the six ゴ in cascade order, the name with
+        // its label, the radar fill, and the six grades clockwise from the top. No animation is in the SVG itself.
+        let s = card_svg(&sample(), Theme::Light);
+        assert_eq!(s.matches("data-part=\"go\"").count(), 6);
+        assert_eq!(s.matches("data-part=\"name\"").count(), 1);
+        assert_eq!(s.matches("data-part=\"fill\"").count(), 1);
+        let grades: Vec<usize> = s.split("data-part=\"grade\" data-i=\"").skip(1).map(|p| p[..1].parse().unwrap()).collect();
+        assert_eq!(grades, vec![0, 1, 2, 3, 4, 5]);
+        // the groups are balanced: every one closes
+        assert_eq!(s.matches("<g").count(), s.matches("</g>").count());
+        // the name group holds the label and the name; the fill group the polygon and the "?" markers
+        let at = s.find("data-part=\"name\"").unwrap();
+        let name = &s[at..at + s[at..].find("</g>").unwrap()];
+        assert_eq!(name.matches("<path").count(), 2);
+        let at = s.find("data-part=\"fill\"").unwrap();
+        let fill = &s[at..at + s[at..].find("</g>").unwrap()];
+        assert!(fill.contains("<polygon") && fill.matches("<circle").count() == sample().unknown.iter().filter(|u| **u).count());
+        assert!(!s.contains("<animate") && !s.contains("@keyframes"));
     }
 
     #[test]
