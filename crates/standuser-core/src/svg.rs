@@ -272,10 +272,12 @@ pub fn ability_rows(rows: usize) -> (f64, f64) {
     (first - ABILITY_RISE, first)
 }
 
-/// The ゴゴゴ: six ゴ in one diagonal cascade, from under the Stand name down the left side toward the hexagon's lower left, each smaller
-/// than the one before (a Dela Gothic One ゴ is one em wide): (size, centre x, centre y). They stand in the free strip between the card's
-/// edge and the hexagon, clear of every text and of the plate.
-pub const GOGOGO: [(f64, f64, f64); 6] = [(96.0, 86.0, 257.0), (84.0, 94.0, 373.0), (74.0, 103.0, 476.0), (64.0, 130.0, 568.0), (56.0, 156.0, 650.0), (48.0, 184.0, 723.0)];
+/// The ゴゴゴ: four ゴ in one diagonal cascade at 36 degrees from horizontal (local/ref/004385f76965c1727c35e5134bc5fe89.jpg), each smaller than
+/// the one before (a Dela Gothic One ゴ is one em wide): (size, centre x, centre y). They stand in the gap between the Stand name's block
+/// and the hexagon's upper left, clear of every text and of the plate by 10 px. Four is what the gap holds at that angle: a line down to the
+/// right from the card's top left meets the hexagon's upper-left edge after about 300 px, the 成長性 label stands under it, and the glyphs
+/// may not shrink below 40 px. A test (`the_gogogo_are_one_shallow_cascade_in_the_gap_clear_of_all_text`) checks all this on 14 grounds.
+pub const GOGOGO: [(f64, f64, f64); 4] = [(60.0, 92.0, 243.0), (54.0, 168.9, 298.8), (48.0, 239.2, 350.0), (42.0, 302.3, 395.8)];
 /// The cascade's one tilt, in degrees as SVG's rotate() takes them (negative climbs to the right): the slant of the manga's sound effects.
 /// It is the only rotation on the card; the slant belongs to series logos and sound effects, not to a Stand name.
 pub const GOGOGO_TILT: f64 = -8.0;
@@ -618,7 +620,7 @@ mod tests {
         // every outlined text is a black path (class "o", with a stroke width) followed by the fill path of the same glyphs: each ゴ (6 of
         // them) and each of the six grades. The Stand name is plain serif, with no outline.
         let s = card_svg(&sample(), Theme::Light);
-        assert_eq!(s.matches("class=\"o\"").count(), 6 + 6);
+        assert_eq!(s.matches("class=\"o\"").count(), GOGOGO.len() + 6);
         let mut pairs = 0;
         let parts: Vec<&str> = s.split("<path d=\"").skip(1).collect();
         for (k, part) in parts.iter().enumerate() {
@@ -628,7 +630,7 @@ mod tests {
                 pairs += 1;
             }
         }
-        assert_eq!(pairs, 6 + 6);
+        assert_eq!(pairs, GOGOGO.len() + 6);
         assert!(s.contains(".o{fill:#0b0b0b;stroke:#0b0b0b;stroke-linejoin:round}"));
     }
 
@@ -766,7 +768,7 @@ mod tests {
                 let japanese = |c: char| c as u32 >= 0x2E80 && c != '【' && c != '】';
                 let all_jp = run.text.chars().all(|c| japanese(c) || c == '―');
                 match run.kind {
-                    FontKind::Display => assert!(run.size >= JP_LETTERING_MIN && run.outlined && all_jp, "{run:?}"),
+                    FontKind::Display => assert!((run.size >= JP_LETTERING_MIN || run.text == "ゴ") && run.outlined && all_jp, "{run:?}"),
                     FontKind::Jp => assert!(run.size < JP_LETTERING_MIN && !run.outlined && all_jp, "{run:?}"),
                     FontKind::Name => assert!(!run.text.chars().any(japanese), "{run:?}"),
                     FontKind::Body => assert!(!run.outlined && !run.text.chars().any(|c| c as u32 >= 0x2E80), "{run:?}"),
@@ -836,39 +838,96 @@ mod tests {
         }
     }
 
+    /// Is the box `r` (left, top, right, bottom), grown by `pad`, clear of the convex polygon `poly`? Separating axis test.
+    fn box_clear_of_polygon(r: &[f64; 4], poly: &[(f64, f64)], pad: f64) -> bool {
+        let rc = [(r[0] - pad, r[1] - pad), (r[2] + pad, r[1] - pad), (r[2] + pad, r[3] + pad), (r[0] - pad, r[3] + pad)];
+        let mut axes = vec![(1.0, 0.0), (0.0, 1.0)];
+        for i in 0..poly.len() {
+            let (a, b) = (poly[i], poly[(i + 1) % poly.len()]);
+            axes.push((-(b.1 - a.1), b.0 - a.0));
+        }
+        axes.iter().any(|&(ax, ay)| {
+            let proj = |pts: &[(f64, f64)]| pts.iter().map(|p| p.0 * ax + p.1 * ay).fold((f64::MAX, f64::MIN), |(lo, hi), v| (lo.min(v), hi.max(v)));
+            let (pl, ph) = proj(poly);
+            let (rl, rh) = proj(&rc);
+            ph < rl || rh < pl
+        })
+    }
+
     #[test]
-    fn the_gogogo_are_one_diagonal_cascade_clear_of_all_text() {
-        for theme in [Theme::Light, Theme::Dark] {
-            let mut d = sample();
-            d.name = "YORKTOWN AND THE RETURN HOME".into();
-            d.grades[1] = "完成".into();
-            let runs = card_build(&d, theme).1;
-            let go: Vec<&Run> = runs.iter().filter(|r| r.text == "ゴ").collect();
-            assert!(go.len() == 6, "five or six ゴ: {}", go.len());
-            // each smaller than the one before, all at least the lettering size
-            let sizes: Vec<f64> = go.iter().map(|r| r.size).collect();
-            assert!(sizes.windows(2).all(|w| w[0] > w[1]) && sizes[5] >= JP_LETTERING_MIN, "{sizes:?}");
-            // one diagonal from the top left down to the right: each lower than the last and, over the cascade, further right; the first
-            // stands in the left half of the card's top third, the last lower and right of it
-            let centre = |r: &Run| ((r.bbox[0] + r.bbox[2]) / 2.0, (r.bbox[1] + r.bbox[3]) / 2.0);
-            for w in go.windows(2) {
-                let (a, b) = (centre(w[0]), centre(w[1]));
-                assert!(b.1 > a.1 && b.1 - a.1 >= (w[0].bbox[3] - w[0].bbox[1]) / 2.0 + (w[1].bbox[3] - w[1].bbox[1]) / 2.0 - 1.0, "{a:?} {b:?}: they overlap");
-            }
-            let (first, last) = (centre(go[0]), centre(go[5]));
-            assert!(first.0 < W / 4.0 && first.1 < H / 3.0 && last.0 - first.0 >= 60.0 && last.1 - first.1 >= 300.0, "{first:?} {last:?}");
-            // they lean (the cascade is the one rotation on the card) and are clear of every other piece of text by 10 px, of the plate,
-            // and of the frame
-            assert!(go.iter().all(|r| r.rotated) && runs.iter().filter(|r| r.rotated).count() == go.len());
-            let apart = |a: &[f64; 4], b: &[f64; 4], pad: f64| a[2] + pad <= b[0] || b[2] + pad <= a[0] || a[3] + pad <= b[1] || b[3] + pad <= a[1];
-            for g in &go {
-                for r in runs.iter().filter(|r| r.text != "ゴ") {
-                    assert!(apart(&g.bbox, &r.bbox, 10.0), "ゴ {:?} touches {:?}", g.bbox, r);
+    fn the_gogogo_are_one_shallow_cascade_in_the_gap_clear_of_all_text() {
+        // the longest Stand name in names.json (the widest at the smallest size), names with deep descenders at the largest size, a one-letter
+        // name, and the widest type lines
+        let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
+        let f = serif_text();
+        let mut longest = (0.0, String::new());
+        for v in names["names"].as_object().unwrap().values() {
+            for cand in v[1].as_array().unwrap() {
+                let n = cand[0].as_str().unwrap();
+                let w = f.width(n, NAME_MIN_SIZE, 0.0);
+                if w > longest.0 {
+                    longest = (w, n.to_string());
                 }
-                assert!(g.bbox[2] + 10.0 <= CX - 3.0f64.sqrt() / 2.0 * CHART_R, "ゴ {:?} reaches the plate", g.bbox);
-                assert!(g.bbox[0] >= FRAME + 10.0, "ゴ {:?} is at the frame", g.bbox);
             }
         }
+        let cases = [longest.1.as_str(), "YORKTOWN AND THE RETURN HOME", "QUEEN, JAZZ (JQ)", "A", "DIRTY WEATHER"];
+        let plate = hex(CX, CY, CHART_R);
+        let mut checked = 0;
+        // 7 keys (six accents and none) in the light and the dark card: 14 grounds
+        for key in [None, Some("PWR"), Some("SPD"), Some("RNG"), Some("STA"), Some("PRC"), Some("DEV")] {
+            for theme in [Theme::Light, Theme::Dark] {
+                for name in cases {
+                    let mut d = sample();
+                    d.name = name.into();
+                    d.accent = key.map(String::from);
+                    d.type_jp = "遠隔自動操縦型".into();
+                    d.type_en = "Automatic, Far-Distance Autopilot".into();
+                    d.user = "abcdefghijklmno".into();
+                    d.grades[1] = "完成".into();
+                    let runs = card_build(&d, theme).1;
+                    let go: Vec<&Run> = runs.iter().filter(|r| r.text == "ゴ").collect();
+                    assert_eq!(go.len(), GOGOGO.len());
+                    // each smaller than the one before; none below the card's smallest text
+                    let sizes: Vec<f64> = go.iter().map(|r| r.size).collect();
+                    assert!(sizes.windows(2).all(|w| w[0] > w[1]) && sizes[sizes.len() - 1] >= MIN_TEXT, "{sizes:?}");
+                    // one diagonal from the top left down to the right, at 35 to 45 degrees from horizontal: from the first glyph to the last and
+                    // from each to the next
+                    let centre = |r: &Run| ((r.bbox[0] + r.bbox[2]) / 2.0, (r.bbox[1] + r.bbox[3]) / 2.0);
+                    let angle = |a: (f64, f64), b: (f64, f64)| (b.1 - a.1).atan2(b.0 - a.0).to_degrees();
+                    let cs: Vec<(f64, f64)> = go.iter().map(|r| centre(r)).collect();
+                    let whole = angle(cs[0], cs[cs.len() - 1]);
+                    assert!((35.0..=45.0).contains(&whole), "the cascade runs at {whole:.1} degrees");
+                    for w in cs.windows(2) {
+                        let a = angle(w[0], w[1]);
+                        assert!((35.0..=45.0).contains(&a), "a step runs at {a:.1} degrees");
+                    }
+                    assert!(cs[0].0 < W / 4.0 && cs[0].1 < H / 4.0, "it starts at the top left: {:?}", cs[0]);
+                    // no two touch
+                    let apart = |a: &[f64; 4], b: &[f64; 4], pad: f64| a[2] + pad <= b[0] || b[2] + pad <= a[0] || a[3] + pad <= b[1] || b[3] + pad <= a[1];
+                    for (i, a) in go.iter().enumerate() {
+                        for b in go.iter().skip(i + 1) {
+                            assert!(apart(&a.bbox, &b.bbox, 2.0), "ゴ {:?} touches ゴ {:?}", a.bbox, b.bbox);
+                        }
+                    }
+                    // they lean (the cascade is the one rotation on the card), and stand in the gap: under the name block (the name, its label
+                    // and the type lines), above the hexagon's upper-left vertex, each clear of every other text by 10 px, of the plate by
+                    // 10 px, and of the frame
+                    assert!(go.iter().all(|r| r.rotated) && runs.iter().filter(|r| r.rotated).count() == go.len());
+                    let name_block = runs.iter().filter(|r| r.kind == FontKind::Serif && r.bbox[3] < 300.0).map(|r| r.bbox[3]).fold(0.0, f64::max);
+                    for g in &go {
+                        for r in runs.iter().filter(|r| r.text != "ゴ") {
+                            assert!(apart(&g.bbox, &r.bbox, 10.0), "{name:?}: ゴ {:?} touches {:?}", g.bbox, r);
+                        }
+                        assert!(box_clear_of_polygon(&g.bbox, &plate, 10.0), "{name:?}: ゴ {:?} reaches the hexagon", g.bbox);
+                        assert!(g.bbox[0] >= FRAME + 10.0, "ゴ {:?} is at the frame", g.bbox);
+                        assert!(g.bbox[1] >= name_block + 10.0 && g.bbox[3] <= plate[5].1, "{name:?}: ゴ {:?} is outside the gap between the name block ({name_block}) and the hexagon ({})", g.bbox, plate[5].1);
+                    }
+                    checked += 1;
+                }
+            }
+        }
+        assert_eq!(checked, 14 * cases.len());
+        println!("the longest name in names.json is {:?}; {checked} cards checked", longest.1);
     }
 
     #[test]
@@ -973,16 +1032,16 @@ mod tests {
             for r in runs.iter().filter(|r| !r.rotated && r.text != d.name && !grades.iter().any(|g| std::ptr::eq(*g, *r))) {
                 assert!(r.size < smallest, "{r:?} is as large as a grade ({smallest} px)");
             }
-            assert!(svg.matches("class=\"o\" stroke-width=\"6\"").count() >= 6 + 6, "an outline under each grade and each ゴ");
+            assert!(svg.matches("class=\"o\" stroke-width=\"6\"").count() >= GOGOGO.len() + 6, "an outline under each grade and each ゴ");
         }
     }
 
     #[test]
     fn the_parts_the_pages_reveal_animates_are_marked() {
-        // the page inlines the card while it plays the reveal and animates these groups by CSS: the six ゴ in cascade order, the name with
+        // the page inlines the card while it plays the reveal and animates these groups by CSS: the ゴ in cascade order, the name with
         // its label, the radar fill, and the six grades clockwise from the top. No animation is in the SVG itself.
         let s = card_svg(&sample(), Theme::Light);
-        assert_eq!(s.matches("data-part=\"go\"").count(), 6);
+        assert_eq!(s.matches("data-part=\"go\"").count(), GOGOGO.len());
         assert_eq!(s.matches("data-part=\"name\"").count(), 1);
         assert_eq!(s.matches("data-part=\"fill\"").count(), 1);
         let grades: Vec<usize> = s.split("data-part=\"grade\" data-i=\"").skip(1).map(|p| p[..1].parse().unwrap()).collect();

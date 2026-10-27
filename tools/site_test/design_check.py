@@ -271,11 +271,11 @@ def main():
         parts = lambda n: [a for a in anim if a["part"] == n]
         gos, name, fill, grades = parts("go"), parts("name"), parts("fill"), sorted(parts("grade"), key=lambda a: int(a["i"]))
         total = max([a["end"] for a in anim] + [0])
-        ordered = (len(gos) == 6 and len(name) == 1 and len(fill) == 1 and len(grades) == 6
-                   and all(gos[k]["start"] < gos[k + 1]["start"] for k in range(5)) and gos[-1]["start"] < name[0]["start"] <= max(g["end"] for g in gos) + 100
+        ordered = (len(gos) >= 4 and len(name) == 1 and len(fill) == 1 and len(grades) == 6
+                   and all(gos[k]["start"] < gos[k + 1]["start"] for k in range(len(gos) - 1)) and gos[-1]["start"] < name[0]["start"] <= max(g["end"] for g in gos) + 100
                    and name[0]["end"] <= fill[0]["start"] + 1 and fill[0]["end"] <= grades[0]["start"] + 1
                    and all(grades[k]["start"] < grades[k + 1]["start"] for k in range(5)))
-        check("R8 reveal: at most 2.2 s in all; the ゴ fade in one at a time down the cascade, then the name drops in, then the radar fill grows, then the six grades pop in clockwise from the top", ordered and total <= 2200, f"{len(anim)} part animations end at {total:.0f} ms; ゴ start {[round(g['start']) for g in gos]}, name {name[0]['start']:.0f}-{name[0]['end']:.0f}, fill {fill[0]['start']:.0f}-{fill[0]['end']:.0f}, grades {[round(g['start']) for g in grades]}")
+        check("R8 reveal: at most 2.2 s in all; the four ゴ fade in one at a time down the cascade, then the name drops in, then the radar fill grows, then the six grades pop in clockwise from the top", ordered and total <= 2200, f"{len(anim)} part animations end at {total:.0f} ms; ゴ start {[round(g['start']) for g in gos]}, name {name[0]['start']:.0f}-{name[0]['end']:.0f}, fill {fill[0]['start']:.0f}-{fill[0]['end']:.0f}, grades {[round(g['start']) for g in grades]}")
         check("R8 reveal: the name's drop has a shake of 3 held frames, the fill grows from the centre of the chart, each part under 400 ms", "nameDrop" in css and css.count("steps(1, end)") == 4 and "transform-origin: 540px 664px" in css and all(a["dur"] <= 400 for a in anim), f"longest part {max(a['dur'] for a in anim):.0f} ms; nameDrop holds frames with steps(1, end)")
         check("R8 reveal: at the drop the field flashes (240 ms) to the card's ground and the accent shifts with it, at once", flash[0] and flash[1] == "flash" and flash[2] == "0.24s" and flash[3] == flash[4], f"flash {flash[1]} {flash[2]}; --accent {flash[3]}, --field {flash[4]}")
         t0 = pg.evaluate("performance.now()")
