@@ -84,6 +84,7 @@ try {
   out('Why these grades: Based on does not repeat a count', [...rows].some((r) => { const n = r.cells[4].firstChild.textContent.match(/^(\d+) of/); return n && new RegExp(`(^|[^\\d])${n[1]}( |$)`).test(r.cells[4].querySelector('small').textContent); }), false);
   for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
   out('Why these grades: no Data credits section; the footer keeps the credits and the TMDB block', `${!!document.getElementById('why-credit')} ${/Letterboxd.*TMDB.*MusicBrainz/.test(document.querySelector('footer').textContent)} ${!!document.querySelector('footer .tmdb img')}`, 'false true true');
+  out('Why these grades: the weakness line has no leading label', /^(Weakness|Soft spot):/.test(document.getElementById('why-weakness').textContent), false);
   out('Why these grades: the name line has no leading Why', /^Why\b/.test(document.getElementById('why-name').textContent), false);
   out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
   out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);

@@ -192,7 +192,9 @@ function show(a, svg) {
     tr.cells[4].append(Object.assign(document.createElement('small'), { textContent: s.status + (note ? ` · ${note}` : '') }));
   });
   $('why-ability').textContent = card.ability;
-  $('why-weakness').textContent = card.weakness;
+  // the section is headed Weakness, so the line drops its label
+  const weak = card.weakness.replace(/^(Weakness|Soft spot):\s*/, '');
+  $('why-weakness').textContent = weak[0].toUpperCase() + weak.slice(1);
   // the card's corner brackets are card lettering; the page quotes the name in plain quotes
   // the section is headed The name, so the leading Why 「NAME」: goes
   const why = (a.name.why || card.why || 'No name line.').replace(/^Why 「[^」]*」:\s*/, '').replace(/「/g, '“').replace(/」/g, '”');
