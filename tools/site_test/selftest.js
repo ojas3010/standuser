@@ -84,8 +84,12 @@ try {
     input.dispatchEvent(new Event('change'));
     await done;
   };
+  // with reduced motion the To Be Continued arrow is not shown (and so nothing waits for it)
+  let sawArrow = false;
+  new MutationObserver(() => { if (document.getElementById('drop').classList.contains('reading')) sawArrow = true; }).observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] });
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('result visible', !result.hidden, true);
+  out('the To Be Continued arrow is not shown under reduced motion', `${matchMedia('(prefers-reduced-motion: reduce)').matches} ${sawArrow}`, 'true false');
   out('drop zone is replaced', document.getElementById('drop').hidden, true);
   out('file line', document.getElementById('fileinfo').textContent, /^letterboxd-synthuser-2026-06-30-12-00-utc\.zip · \d[\d,]* films read$/);
   out('Change file button', document.getElementById('change').textContent, 'Change file');

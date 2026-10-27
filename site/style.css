@@ -162,8 +162,13 @@ button:active { transform: scale(.97); }
   #dropgo .col { display: none; }
   #dropgo .row { display: block; }
 }
-#tbc { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; gap: 16px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.375rem; }
+#tbc { display: none; position: absolute; inset: 0; overflow: hidden; align-items: center; justify-content: center; gap: 16px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.375rem; }
 #tbc .arrow { flex: none; width: 64px; height: 36px; background: var(--p-ink); clip-path: polygon(0 28%, 52% 28%, 52% 0, 100% 50%, 52% 100%, 52% 72%, 0 72%); }
+/* the arrow slides in from the left of the zone, as in the anime, and its words come in behind it */
+#drop.reading #tbc .arrow { animation: tbcIn 450ms cubic-bezier(.2, .7, .4, 1) both; }
+#drop.reading #tbc span:last-child { animation: tbcText 250ms ease-out 350ms both; }
+@keyframes tbcIn { from { opacity: 0; transform: translateX(-260px); } to { opacity: 1; transform: translateX(0); } }
+@keyframes tbcText { from { opacity: 0; } to { opacity: 1; } }
 #drop.reading { pointer-events: none; cursor: progress; }
 #drop.reading > :not(#tbc) { visibility: hidden; }
 #drop.reading #tbc { display: flex; }

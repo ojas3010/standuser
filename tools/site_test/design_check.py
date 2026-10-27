@@ -54,6 +54,25 @@ def load(browser, base, w, h, scheme="light", motion="no-preference"):
     return ctx, page, reqs, phase
 
 
+OBSERVE = """() => { window.__ev = []; const log = (k) => window.__ev.push([k, Math.round(performance.now() - window.__t0)]);
+  new MutationObserver(() => { const r = document.getElementById('drop').classList.contains('reading'); if (r !== !!window.__r) { window.__r = r; log(r ? 'arrow on' : 'arrow off'); }
+    if (document.getElementById('cardlive') && !window.__c) { window.__c = 1; log('reveal start'); }
+    if (!document.getElementById('result').hidden && !window.__v) { window.__v = 1; log('card shown'); } }).observe(document.body, { attributes: true, childList: true, subtree: true }); }"""
+
+
+def timeline(page, z, act=None, wait_ms=3500):
+    """Drops z and returns the page's events: [[name, ms after the drop]]. act(page) runs 300 ms after the drop."""
+    page.evaluate(OBSERVE)
+    page.evaluate("window.__t0 = performance.now()")
+    page.set_input_files("#file", str(z))
+    if act:
+        page.wait_for_timeout(300)
+        act(page)
+    page.wait_for_function("!document.getElementById('result').hidden")
+    page.wait_for_timeout(wait_ms if not act else 800)
+    return dict(page.evaluate("window.__ev"))
+
+
 def drop(page, phase, z, settle=True):
     phase[0] = "drop"
     page.set_input_files("#file", str(z))
@@ -216,6 +235,31 @@ def main():
         check("R2 the accent and the field are the exact ground colour of the card on show, and the field's ink is the card's ink", all(o[3] for o in out), f"{sum(o[3] for o in out)} of {len(out)} renders: --accent, --field and #field's paint equal the card's .f-bg; --field-ink equals its .f-ink")
         check("R2 the filled button (the card's ink on its ground) passes WCAG AA (4.5:1), light and dark", min(o[5] for o in out) >= 4.5, f"lowest ratio over {len(out)} renders: {min(o[5] for o in out):.2f}")
         check("R3 all text on the field keeps WCAG AA (4.5:1): the card's ink and muted ink on the ground, on the dots and on the big ゴ, light and dark", min(o[4] for o in out) >= 4.5 and all(o[6] for o in out), f"lowest ratio over {len(out)} renders: {min(o[4] for o in out):.2f}; the lede is the card's muted ink in every render")
+
+        # --- rule 8: the To Be Continued arrow, then the reveal
+        c3, pg, _, _ = load(browser, base, 1280, 900)
+        pg.evaluate(OBSERVE)
+        pg.evaluate("window.__t0 = performance.now()")
+        pg.set_input_files("#file", str(zips[0]))
+        pg.wait_for_function("document.getElementById('drop').classList.contains('reading')")
+        tbc = pg.evaluate("[getComputedStyle(document.getElementById('tbc')).display, document.getElementById('tbc').textContent, getComputedStyle(document.querySelector('#drop .drop-title')).visibility, document.getAnimations().filter(a => a.effect.target.closest && a.effect.target.closest('#tbc')).map(a => a.animationName + ' ' + a.effect.getComputedTiming().duration)]")
+        pg.wait_for_function("document.getElementById('cardlive')")
+        pg.wait_for_timeout(200)
+        ev = dict(pg.evaluate("window.__ev"))
+        slide = re.search(r"@keyframes tbcIn \{ from \{[^}]*translateX\(-\d+px\)[^}]*\} to \{[^}]*translateX\(0\)", css)
+        check("R8 the To Be Continued arrow is shown from the drop for at least 1.0 s, however fast the file is read, and slides in from the left; its words come in behind it", tbc[0] == "flex" and "To Be Continued" in tbc[1] and tbc[2] == "hidden" and any(a.startswith("tbcIn") for a in tbc[3]) and bool(slide) and ev["arrow off"] - ev["arrow on"] >= 1000, f"arrow on at {ev['arrow on']} ms, off at {ev['arrow off']} ms ({ev['arrow off'] - ev['arrow on']} ms); animations {tbc[3]}")
+        check("R8 the reveal starts after the arrow ends, and the card is shown with it", ev["reveal start"] >= ev["arrow off"] and ev["card shown"] >= ev["arrow off"] - 5, f"arrow off {ev['arrow off']} ms, card shown {ev['card shown']} ms, reveal start {ev['reveal start']} ms")
+        c3.close()
+        for what, act in (("a click", lambda p_: p_.mouse.click(5, 300)), ("a key press", lambda p_: p_.keyboard.press("Shift"))):
+            c3, pg, _, _ = load(browser, base, 1280, 900)
+            ev = timeline(pg, zips[0], act)
+            done = pg.evaluate("[!document.getElementById('cardlive'), !document.getElementById('card').classList.contains('playing'), document.documentElement.dataset.accent || '']")
+            check(f"R8 {what} during the arrow skips the arrow and the reveal: the end state at once, no inline card", "reveal start" not in ev and ev["card shown"] < 1000 and done[0] and done[1] and done[2] != "", f"arrow off {ev.get('arrow off')} ms, card shown {ev.get('card shown')} ms, reveal never started: {'reveal start' not in ev}")
+            c3.close()
+        c3, pg, _, _ = load(browser, base, 1280, 900, motion="reduce")
+        ev = timeline(pg, zips[0])
+        check("R8 under prefers-reduced-motion the arrow is not shown and nothing waits", "arrow on" not in ev and "reveal start" not in ev and ev["card shown"] < 1000, f"events {ev}")
+        c3.close()
 
         # --- rule 8: the reveal
         c3, pg, reqs3, ph3 = load(browser, base, 1280, 900)

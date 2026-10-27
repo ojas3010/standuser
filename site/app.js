@@ -89,14 +89,20 @@ async function handle(file) {
   $('result').hidden = true;
   $('downloads').hidden = true;
   $('share').hidden = true;
+  let arrow = null;
   try {
     setStatus('Reading the export…');
-    // while the file is read the zone shows the To Be Continued arrow (style.css); a few frames are given to paint it before the wasm runs
-    drop.classList.add('reading');
-    await new Promise((r) => setTimeout(r, 40));
+    // From the drop the zone shows the To Be Continued arrow, sliding in from the left (style.css), for at least ARROW_MS, however fast the
+    // file is read; the reveal starts when it ends. A click or a key press ends the arrow and skips the reveal. Reduced motion: no arrow.
+    if (!reducedMotion()) {
+      arrow = holdArrow(performance.now());
+      drop.classList.add('reading');
+      await new Promise((r) => setTimeout(r, 40)); // a few frames to paint it before the wasm runs
+    }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const out = exec(bytes, file.name);
     last = { svgs: out.svgs, card: out.analysis.card, analysis: out.analysis };
+    const skipped = arrow ? await arrow.ended : false;
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     show(out.analysis, out.svgs[resolvedTheme()]);
     // the drop zone gives way to one line: the file, the films read, and a way to pick another
@@ -106,7 +112,7 @@ async function handle(file) {
     $('share').hidden = false;
     $('sharenote').textContent = '';
     setDone(true);
-    reveal(out.analysis.card, out.svgs);
+    reveal(out.analysis.card, out.svgs, skipped);
     $('stage').scrollIntoView({ block: 'start' });
     setStatus('');
   } catch (e) {
@@ -124,6 +130,7 @@ async function handle(file) {
     $('share').hidden = true;
     setStatus(e.message, true);
   } finally {
+    if (arrow) arrow.cancel();
     drop.classList.remove('reading');
   }
 }
@@ -181,13 +188,26 @@ const fieldHeight = () => root.style.setProperty('--field-h', `${Math.round($('s
 new ResizeObserver(fieldHeight).observe(document.querySelector('main'));
 addEventListener('load', fieldHeight);
 
-// The reveal, at most 2.2 s (docs/DESIGN.md rule 8). At the drop the field flashes to the card's ground colour and the accent shifts with it.
+// The reveal, at most 2.2 s, after the To Be Continued arrow (docs/DESIGN.md rule 8). At the drop the field flashes to the card's ground colour and the accent shifts with it.
 // The card's own parts (data-part in its SVG) are played from an inline copy laid over the card (#cardlive; the PNG and the SVG that are
 // downloaded are the card, static): the ゴ one at a time down the cascade, the name dropping in with a short shake, the radar fill growing
 // from the centre, then the six grades popping in clockwise from the top, as in the anime's eyecatch. The delays and durations are in
 // style.css. A click or a key press ends it at the card's end state; with reduced motion there is no copy and no flash, the end state is
 // simply there.
 const REVEAL_MS = 2150;
+const ARROW_MS = 1000;
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+// The wait for the arrow: `ended` resolves false ARROW_MS after `from`, or true as soon as a click or a key press skips it.
+function holdArrow(from) {
+  const keys = ['pointerdown', 'keydown'];
+  let done;
+  const ended = new Promise((res) => { done = res; });
+  const finish = (skipped) => { clearTimeout(timer); keys.forEach((t) => removeEventListener(t, skip, true)); done(skipped); };
+  const skip = () => finish(true);
+  const timer = setTimeout(() => finish(false), Math.max(0, from + ARROW_MS - performance.now()));
+  keys.forEach((t) => addEventListener(t, skip, true));
+  return { ended, cancel: () => finish(false) };
+}
 let live = null; // { svg, timer, off } while a reveal plays
 function endReveal() {
   if (!live) return;
@@ -198,10 +218,10 @@ function endReveal() {
   $('field').classList.remove('flash');
   live = null;
 }
-function reveal(card, svgs) {
+function reveal(card, svgs, skipped = false) {
   endReveal();
   setAccent(svgs, card.accent);
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  if (skipped || reducedMotion()) return;
   const tpl = document.createElement('template');
   tpl.innerHTML = svgs[resolvedTheme()];
   const svg = tpl.content.firstElementChild;
