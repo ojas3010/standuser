@@ -139,6 +139,40 @@ def main():
         check("Drop zone export line (phone, 390 px): the same words in one or two lines", ex[0] == "On letterboxd.com (not the app): Settings, Account data, Export your data." and ex[1] <= 2, f"{ex[1]} line(s)")
         ctx1.close()
 
+        # --- C4: every control has a tap target of at least 44 px and a visible keyboard focus (a 3 px ring that is 3:1 or better against what
+        # it stands on). The controls are found in the page, and the Tab key is pressed through all of them.
+        TARGETS = """() => [...document.querySelectorAll('button, a[href], select, input:not([type=hidden]), summary, [tabindex="0"]')]
+          .filter(e => e.offsetParent !== null && !e.closest('[hidden]') && getComputedStyle(e).visibility !== 'hidden')
+          .map(e => { const r = e.getBoundingClientRect(); return { id: e.id || e.tagName.toLowerCase() + (e.className ? '.' + e.className : ''), w: r.width, h: r.height }; })"""
+        RING = """() => { const e = document.activeElement, s = getComputedStyle(e);
+          // the ring is drawn outside the control (2 px off), so it stands on what is behind the control: the nearest opaque ancestor, or the field
+          let bg = null; for (let n = e.parentElement; n && !bg; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor; if (c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') bg = c; }
+          const panel = e.parentElement && e.parentElement.closest('#drop');
+          if (e.closest('header, #stage') && !panel) bg = getComputedStyle(document.getElementById('field')).backgroundColor;
+          return { id: e.id || e.tagName.toLowerCase(), style: s.outlineStyle, width: parseFloat(s.outlineWidth), color: s.outlineColor, bg: bg || getComputedStyle(document.body).backgroundColor }; }"""
+        for (w, h) in [(1280, 720), (390, 844)]:
+            for after in (False, True):
+                cx, pgc, _, phc = load(browser, base, w, h)
+                if after:
+                    drop(pgc, phc, zips[0])
+                    pgc.evaluate("document.querySelector('#advanced summary').scrollIntoView()")
+                small = [t for t in pgc.evaluate(TARGETS) if t["h"] < 43.5 or t["w"] < 43.5]
+                seen, bad = [], []
+                pgc.evaluate("document.activeElement && document.activeElement.blur()")
+                for _ in range(40):
+                    pgc.keyboard.press("Tab")
+                    r = pgc.evaluate(RING)
+                    if r["id"] in seen or r["id"] == "body":
+                        break
+                    seen.append(r["id"])
+                    ratio = cr(rgb(r["color"]), rgb(r["bg"]))
+                    if r["style"] == "none" or r["width"] < 2 or ratio < 3:
+                        bad.append((r["id"], r["style"], r["width"], round(ratio, 2)))
+                state = f"{w} x {h}, {'after' if after else 'before'} a drop"
+                check(f"C4 {state}: every control is at least 44 px high and wide", not small and len(seen) >= 3, f"{len(pgc.evaluate(TARGETS))} controls; under 44 px: {small}")
+                check(f"C4 {state}: every control shows a focus ring of 2 px or more at 3:1 or better when the Tab key reaches it", not bad and len(seen) >= 3, f"{len(seen)} controls reached by Tab ({', '.join(seen)}); without a visible ring: {bad}")
+                cx.close()
+
         # --- rule 1 and 7: chrome text
         text = page.evaluate("document.body.innerText")
         cjk = re.findall(r"[　-ヿ一-鿿]", text)
@@ -211,7 +245,7 @@ def main():
         d1 = page.evaluate("[document.getElementById('card').src, document.getElementById('theme').dataset.value, document.getElementById('theme').querySelector('[data-v=dark]').getAttribute('aria-pressed')]")
         page.click("#theme [data-v=light]"); page.wait_for_timeout(300)
         d2 = page.evaluate("[document.getElementById('card').src, document.getElementById('theme').dataset.value]")
-        check("R10 the card theme is a small Light/Dark toggle in the share bar (the card changes with it); the link note under the share bar is gone", tg[0] and tg[1] == "Light/Dark" and tg[3] <= 40 and not tg[4] and d1[0] != src0 and d1[1:] == ["dark", "true"] and d2[1] == "light" and d2[0] != d1[0], f"toggle in share bar {tg[0]}, buttons {tg[1]}, pressed at first {tg[2]}, height {tg[3]:.0f} px, link note present {tg[4]}; card changed on Dark {d1[0] != src0} and on Light {d2[0] != d1[0]}")
+        check("R10 the card theme is a small Light/Dark toggle in the share bar (the card changes with it); the link note under the share bar is gone", tg[0] and tg[1] == "Light/Dark" and tg[3] <= 44 and not tg[4] and d1[0] != src0 and d1[1:] == ["dark", "true"] and d2[1] == "light" and d2[0] != d1[0], f"toggle in share bar {tg[0]}, buttons {tg[1]}, pressed at first {tg[2]}, height {tg[3]:.0f} px, link note present {tg[4]}; card changed on Dark {d1[0] != src0} and on Light {d2[0] != d1[0]}")
         wy = page.evaluate("""() => ({ heads: [...document.querySelectorAll('#stats th')].map(h => h.textContent).join('/'), rows: [...document.getElementById('stats').tBodies[0].rows].map(r => [...r.cells].map(c => c.textContent)),
           detail: [...document.querySelectorAll('#detail th')].map(h => h.textContent).join('/'), adv: document.getElementById('advanced').open, display: getComputedStyle(document.getElementById('stats')).display }); """)
         sent = [r[2] for r in wy["rows"]]

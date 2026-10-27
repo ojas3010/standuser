@@ -62,23 +62,24 @@ a { color: inherit; }   /* links are ink, not the browser's blue */
 #drop .small + .small { margin-top: 8px; }
 #drop.over { border-style: solid; border-color: var(--p-ink); }   /* instant: #drop has no transition */
 #drop:focus-visible { outline: 3px solid var(--field-ink, var(--p-ink)); outline-offset: 2px; }
-button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+/* every control shows a 3 px ring in the ink of the ground it stands on when the keyboard has the focus */
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
 #filebar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding: 12px 0; border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
 #filebar { gap: 4px 8px; }
 #filebar .sep { margin-right: -4px; }   /* the button's own padding sits between the dot and its text */
-#filebar button { height: 32px; padding: 0 8px; margin-left: -8px; text-decoration: underline; text-underline-offset: 4px; }
+#filebar button { padding: 0 8px; margin-left: -8px; text-decoration: underline; text-underline-offset: 4px; }
 .opts { margin: 0; }   /* Advanced: collapsed, its own block after the method section */
 #notes:empty, #downloads[hidden] { display: none; }
-.opts summary { cursor: pointer; }
+.opts summary { cursor: pointer; padding: 10px 0; }   /* 24 px of text and 10 px above and below: a 44 px target */
 .opts label { display: block; margin: 12px 0; }
 #status { min-height: 1.5em; margin: 16px 0 0; color: var(--mute); }
 #status.error { color: var(--ink); font-weight: 600; padding-left: 12px; border-left: 4px solid var(--ink); }   /* an error is bold and barred, not red: the chrome has no hue */
 
-input[type=text], input[type=date], select { height: 40px; margin-left: 8px; padding: 0 8px; font: inherit; color: var(--p-ink); background: var(--p-ground2); border: 2px solid var(--p-line); border-radius: 0; }
+input[type=text], input[type=date], select { height: 44px; margin-left: 8px; padding: 0 8px; font: inherit; color: var(--p-ink); background: var(--p-ground2); border: 2px solid var(--p-line); border-radius: 0; }
 
 /* buttons: Download PNG is the one filled button; the others are quiet text buttons of the same height and radius */
-button { height: 40px; padding: 0 16px; font: 600 1rem/1 Archivo, system-ui, sans-serif; border: 2px solid transparent; border-radius: 0; cursor: pointer; transition: transform 120ms ease-out; }
+button { height: 44px; padding: 0 16px; font: 600 1rem/1 Archivo, system-ui, sans-serif; border: 2px solid transparent; border-radius: 0; cursor: pointer; transition: transform 120ms ease-out; }
 button:active { transform: scale(.97); }
 .primary { background: var(--accent); color: var(--on-accent); border-color: var(--ink); transition: transform 120ms ease-out, background-color 250ms ease-out, color 250ms ease-out; }   /* the card's ground and ink, in the manga's black outline */
 .quiet { background: transparent; color: var(--ink); }
@@ -87,7 +88,7 @@ button:active { transform: scale(.97); }
 /* on the field the filled button is the card's ink on its ground: its own ground colour would be the field's */
 #stage .primary { background: var(--ink); color: var(--field, var(--ground)); border-color: var(--ink); }
 #stage .primary:hover { background: var(--field, var(--ground)); color: var(--ink); }
-#pick { height: 32px; padding: 0 8px; margin-left: -8px; }
+#pick { padding: 0 8px; margin-left: -8px; }
 
 /* stage: before a card of the user's exists, the drop zone and the sample (one column on a phone, the drop zone first; two columns from
    900 px); after a file or on an opened link, one column: the file line, the card at the width of the column, the share bar */
@@ -125,10 +126,12 @@ button:active { transform: scale(.97); }
 #cardlabel { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
 #sharenote { flex-basis: 100%; min-height: 1.5em; color: var(--mute); font-size: .875rem; }
+/* links are controls too: at least 44 px high and wide */
+a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; vertical-align: middle; }
 .downloads a { color: var(--ink); text-underline-offset: 4px; }
 /* the card theme: a small Light / Dark toggle at the end of the share bar; the chosen one has the card's ink outline, flat (Download PNG stays the one filled button) */
 .toggle { display: inline-flex; margin-left: auto; }
-.toggle button { height: 32px; padding: 0 8px; font-size: .875rem; border: 2px solid transparent; color: var(--ink); background: transparent; }
+.toggle button { height: 44px; padding: 0 8px; font-size: .875rem; border: 2px solid transparent; color: var(--ink); background: transparent; }
 .toggle button[aria-pressed=true] { border-color: var(--ink); }
 .toggle button:hover { text-decoration: underline; text-underline-offset: 4px; }
 #card, #cardlive { display: block; width: 100%; height: auto; }
@@ -209,7 +212,7 @@ th, td { text-align: left; padding: 8px 8px 8px 0; border-bottom: 1px solid var(
 th { font-weight: 600; border-bottom: 2px solid var(--accent); transition: border-color 250ms ease-out; }
 #notes { margin: 16px 0 0; padding-left: 20px; color: var(--mute); font-size: .9375rem; }
 footer { padding-top: 16px; border-top: 1px solid var(--line); }
-.tmdb { display: inline-block; margin-right: 8px; line-height: 0; vertical-align: -2px; }
+.tmdb { display: inline-flex; align-items: center; margin-right: 8px; line-height: 0; vertical-align: middle; }
 .tmdb img { height: 14px; width: auto; }
 footer .small { margin: 0 0 8px; max-width: 48em; }
 

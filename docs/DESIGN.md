@@ -36,6 +36,7 @@ Sources: emilkowal.ski (motion), the ui-skills Scandinavian design skill (restra
 13. Card theme: a small Light/Dark toggle at the end of the share bar (two buttons, `aria-pressed`), shown only after a drop (or on an opened link); before a drop the sample follows the system. The card starts in the system's theme and follows it until the user picks one.
 14. Requests: the page loads its own files only (including sample.json); 0 requests after a drop, over the whole reveal, and when a share link is opened. The reveal, the field and the drop-zone marks use CSS and the page's own JavaScript only.
 15. Every rule and every ban in this section gets a before and after screenshot at desktop width and phone width.
+16. Controls: every button, link, select, input, the Advanced summary and the drop zone is at least 44 px high and 44 px wide (a link is an inline-flex box with that minimum), and shows a 3 px ring (outline, 2 px off the control) in the ink of the ground behind it when the keyboard has the focus: on the field the card's ink, in the drop zone and below the stage the page's ink. The ring is 3:1 or better against what is behind the control (WCAG 2.2, 1.4.11). design_check.py presses Tab through every control at 1280 x 720 and 390 x 844, before and after a drop, and measures each ring and each box.
 
 ## 3. Card-level fixes
 
