@@ -180,6 +180,8 @@ def main():
             adv: (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })() }; }""")
         mid = (lay["inner"][0] + lay["inner"][1]) / 2
         check("R6 after a drop (1280 x 720): the file line, the whole card and the share bar fit in the window without scrolling; the card is centred; the theme select is displayed; Advanced is collapsed in the method section", lay["fit"][0] >= 0 and lay["fit"][3] <= lay["fit"][4] and abs((lay["c"][0] + lay["c"][1]) / 2 - mid) < 1.5 and lay["theme"] and lay["adv"], f"file line top {lay['fit'][0]:.0f}, card {lay['fit'][1]:.0f} to {lay['fit'][2]:.0f}, share bar bottom {lay['fit'][3]:.0f} of {lay['fit'][4]}, card {lay['c']} in column {lay['inner']}, theme select shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
+        al = page.evaluate("""() => { const c = document.getElementById('card').getBoundingClientRect(), s = document.getElementById('share').getBoundingClientRect(); return [c.left, c.width, s.left, s.width]; }""")
+        check("R6 after a drop (1280 x 720): the share bar has the card's left edge and width", abs(al[0] - al[2]) < 1 and abs(al[1] - al[3]) < 1, f"card left {al[0]:.1f} width {al[1]:.1f}, share bar left {al[2]:.1f} width {al[3]:.1f}")
         check("R6 48 px between sections (after a drop)", all(g == 48 for g in lay["gaps"]) and len(lay["gaps"]) >= 4, f"gaps {lay['gaps']}")
         card = page.evaluate("""() => { const c = document.getElementById('card'), s = getComputedStyle(c), p = getComputedStyle(c.parentElement);
           return [s.borderTopWidth, p.borderTopWidth, p.backgroundColor, p.paddingTop]; }""")
