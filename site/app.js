@@ -1,6 +1,6 @@
 // standuser site: export.zip in, card out, all in the browser. No network use after the page, the film table and the name candidates load.
 import init, { run, render_card, share_encode, share_decode } from './pkg/standuser.js';
-import { cardColours } from './accent.js';
+import { cardColours, fieldColours } from './accent.js';
 
 const $ = (id) => document.getElementById(id);
 const drop = $('drop');
@@ -35,6 +35,7 @@ async function boot() {
     const r = JSON.parse(render_card(smp));
     if (r.error) throw new Error(r.error);
     sample = { svgs: r.svgs, card: r.card };
+    paintGlyphs(r.svgs.light);
     if (!openLink()) showSample();
     if (n instanceof Error) setStatus(`The name candidates did not load (${n.message}); names will come from your composers.`);
     else {
@@ -53,6 +54,7 @@ const ready = boot();
 function showSample() {
   if (!sample) return;
   showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
+  setField(sample.svgs); // before a drop the field is the sample card's colour
 }
 
 // A share link (#c=...) holds the data the card needs: it renders the card with no file and no request. A fragment that is not a
@@ -121,7 +123,8 @@ async function handle(file) {
   }
 }
 
-// The page's accent (the filled rules and the headings' rules) is the card's ground colour after a drop.
+// The page's field (the band behind the header and the stage) is the card's ground colour, with the card's own ink on it (accent.js); before
+// a drop it is the sample card's. The page's accent (the filled rules and the headings' rules) is the same ground colour after a drop.
 // The card starts in the theme of the system and follows it until the user picks one.
 const resolvedTheme = () => $('theme').value;
 const systemDark = matchMedia('(prefers-color-scheme: dark)');
@@ -135,14 +138,42 @@ systemDark.addEventListener('change', (e) => {
   picked = false;
 });
 const root = document.documentElement;
+function setField(svgs) {
+  const f = fieldColours(svgs[resolvedTheme()]);
+  for (const [k, v] of Object.entries({ field: f.ground, 'field-ink': f.ink, 'field-mute': f.mute, dot: f.dot, ghost: f.ghost, flash: f.flash })) root.style.setProperty('--' + k, v);
+}
 function setAccent(svgs, key) {
   const { ground, ink } = cardColours(svgs[resolvedTheme()]);
   root.style.setProperty('--accent', ground);
   root.style.setProperty('--on-accent', ink);
   root.dataset.accent = key || 'none';
+  setField(svgs);
 }
 
-// The reveal, at most 2.2 s (docs/DESIGN.md rule 8). At the drop the accent shifts to the card's ground colour at once.
+// The ゴ of the card is the page's too: its outline path is read from the card's own SVG (no font, no request) and drawn big and faint
+// in the field.
+function glyphOf(svg) {
+  const d = (svg.match(/data-part="go"><g transform="rotate\([^)]*\)"><path d="([^"]+)"/) || [])[1];
+  if (!d) return null;
+  const n = d.match(/-?\d*\.?\d+/g).map(Number);
+  const xs = n.filter((_, i) => i % 2 === 0), ys = n.filter((_, i) => i % 2 === 1);
+  const [x0, x1, y0, y1] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  return { d, cx: (x0 + x1) / 2, cy: (y0 + y1) / 2, h: y1 - y0 };
+}
+// glyphs: [centre x, centre y, height], each leaning like the card's
+const goPaths = (g, glyphs) => glyphs.map(([x, y, h]) => `<path d="${g.d}" transform="translate(${x} ${y}) rotate(-8) scale(${(h / g.h).toFixed(4)}) translate(${-g.cx} ${-g.cy})"/>`).join('');
+function paintGlyphs(svg) {
+  const g = glyphOf(svg);
+  if (!g) return;
+  const wide = (cls, box, glyphs) => `<svg class="${cls}" viewBox="${box}" preserveAspectRatio="xMinYMin slice" aria-hidden="true" focusable="false">${goPaths(g, glyphs)}</svg>`;
+  $('field').innerHTML = wide('ghost', '0 0 1280 800', [[150, 200, 250], [235, 440, 205], [315, 640, 165], [1120, 250, 225], [1035, 470, 185], [1130, 650, 150]]);
+}
+// The band is as tall as the header and the stage: it follows them as the stage changes between one column and two.
+const fieldHeight = () => root.style.setProperty('--field-h', `${Math.round($('stage').getBoundingClientRect().bottom + scrollY + 24)}px`);
+new ResizeObserver(fieldHeight).observe(document.querySelector('main'));
+addEventListener('load', fieldHeight);
+
+// The reveal, at most 2.2 s (docs/DESIGN.md rule 8). At the drop the field flashes to the card's ground colour and the accent shifts with it.
 // The card's own parts (data-part in its SVG) are played from an inline copy laid over the card (#cardlive; the PNG and the SVG that are
 // downloaded are the card, static): the ゴ one at a time down the cascade, the name dropping in with a short shake, the radar fill growing
 // from the centre, then the six grades popping in clockwise from the top, as in the anime's eyecatch. The delays and durations are in
@@ -156,6 +187,7 @@ function endReveal() {
   live.off();
   live.svg.remove();
   $('card').classList.remove('playing');
+  $('field').classList.remove('flash');
   live = null;
 }
 function reveal(card, svgs) {
@@ -174,6 +206,10 @@ function reveal(card, svgs) {
   const img = $('card');
   img.classList.add('playing');
   img.after(svg);
+  const field = $('field');
+  field.classList.remove('flash');
+  void field.offsetWidth; // restart the flash for a second file
+  field.classList.add('flash');
   const off = () => ['pointerdown', 'keydown'].forEach((t) => removeEventListener(t, endReveal, true));
   ['pointerdown', 'keydown'].forEach((t) => addEventListener(t, endReveal, true));
   live = { svg, off, timer: setTimeout(endReveal, REVEAL_MS) };

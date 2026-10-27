@@ -1,5 +1,7 @@
-/* Page chrome: quiet, flat, neutral (zero hue: white and near-black, greys with equal channels). Only the card carries the JoJo identity.
-   No gradients, glows or shadows. One accent, keyed to the user's card (accent.js); before a card exists it is the ink colour. */
+/* Page chrome: flat, right-angled, neutral (zero hue: white and near-black, greys with equal channels) below the stage. Behind the header
+   and the stage is the field: the ground colour of the card on show (the sample's before a drop) with a halftone screentone and big faint
+   ゴ (accent.js, app.js). Flat fills, no glows or shadows; the screentone's dots are the page's one use of a gradient. One accent, keyed to
+   the user's card; before a card exists it is the ink colour. docs/DESIGN.md section 2. */
 @font-face {
   font-family: "Archivo Black";
   src: url(fonts/archivo-black.woff2) format("woff2");
@@ -13,17 +15,28 @@
   font-display: swap;
 }
 :root {
-  --ground: #ffffff; --ground2: #f4f4f4; --ink: #0b0b0b; --mute: #595959; --line: #d4d4d4;
+  --p-ground: #ffffff; --p-ground2: #f4f4f4; --p-ink: #0b0b0b; --p-mute: #595959; --p-line: #d4d4d4;
+  --ground: var(--p-ground); --ground2: var(--p-ground2); --ink: var(--p-ink); --mute: var(--p-mute); --line: var(--p-line);
   --accent: var(--ink); --on-accent: var(--ground);
 }
 @media (prefers-color-scheme: dark) {
-  :root { --ground: #0e0e0e; --ground2: #1a1a1a; --ink: #f5f5f5; --mute: #b3b3b3; --line: #3a3a3a; }
+  :root { --p-ground: #0e0e0e; --p-ground2: #1a1a1a; --p-ink: #f5f5f5; --p-mute: #b3b3b3; --p-line: #3a3a3a; }
 }
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }   /* a display rule below must not show what the page hides */
-body { margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Archivo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+body { position: relative; margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Archivo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
 /* sections (header, stage, Why these grades, the method, footer) stand 48 px apart */
 main { max-width: 800px; margin: 0 auto; padding: 40px 16px 64px; display: flex; flex-direction: column; gap: 48px; }
+
+/* the field: behind the header and the stage, the card's ground colour (app.js sets --field, --field-ink, --field-mute, --dot, --ghost and
+   the band's height) with a screentone of dots 7 px apart and big faint ゴ. The dots, the ゴ and the flash are the ground moved away from
+   the ink, so no text on the field is lower than the card's own 4.5:1. The text on the field takes the card's ink and muted ink. */
+#field { position: absolute; z-index: -1; top: 0; left: 0; right: 0; height: var(--field-h, 760px); overflow: hidden; background-color: var(--field, var(--ground));
+  background-image: radial-gradient(circle at 50% 50%, var(--dot, transparent) 1.5px, transparent 2px); background-size: 7px 7px; }
+#field .ghost { position: absolute; inset: 0; width: 100%; height: 100%; }
+#field .ghost path { fill: var(--ghost); }
+header, #stage { --ink: var(--field-ink, var(--p-ink)); --mute: var(--field-mute, var(--p-mute)); --line: var(--field-mute, var(--p-line)); color: var(--ink); }
+header .mark { border-bottom-color: var(--ink); }
 
 /* the wordmark: the page's one tilt */
 .mark { display: inline-block; margin: 8px 0 0; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-weight: 400; font-size: clamp(2.6rem, 11vw, 4rem); line-height: 1; letter-spacing: -.01em; transform: rotate(-4deg); transform-origin: 0 100%; padding-bottom: .08em; border-bottom: .14em solid var(--accent); transition: border-color 250ms ease-out; }
@@ -34,13 +47,14 @@ code { font-size: .9em; }
 a { color: inherit; }   /* links are ink, not the browser's blue */
 
 /* stage */
-#drop { padding: 32px 24px; border: 2px dashed var(--mute); background: var(--ground2); cursor: pointer; }
+#drop { position: relative; padding: 32px 24px; border: 2px dashed var(--p-mute); background: var(--p-ground); color: var(--p-ink); --ink: var(--p-ink); --mute: var(--p-mute); --line: var(--p-line); cursor: pointer; }
 #drop p { margin: 0 0 8px; }
 #drop .drop-title { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.375rem; font-weight: 400; }
 #drop .small { margin: 16px 0 0; max-width: 40em; }
 #drop .small + .small { margin-top: 8px; }
-#drop.over { border-style: solid; border-color: var(--accent); background: var(--ground); }   /* instant: #drop has no transition */
-#drop:focus-visible, button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+#drop.over { border-style: solid; border-color: var(--p-ink); }   /* instant: #drop has no transition */
+#drop:focus-visible { outline: 3px solid var(--field-ink, var(--p-ink)); outline-offset: 2px; }
+button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
 #filebar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding: 12px 0; border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
 #fileinfo { overflow-wrap: anywhere; }
@@ -52,7 +66,7 @@ a { color: inherit; }   /* links are ink, not the browser's blue */
 #status { min-height: 1.5em; margin: 16px 0 0; color: var(--mute); }
 #status.error { color: var(--ink); font-weight: 600; padding-left: 12px; border-left: 4px solid var(--ink); }   /* an error is bold and barred, not red: the chrome has no hue */
 
-input[type=text], input[type=date], select { height: 40px; margin-left: 8px; padding: 0 8px; font: inherit; color: var(--ink); background: var(--ground2); border: 2px solid var(--line); border-radius: 0; }
+input[type=text], input[type=date], select { height: 40px; margin-left: 8px; padding: 0 8px; font: inherit; color: var(--p-ink); background: var(--p-ground2); border: 2px solid var(--p-line); border-radius: 0; }
 
 /* buttons: Download PNG is the one filled button; the others are quiet text buttons of the same height and radius */
 button { height: 40px; padding: 0 16px; font: 600 1rem/1 Archivo, system-ui, sans-serif; border: 2px solid transparent; border-radius: 0; cursor: pointer; transition: transform 120ms ease-out; }
@@ -61,6 +75,9 @@ button:active { transform: scale(.97); }
 .quiet { background: transparent; color: var(--ink); }
 .quiet:hover { text-decoration: underline; text-underline-offset: 4px; }
 .primary:hover { background: var(--ink); color: var(--ground); }
+/* on the field the filled button is the card's ink on its ground: its own ground colour would be the field's */
+#stage .primary { background: var(--ink); color: var(--field, var(--ground)); border-color: var(--ink); }
+#stage .primary:hover { background: var(--field, var(--ground)); color: var(--ink); }
 #pick { height: 32px; padding: 0 8px; margin-left: -8px; }
 
 /* stage: before a card of the user's exists, the drop zone and the sample (one column on a phone, the drop zone first; two columns from
@@ -113,7 +130,7 @@ button:active { transform: scale(.97); }
    image waits beside it, hidden from sight but not from screen readers. The card lands (200 ms), then its parts play in this order:
    the six ゴ one at a time (150 ms on, 90 ms apart, 120 ms each), the name dropping in with a shake of three frames (700 ms, 350 ms), the
    radar fill growing from the centre (1050 ms, 400 ms), the six grades popping in clockwise from the top (1450 ms on, 80 ms apart,
-   160 ms each): the last ends at 2010 ms. */
+   160 ms each): the last ends at 2010 ms. The field flashes for 240 ms at the start. */
 #card.playing { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); opacity: 0; }
 #cardlive { animation: land 200ms ease-out; }
 #cardlive [data-part=go] { animation: goIn 120ms ease-out both; animation-delay: calc(150ms + var(--i) * 90ms); }
@@ -131,6 +148,8 @@ button:active { transform: scale(.97); }
 }
 @keyframes grow { from { transform: scale(0); } to { transform: scale(1); } }
 @keyframes pop { 0% { opacity: 0; transform: scale(0); } 70% { opacity: 1; transform: scale(1.18); } 100% { opacity: 1; transform: scale(1); } }
+#field.flash { animation: flash 240ms ease-out; }
+@keyframes flash { from { background-color: var(--flash); } to { background-color: var(--field); } }
 
 
 /* why these grades */
