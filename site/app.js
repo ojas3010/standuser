@@ -170,7 +170,7 @@ function showCard(svg, label, alt) {
 
 function show(a, svg) {
   showCard(svg, 'Your card', 'Your Stand card');
-  // Why these grades: for each stat its value, its film, what it was graded on and its status
+  // Why these grades: for each stat its value, your film and what it is based on
   const tb = $('stats').tBodies[0];
   tb.replaceChildren();
   const names = ['Power', 'Speed', 'Range', 'Stamina', 'Precision', 'Potential'];
@@ -181,10 +181,15 @@ function show(a, svg) {
     const val = s.value == null ? '' : Number(s.value).toFixed(3);
     const cov = a.coverage.per_stat[i];
     const [metric, film] = card.evidence[i];
-    const cells = [names[i], s.letter + (card.prov[i] ? '*' : ''), val, film || '–', `${cov.used} of ${cov.of} ${cov.unit}${cov.meets_minimum ? '' : ` (needs ${cov.minimum})`}`, s.status + (s.note ? `: ${s.note}` : '')];
+    // Based on: how many films or watches it was graded on, then the status and what the note adds. A count the first line already
+    // gives is not said again: the note's leading count is dropped, and the minimum is left to the note when it says what is needed.
+    const note = (s.note || '').replace(new RegExp(`^${cov.used} `), '');
+    const needs = cov.meets_minimum || note.startsWith('needs') ? '' : ` (needs ${cov.minimum})`;
+    const cells = [names[i], s.letter + (card.prov[i] ? '*' : ''), val, film || '–', `${cov.used} of ${cov.of} ${cov.unit}${needs}`];
     cells.forEach((t) => (tr.insertCell().textContent = t));
     // the line the stat was shown with on the card before: what the value means
     if (metric) tr.cells[2].append(Object.assign(document.createElement('small'), { textContent: metric }));
+    tr.cells[4].append(Object.assign(document.createElement('small'), { textContent: s.status + (note ? ` · ${note}` : '') }));
   });
   $('why-ability').textContent = card.ability;
   $('why-weakness').textContent = card.weakness;

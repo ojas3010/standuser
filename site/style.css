@@ -129,7 +129,7 @@ footer .small { margin: 0 0 8px; max-width: 40em; }
 @media (max-width: 560px) {
   main { padding-top: 24px; }
   #drop { padding: 24px 16px; }
-  /* one row per stat: name, grade and value on a line, then what it was graded on, then its status */
+  /* one row per stat: name, grade and value on a line, then your film, then what it is based on */
   table, tbody { display: block; }
   thead { display: none; }
   tr { display: grid; grid-template-columns: 1fr auto auto; gap: 0 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
