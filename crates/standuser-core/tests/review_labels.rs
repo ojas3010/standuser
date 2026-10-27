@@ -56,9 +56,9 @@ fn card_labels_the_type_as_an_archetype_by_stats() {
     assert!(StandType::Automatic.low_confidence() && !StandType::CloseRange.low_confidence());
     let low = format!("{} · {}", svg::TYPE_NOTE_LOW, svg::TYPE_NOTE);
     assert!(low.contains("low confidence") && low.contains("archetype by stats"));
-    // and the note is drawn: the card has more outlined text with it than without
+    // the card no longer draws the note; the page gets it in the analysis JSON
     let with = svg::card_svg(&a.card, svg::Theme::Light);
     let mut blank = a.card.clone();
     blank.type_note.clear();
-    assert!(with.len() > svg::card_svg(&blank, svg::Theme::Light).len());
+    assert_eq!(with, svg::card_svg(&blank, svg::Theme::Light));
 }

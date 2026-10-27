@@ -4,6 +4,7 @@
 // or "key: value [FAIL: expected ...]", and tools/site_test/run.sh exits non-zero on any FAIL or ERROR line.
 // Nothing waits a fixed time for the page: each step waits for the element it changes (until / settled) and times out
 // with an error instead of reading a half-finished page.
+import { cardColours, contrast } from './accent.js';
 const log = [];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const same = (v, e) => (e instanceof RegExp ? e.test(String(v)) : e instanceof Function ? e(v) : String(v) === String(e));
@@ -11,7 +12,8 @@ const out = (k, v, expect) => {
   const ok = same(v, expect);
   log.push(`${k}: ${v} [${ok ? 'ok' : 'FAIL: expected ' + (expect instanceof Function ? 'predicate' : expect)}]`);
 };
-const until = async (what, cond, ms = 20000) => {
+// (the waits are in the virtual clock of run.sh, which sometimes jumps 5 to 30 s while the page works; the run's own budget is 60 s)
+const until = async (what, cond, ms = 45000) => {
   const t0 = performance.now();
   while (!cond()) {
     if (performance.now() - t0 > ms) throw new Error('timed out waiting for ' + what);
@@ -29,13 +31,47 @@ const settled = (what) => new Promise((res, rej) => {
     else if (started) { obs.disconnect(); clearTimeout(to); res(); }
   });
   obs.observe(statusEl(), { childList: true, characterData: true, subtree: true });
-  const to = setTimeout(() => { obs.disconnect(); rej(new Error('timed out waiting for the page to finish ' + what)); }, 20000);
+  const to = setTimeout(() => { obs.disconnect(); rej(new Error('timed out waiting for the page to finish ' + what)); }, 45000);
 });
 try {
   const bytes = new Uint8Array(await (await fetch('synth.zip')).arrayBuffer());
   const seen = () => performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname).filter((n) => n !== '/synth.zip' && n !== '/favicon.ico');
   // the page is booted when it has loaded the table and the wasm and its status line is empty again
   await until('the page to boot', () => seen().includes('/films.json') && seen().includes('/names.json') && seen().includes('/pkg/standuser_bg.wasm') && statusEl().textContent === '');
+  // the privacy line sits in the drop zone: the three files read and the two columns of profile.csv
+  const dropText = document.getElementById('drop').textContent;
+  for (const w of ['watched.csv', 'ratings.csv', 'diary.csv', 'two columns of', 'profile.csv', 'Date Joined', 'Favorite Films']) out('drop zone says ' + w, dropText.includes(w), true);
+  // before a drop: the sample card, labelled Sample, sits above the drop zone and the accent is still the ink colour
+  const card0 = document.getElementById('card');
+  await until('the sample card', () => card0.src.startsWith('blob:'));
+  await card0.decode();
+  out('sample label', document.getElementById('cardlabel').textContent, 'Sample');
+  out('sample card', `${card0.naturalWidth}x${card0.naturalHeight}`, '1080x1350');
+  // from 900 px the drop zone is on the left and the sample on the right, side by side; on a phone the drop zone comes first, the sample under it
+  const dz = document.getElementById('drop').getBoundingClientRect(), cz = card0.getBoundingClientRect();
+  out('sample card and drop zone are placed by the viewport width', innerWidth >= 900 ? dz.right <= cz.left && Math.abs(dz.top - cz.top) < 80 : dz.bottom <= cz.top, true);
+  out('sample username is sample', (await (await fetch(card0.src)).text()).includes('>Stand card for sample: '), true);
+  out('card theme select is not displayed before a drop', document.getElementById('theme').offsetParent === null, true);
+  out('no accent before a drop', document.documentElement.dataset.accent || '', '');
+  // the field behind the header and the stage: the sample card's ground colour, with the halftone dots and the big faint ゴ; the ink on it is the card's
+  const sampleSvg = await (await fetch(card0.src)).text();
+  const rs0 = getComputedStyle(document.documentElement), fieldEl = document.getElementById('field');
+  out('before a drop the field is the sample card\'s ground', rs0.getPropertyValue('--field').trim(), cardColours(sampleSvg).ground);
+  out('the field paints that colour, with dots 7 px apart', `${getComputedStyle(fieldEl).backgroundColor === 'rgb(' + [1, 3, 5].map((i) => parseInt(cardColours(sampleSvg).ground.slice(i, i + 2), 16)).join(', ') + ')'} ${/radial-gradient/.test(getComputedStyle(fieldEl).backgroundImage)} ${getComputedStyle(fieldEl).backgroundSize}`, 'true true 7px 7px');
+  out('the field holds six big faint ゴ, made from the card\'s own path', `${fieldEl.querySelectorAll('svg.ghost path').length} ${fieldEl.getAttribute('aria-hidden')}`, '6 true');
+  out('the field behind the header and the stage ends under the stage', Math.abs(fieldEl.getBoundingClientRect().bottom - (document.getElementById('stage').getBoundingClientRect().bottom + 24)) < 2, true);
+  const v0 = (k) => rs0.getPropertyValue(k).trim();
+  out('text on the field keeps 4.5:1: the ink and the muted ink on the ground, on the dots and on the ghost ゴ', [[v0('--field'), v0('--field-ink')], [v0('--field'), v0('--field-mute')], [v0('--dot'), v0('--field-ink')], [v0('--ghost'), v0('--field-ink')], [v0('--ghost'), v0('--field-mute')]].every(([a, b]) => contrast(a, b) >= 4.5), true);
+  // the drop zone: ゴゴゴ beside it only while a file is dragged over it, the To Be Continued arrow in it only while a file is read
+  const dzone = document.getElementById('drop');
+  out('the drag-over ゴゴゴ and the arrow are not displayed at rest', `${document.getElementById('dropgo').offsetParent === null} ${document.getElementById('tbc').offsetParent === null}`, 'true true');
+  dzone.classList.add('over');
+  out('on drag-over the ゴゴゴ are displayed beside the zone', document.getElementById('dropgo').offsetParent !== null && document.querySelectorAll('#dropgo svg path').length >= 6, true);
+  dzone.classList.remove('over');
+  dzone.classList.add('reading');
+  out('while a file is read the To Be Continued arrow is displayed and the zone text is hidden', `${document.getElementById('tbc').offsetParent !== null} ${getComputedStyle(dzone.querySelector('.drop-title')).visibility} ${document.getElementById('tbc').textContent}`, 'true hidden To Be Continued');
+  dzone.classList.remove('reading');
+  out('share bar and file line are not displayed before a drop', ['share', 'filebar', 'result'].map((id) => document.getElementById(id).offsetParent === null).join(), 'true,true,true');
   const before = seen();
   const result = document.getElementById('result');
   const input = document.getElementById('file');
@@ -48,18 +84,35 @@ try {
     input.dispatchEvent(new Event('change'));
     await done;
   };
+  // with reduced motion the To Be Continued arrow is not shown (and so nothing waits for it)
+  let sawArrow = false;
+  new MutationObserver(() => { if (document.getElementById('drop').classList.contains('reading')) sawArrow = true; }).observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] });
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('result visible', !result.hidden, true);
+  out('the To Be Continued arrow is not shown under reduced motion', `${matchMedia('(prefers-reduced-motion: reduce)').matches} ${sawArrow}`, 'true false');
+  out('drop zone is replaced', document.getElementById('drop').hidden, true);
+  out('file line', document.getElementById('fileinfo').textContent, /^letterboxd-synthuser-2026-06-30-12-00-utc\.zip · \d[\d,]* films read$/);
+  out('Change file button', document.getElementById('change').textContent, 'Change file');
+  out('card scrolled into view', (() => { const r = document.getElementById('figure').getBoundingClientRect(); return r.top >= -2 && r.top < innerHeight; })(), true);
   const after = seen();
   const added = after.filter((n) => !before.includes(n));
   out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''), '0');
-  out('page resources', [...new Set(after)].sort().join(' '), '/app.js /films.json /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /selftest.js /style.css /tmdb.svg');
+  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /sample.json /selftest.js /style.css /tmdb.svg');
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
   out('rows', rows.length, 6);
-  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), 'Power | C | -0.049 | 210 of 250 films | measured: 210 rated films with crowd data');
-  out('notes', document.getElementById('notes').children.length, 2);
-  out('coverage cell', rows[0].cells[3].textContent, '210 of 250 films');
+  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*? \| -0\.049.+ \| .+ \| 210 of 250 filmsmeasured · rated films with crowd data$/);
+  out('Why these grades: six stats, each with value, your film and what it is based on', [...rows].every((r) => r.cells.length === 5 && r.cells[0].textContent && r.cells[2].textContent && r.cells[3].textContent && r.cells[4].textContent), true);
+  out('Why these grades: columns', [...document.querySelectorAll('#stats th')].map((h) => h.textContent).join(' | '), 'Stat | Grade | Value | Your film | Based on');
+  out('Why these grades: Based on does not repeat a count', [...rows].some((r) => { const n = r.cells[4].firstChild.textContent.match(/^(\d+) of/); return n && new RegExp(`(^|[^\\d])${n[1]}( |$)`).test(r.cells[4].querySelector('small').textContent); }), false);
+  for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
+  out('Why these grades: no Data credits section; the footer keeps the credits and the TMDB block', `${!!document.getElementById('why-credit')} ${/Letterboxd.*TMDB.*MusicBrainz/.test(document.querySelector('footer').textContent)} ${!!document.querySelector('footer .tmdb img')}`, 'false true true');
+  out('Why these grades: the weakness line has no leading label', /^(Weakness|Soft spot):/.test(document.getElementById('why-weakness').textContent), false);
+  out('Why these grades: the name line has no leading Why', /^Why\b/.test(document.getElementById('why-name').textContent), false);
+  out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
+  out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
+  out('notes: the film-table sentence is in the method text only', `${document.getElementById('notes').children.length} ${/film table/.test(document.getElementById('notes').textContent.replace(/Film table built/, ''))}`, '1 false');
+  out('coverage cell', rows[0].cells[4].firstChild.textContent, '210 of 250 films');
   const img = document.getElementById('card');
   await img.decode();
   out('img', `${img.naturalWidth}x${img.naturalHeight} ${img.src.slice(0, 5)}`, '1080x1350 blob:');
@@ -67,6 +120,29 @@ try {
   const dls = [];
   HTMLAnchorElement.prototype.click = function () { dls.push([this.download, fetch(this.href).then((r) => r.arrayBuffer())]); };
   const heads = { 'card.png': '89 50 4e 47 d a 1a a', 'card.svg': '3c 73 76 67 20 78 6d 6c', 'stand.json': '7b a 20 20 22 61 62 69' };
+  out('share bar is under the card', document.getElementById('card').getBoundingClientRect().bottom <= document.getElementById('share').getBoundingClientRect().top, true);
+  out('share bar order', [...document.querySelectorAll('#share button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
+  out('Download SVG and JSON are text links in the method section', ['dl-svg', 'dl-json'].map((id) => document.getElementById(id).tagName + document.getElementById(id).closest('#method').tagName).join(' '), 'ASECTION ASECTION');
+  out('card theme select is displayed after a drop', document.getElementById('theme').offsetParent !== null, true);
+  out('Advanced is collapsed, in the method section', (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })(), true);
+  out('order after a drop: file line, card, share bar, Why these grades', ['filebar', 'figure', 'share', 'result'].map((id) => document.getElementById(id).getBoundingClientRect().top).every((t, i, a) => !i || a[i - 1] < t), true);
+  out('Share is hidden exactly where the API cannot share files', document.getElementById('share-btn').hidden, !(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'a.png', { type: 'image/png' })] })));
+  // Copy image puts a PNG on the clipboard
+  if (!document.getElementById('copy-img').hidden) {
+    // The page hands the clipboard a ClipboardItem holding a promise of the PNG. The item is captured as the page makes it and its promise is
+    // read directly, through an object URL: Blob.arrayBuffer() on a canvas blob, and getType() on the item, make the virtual clock jump 30 to
+    // 120 s (it is read through another process), which would end the 60 s budget before the report is written.
+    let copied = null;
+    const Item = window.ClipboardItem;
+    window.ClipboardItem = function (data) { copied = data; return new Item(data); };
+    Object.defineProperty(navigator.clipboard, 'write', { configurable: true, value: async () => {} });
+    document.getElementById('copy-img').click();
+    await until('Copy image to write', () => copied, 5000);
+    window.ClipboardItem = Item;
+    const head = [...new Uint8Array(await (await fetch(URL.createObjectURL(await copied['image/png']))).arrayBuffer()).slice(0, 8)].map((x) => x.toString(16)).join(' ');
+    out('Copy image puts a PNG on the clipboard', `${Object.keys(copied).join()} ${head}`, 'image/png 89 50 4e 47 d a 1a a');
+    out('Copy image says so', document.getElementById('sharenote').textContent, 'Image copied.');
+  }
   for (const [n, id] of [[1, 'dl-png'], [2, 'dl-svg'], [3, 'dl-json']]) {
     document.getElementById(id).click();
     await until(id + ' to produce a file', () => dls.length === n);
@@ -81,6 +157,18 @@ try {
       out('name has a why line on the card data', a.card.why.startsWith('Why 「' + a.name.name + '」'), true);
     }
   }
+  // colour per user: the accent applied after the reveal (or at once with reduced motion) is the exact ground colour of the card on show,
+  // with the card's ink for the text on it, at WCAG AA
+  await until('the accent to shift', () => document.documentElement.dataset.accent, 3000);
+  out('accent key', document.documentElement.dataset.accent, /^(PWR|SPD|RNG|STA|PRC|DEV|none)$/);
+  const root = getComputedStyle(document.documentElement);
+  const colours = cardColours(await (await fetch(img.src)).text());
+  out('accent is the card ground', root.getPropertyValue('--accent').trim(), colours.ground);
+  out('the field is the card ground too, with the card ink and muted ink', [root.getPropertyValue('--field'), root.getPropertyValue('--field-ink')].map((x) => x.trim()).join(' '), `${colours.ground} ${colours.ink}`);
+  out('with reduced motion the reveal is not played: no inline card, no flash, the image shows', `${!document.getElementById('cardlive')} ${!img.classList.contains('playing')} ${!document.getElementById('field').classList.contains('flash')} ${matchMedia('(prefers-reduced-motion: reduce)').matches}`, 'true true true true');
+  out('text on the accent is the card ink', root.getPropertyValue('--on-accent').trim(), colours.ink);
+  out('accent label contrast', contrast(colours.ground, colours.ink).toFixed(2), (x) => Number(x) >= 4.5);
+  out('Download PNG is the one primary button', document.querySelectorAll('button.primary').length, 1);
   // malformed input: an error message for a corrupt file, a card for a file with a bad date and a NaN rating, and the page keeps working
   await feed('bad.zip', 'bad.zip');
   out('corrupt file: result hidden', result.hidden, true);
@@ -93,8 +181,52 @@ try {
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('good file afterwards: result visible', !result.hidden, true);
   out('good file afterwards: status', JSON.stringify(statusEl().textContent), '""');
+  // Copy link: the card's data in the URL fragment, base64url
+  let copiedText = null;
+  Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async (t) => { copiedText = t; } });
+  document.getElementById('copy-link').click();
+  await until('Copy link to write', () => copiedText, 5000);
+  out('link', copiedText.replace(/#c=.{12,}$/, '#c=…'), `${location.origin}${location.pathname}#c=…`);
+  out('link payload is base64url', /#c=[A-Za-z0-9_-]{100,900}$/.test(copiedText), true);
+  out('Copy link says so', document.getElementById('sharenote').textContent, 'Link copied.');
+  out('next to Copy link: what the link contains', document.getElementById('linknote').textContent.includes('The link contains your username and grades'), true);
+  // opening the link: the card with no file, and no request beyond the page's own load
+  const open = async (hash) => {
+    const f = document.createElement('iframe');
+    f.src = 'index.html' + hash;
+    f.style.cssText = 'position:fixed;left:-2000px;width:1280px;height:900px';
+    document.body.appendChild(f);
+    await new Promise((r) => f.addEventListener('load', r, { once: true }));
+    const d = () => f.contentDocument;
+    await until('the linked page to boot', () => d().getElementById('status') && d().getElementById('status').textContent === '' && !d().getElementById('drop').classList.contains('loading') && d().getElementById('card').src.startsWith('blob:'), 20000);
+    return f;
+  };
+  const fr = await open(copiedText.slice(copiedText.indexOf('#')));
+  const fd = fr.contentDocument;
+  await fd.getElementById('card').decode();
+  const names = () => fr.contentWindow.performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname);
+  const atLoad = names();
+  out('opened link: card label', fd.getElementById('cardlabel').textContent, 'Shared card');
+  out('opened link: card', `${fd.getElementById('card').naturalWidth}x${fd.getElementById('card').naturalHeight}`, '1080x1350');
+  out('opened link: same card as the file made', (await (await fetch(fd.getElementById('card').src)).text()) === (await (await fetch(img.src)).text()), true);
+  out('opened link: share bar visible, why section hidden', `${!fd.getElementById('share').hidden} ${fd.getElementById('result').hidden}`, 'true true');
+  await sleep(1500);
+  out('opened link: requests after the page load', names().filter((n) => !atLoad.includes(n)).length, 0);
+  out('opened link: only the page\'s own files', [...new Set(names())].filter((n) => !/^\/(accent\.js|app\.js|films\.json|names\.json|sample\.json|style\.css|tmdb\.svg|pkg\/.*|fonts\/.*)$/.test(n)).join(' '), '');
+  out('opened link: no file was read', fd.getElementById('filebar').hidden && !fd.getElementById('drop').hidden, true);
+  fr.remove();
+  // a malformed fragment shows the normal page
+  for (const bad of ['#c=%21%21%21', '#c=e30', '#c=', '#c=' + 'A'.repeat(5000), '#x=1']) {
+    const g = await open(bad);
+    const gd = g.contentDocument;
+    out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden}`, 'Sample false true');
+    g.remove();
+  }
   // theme switch: the card image changes to a new blob
   const sel = document.getElementById('theme');
+  out('card theme options', [...sel.options].map((o) => o.textContent).join(' | '), 'Light card | Dark card');
+  out('card theme starts as the system', sel.value, matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+  if (sel.value === 'dark') { sel.value = 'light'; sel.dispatchEvent(new Event('change')); await sleep(50); }
   const was = img.src;
   sel.value = 'dark';
   sel.dispatchEvent(new Event('change'));

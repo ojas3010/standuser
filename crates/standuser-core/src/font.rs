@@ -1,14 +1,32 @@
-//! Text as outlines: glyph paths from the embedded Noto Sans JP / Noto Serif JP Bold subsets, so the SVG renders the
-//! same everywhere with no font files. Characters missing from the subset are drawn as □.
+//! Text as outlines: glyph paths from the embedded font subsets, so the SVG renders the same everywhere with no font files (all
+//! SIL OFL; the licence texts sit beside the fonts in data/). Sans is Noto Sans JP Bold, for body text; Display is Dela Gothic One,
+//! the manga lettering (the stat labels, ゴゴゴ); Name is Archivo Black, the grades and the ability's name; Serif is Noto Serif JP, the
+//! Stand name and the eyecatch labels. Characters missing from the
+//! subset are drawn as □.
 
 use ttf_parser::{Face, OutlineBuilder};
 
-static SANS: &[u8] = include_bytes!("../data/sans.ttf");
+static JP: &[u8] = include_bytes!("../data/sans.ttf");
+static BODY: &[u8] = include_bytes!("../data/body.ttf");
+static NAME: &[u8] = include_bytes!("../data/name.ttf");
+static DISPLAY: &[u8] = include_bytes!("../data/display.ttf");
 static SERIF: &[u8] = include_bytes!("../data/serif.ttf");
 
-#[derive(Clone, Copy, PartialEq, Eq)]
+/// The card's five faces, all SIL OFL (licence texts in data/):
+/// Jp is Noto Sans JP Bold: Japanese below 48 px, no outline. Body is Archivo at weight 700: all the Latin text that is not display.
+/// Name is Archivo Black: the Stand name and the other Latin display text. Display is Dela Gothic One: Japanese at 48 px or larger, with
+/// the black outline. Serif is Noto Serif JP Bold: the header and the corner of the eyecatch, no outline. (sans.ttf also carries the Latin of Noto Sans JP; the card never draws it, the page's name choice measures with it.)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FontKind {
-    Sans,
+    /// Noto Sans JP Bold.
+    Jp,
+    /// Archivo 700: Basic Latin, Latin-1, Latin Extended-A and punctuation.
+    Body,
+    /// The Stand name (Archivo Black): Basic Latin, Latin-1, punctuation, ∞ ∅ and 「」.
+    Name,
+    /// Dela Gothic One: kana, the kanji of the labels and the Stand types, 【】「」・―.
+    Display,
+    /// Noto Serif JP Bold, the eyecatch's lettering: the Stand name, 【STAND NAME】, 【STAND MASTER】 and the user name. Plain, no outline.
     Serif,
 }
 
@@ -18,9 +36,163 @@ pub struct Font {
 }
 
 pub fn font(kind: FontKind) -> Font {
-    let face = Face::parse(if kind == FontKind::Sans { SANS } else { SERIF }, 0).expect("embedded font");
+    let data = match kind {
+        FontKind::Jp => JP,
+        FontKind::Body => BODY,
+        FontKind::Name => NAME,
+        FontKind::Display => DISPLAY,
+        FontKind::Serif => SERIF,
+    };
+    let face = Face::parse(data, 0).expect("embedded font");
     let upm = face.units_per_em() as f64;
     Font { face, upm }
+}
+
+/// What the card needs of a face: how wide a text is, the path of its outlines, and how far its ink reaches.
+pub trait Draw {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64;
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String;
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64);
+}
+
+/// The Latin body text: Archivo, and for a character Archivo does not have (a Cyrillic, Greek, Korean or Japanese letter in a director's
+/// name, say) Noto Sans JP Bold, so user-supplied names still draw.
+pub struct BodyText {
+    latin: Font,
+    jp: Font,
+}
+
+pub fn body_text() -> BodyText {
+    BodyText { latin: font(FontKind::Body), jp: font(FontKind::Jp) }
+}
+
+impl BodyText {
+    fn pick(&self, c: char) -> &Font {
+        if self.latin.has(c) || !self.jp.has(c) {
+            &self.latin
+        } else {
+            &self.jp
+        }
+    }
+
+    fn adv(&self, c: char, size: f64) -> f64 {
+        self.pick(c).adv(c, size)
+    }
+
+    /// The faces `s` is drawn in, as (text, is the Noto fallback) runs.
+    pub fn runs(&self, s: &str) -> Vec<(String, bool)> {
+        let mut out: Vec<(String, bool)> = vec![];
+        for c in s.chars() {
+            let fallback = !std::ptr::eq(self.pick(c), &self.latin);
+            match out.last_mut() {
+                Some((t, f)) if *f == fallback => t.push(c),
+                _ => out.push((c.to_string(), fallback)),
+            }
+        }
+        out
+    }
+
+    pub fn wrap(&self, text: &str, size: f64, maxw: f64) -> Vec<String> {
+        wrap_by(text, maxw, |c| self.adv(c, size))
+    }
+
+    pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
+        fit_by(s, maxw, |t| self.width(t, size, 0.0))
+    }
+}
+
+/// The eyecatch's serif text: Noto Serif JP Bold, and for a character it does not have (a Cyrillic, Greek or Korean letter in a user
+/// name, say) the body text's faces, so a user name always draws.
+pub struct SerifText {
+    serif: Font,
+    rest: BodyText,
+}
+
+pub fn serif_text() -> SerifText {
+    SerifText { serif: font(FontKind::Serif), rest: body_text() }
+}
+
+impl SerifText {
+    fn adv(&self, c: char, size: f64) -> f64 {
+        if self.serif.has(c) { self.serif.adv(c, size) } else { self.rest.adv(c, size) }
+    }
+
+    pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
+        fit_by(s, maxw, |t| self.width(t, size, 0.0))
+    }
+
+    /// Side bearings of a serif glyph (left, right) at `size`, so a label's ink can line up with the text under it.
+    pub fn bearings(&self, c: char, size: f64) -> (f64, f64) {
+        self.serif.bearings(c, size)
+    }
+}
+
+impl Draw for SerifText {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64 {
+        if s.is_empty() {
+            return 0.0;
+        }
+        s.chars().map(|c| self.adv(c, size) + ls).sum::<f64>() - ls
+    }
+
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
+        let mut out = String::new();
+        let mut cx = x;
+        for c in s.chars() {
+            let t = c.to_string();
+            out.push_str(&if self.serif.has(c) { self.serif.path(&t, cx, y, size, 0.0) } else { self.rest.path(&t, cx, y, size, 0.0) });
+            cx += self.adv(c, size) + ls;
+        }
+        out
+    }
+
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        s.chars().fold((0.0f64, 0.0f64), |(u, d), c| {
+            let t = c.to_string();
+            let (cu, cd) = if self.serif.has(c) { self.serif.ink_extent(&t, size) } else { self.rest.ink_extent(&t, size) };
+            (u.max(cu), d.max(cd))
+        })
+    }
+}
+
+impl Draw for BodyText {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64 {
+        if s.is_empty() {
+            return 0.0;
+        }
+        s.chars().map(|c| self.adv(c, size) + ls).sum::<f64>() - ls
+    }
+
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
+        let mut out = String::new();
+        let mut cx = x;
+        for c in s.chars() {
+            let f = self.pick(c);
+            let t = c.to_string();
+            out.push_str(&f.path(&t, cx, y, size, 0.0));
+            cx += f.adv(c, size) + ls;
+        }
+        out
+    }
+
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        s.chars().fold((0.0f64, 0.0f64), |(u, d), c| {
+            let (cu, cd) = self.pick(c).ink_extent(&c.to_string(), size);
+            (u.max(cu), d.max(cd))
+        })
+    }
+}
+
+impl Draw for Font {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64 {
+        Font::width(self, s, size, ls)
+    }
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
+        Font::path(self, s, x, y, size, ls)
+    }
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        Font::ink_extent(self, s, size)
+    }
 }
 
 fn num(v: f64) -> String {
@@ -88,6 +260,26 @@ impl Font {
         s.chars().map(|c| self.adv(c, size) + ls).sum::<f64>() - ls
     }
 
+    /// How far the ink of `s` reaches above and below the baseline at `size`: (highest, deepest), both positive.
+    pub fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        let (mut up, mut down) = (0.0f64, 0.0f64);
+        for c in s.chars() {
+            if let Some(b) = self.glyph(c).and_then(|g| self.face.glyph_bounding_box(g)) {
+                up = up.max(b.y_max as f64);
+                down = down.max(-(b.y_min as f64));
+            }
+        }
+        (up * size / self.upm, down * size / self.upm)
+    }
+
+    /// The blank between a glyph's ink and its advance box, at `size`: (left, right). The fullwidth brackets 【 and 】 carry a wide one.
+    pub fn bearings(&self, c: char, size: f64) -> (f64, f64) {
+        match self.glyph(c).and_then(|g| Some((self.face.glyph_bounding_box(g)?, self.face.glyph_hor_advance(g)?))) {
+            Some((b, a)) => (b.x_min as f64 * size / self.upm, (a as f64 - b.x_max as f64) * size / self.upm),
+            None => (0.0, 0.0),
+        }
+    }
+
     /// SVG path data for `s` with its baseline starting at (x, y).
     pub fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
         let sc = size / self.upm;
@@ -105,43 +297,7 @@ impl Font {
 
     /// Greedy wrap: break on spaces for Latin, anywhere for CJK.
     pub fn wrap(&self, text: &str, size: f64, maxw: f64) -> Vec<String> {
-        let mut toks: Vec<String> = Vec::new();
-        let mut cur = String::new();
-        for ch in text.chars() {
-            if (ch as u32) > 0x2E80 {
-                if !cur.is_empty() {
-                    toks.push(std::mem::take(&mut cur));
-                }
-                toks.push(ch.to_string());
-            } else if ch == ' ' {
-                if !cur.is_empty() {
-                    toks.push(std::mem::take(&mut cur));
-                }
-                toks.push(" ".into());
-            } else {
-                cur.push(ch);
-            }
-        }
-        if !cur.is_empty() {
-            toks.push(cur);
-        }
-        let mut lines = Vec::new();
-        let mut line = String::new();
-        for t in toks {
-            let cand = format!("{line}{t}");
-            if self.width(cand.trim_end(), size, 0.0) <= maxw {
-                line = cand;
-            } else {
-                if !line.trim().is_empty() {
-                    lines.push(line.trim_end().to_string());
-                }
-                line = t.trim_start().to_string();
-            }
-        }
-        if !line.trim().is_empty() {
-            lines.push(line.trim_end().to_string());
-        }
-        lines
+        wrap_by(text, maxw, |c| self.adv(c, size))
     }
 
     /// Fit a film line "Title: Subtitle (Country)" to `maxw` without cutting a word in half. Order: the line as it is; the part after
@@ -200,38 +356,147 @@ impl Font {
 
     /// Cut `s` to fit `maxw`, ending with an ellipsis.
     pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
-        if self.width(s, size, 0.0) <= maxw {
-            return s.to_string();
-        }
-        let mut t: Vec<char> = s.chars().collect();
-        while !t.is_empty() {
-            t.pop();
-            let cand: String = t.iter().collect::<String>().trim_end().to_string() + "…";
-            if self.width(&cand, size, 0.0) <= maxw {
-                return cand;
-            }
-        }
-        "…".into()
+        fit_by(s, maxw, |t| self.width(t, size, 0.0))
     }
+}
+
+/// Greedy wrap of `text` to `maxw` (the advance of a character is `adv`): break on spaces for Latin, anywhere for CJK.
+pub fn wrap_by(text: &str, maxw: f64, adv: impl Fn(char) -> f64) -> Vec<String> {
+    let mut toks: Vec<String> = Vec::new();
+    let mut cur = String::new();
+    for ch in text.chars() {
+        if (ch as u32) > 0x2E80 {
+            if !cur.is_empty() {
+                toks.push(std::mem::take(&mut cur));
+            }
+            toks.push(ch.to_string());
+        } else if ch == ' ' {
+            if !cur.is_empty() {
+                toks.push(std::mem::take(&mut cur));
+            }
+            toks.push(" ".into());
+        } else {
+            cur.push(ch);
+        }
+    }
+    if !cur.is_empty() {
+        toks.push(cur);
+    }
+    // the width of the line is kept as it grows: re-measuring the whole line for every token made wrapping quadratic
+    let mut lines = Vec::new();
+    let mut line = String::new();
+    let (mut w, mut trail) = (0.0, 0.0); // advance of the line, and of the spaces at its end
+    for t in toks {
+        let tw: f64 = t.chars().map(|c| adv(c)).sum();
+        let blank = t.chars().all(|c| c == ' ');
+        if (if blank { w - trail } else { w + tw }) <= maxw {
+            line.push_str(&t);
+            w += tw;
+            trail = if blank { trail + tw } else { 0.0 };
+        } else {
+            if !line.trim().is_empty() {
+                lines.push(line.trim_end().to_string());
+            }
+            line = t.trim_start().to_string();
+            w = line.chars().map(|c| adv(c)).sum();
+            trail = 0.0;
+        }
+    }
+    if !line.trim().is_empty() {
+        lines.push(line.trim_end().to_string());
+    }
+    lines
+}
+
+/// Cut `s` to fit `maxw` (`width` measures a text), ending with an ellipsis.
+pub fn fit_by(s: &str, maxw: f64, width: impl Fn(&str) -> f64) -> String {
+    if width(s) <= maxw {
+        return s.to_string();
+    }
+    let mut t: Vec<char> = s.chars().collect();
+    while !t.is_empty() {
+        t.pop();
+        let cand: String = t.iter().collect::<String>().trim_end().to_string() + "…";
+        if width(&cand) <= maxw {
+            return cand;
+        }
+    }
+    "…".into()
 }
 
 #[cfg(test)]
 mod title_tests {
     use super::*;
 
-    fn serif() -> Font {
-        font(FontKind::Serif)
+    /// The wrap the card used before it kept the line width as it grows: every line of the new one is the same.
+    fn wrap_naive(f: &Font, text: &str, size: f64, maxw: f64) -> Vec<String> {
+        let mut toks: Vec<String> = Vec::new();
+        let mut cur = String::new();
+        for ch in text.chars() {
+            if (ch as u32) > 0x2E80 {
+                if !cur.is_empty() {
+                    toks.push(std::mem::take(&mut cur));
+                }
+                toks.push(ch.to_string());
+            } else if ch == ' ' {
+                if !cur.is_empty() {
+                    toks.push(std::mem::take(&mut cur));
+                }
+                toks.push(" ".into());
+            } else {
+                cur.push(ch);
+            }
+        }
+        if !cur.is_empty() {
+            toks.push(cur);
+        }
+        let (mut lines, mut line) = (Vec::new(), String::new());
+        for t in toks {
+            let cand = format!("{line}{t}");
+            if f.width(cand.trim_end(), size, 0.0) <= maxw {
+                line = cand;
+            } else {
+                if !line.trim().is_empty() {
+                    lines.push(line.trim_end().to_string());
+                }
+                line = t.trim_start().to_string();
+            }
+        }
+        if !line.trim().is_empty() {
+            lines.push(line.trim_end().to_string());
+        }
+        lines
+    }
+
+    #[test]
+    fn wrap_is_unchanged_by_the_incremental_width() {
+        let f = font(FontKind::Jp);
+        let mut texts: Vec<String> = crate::ability::all_sample_sentences();
+        texts.push("Why 「DIRTY WEATHER」: verbatim: \"DIRTY WEATHER\", track 3 of Some Band's Lighthouse score (2019); Lighthouse is one of your Favourite Films (4.5★). \"weather\" fits your Wind Reading ability.".into());
+        texts.push("日本語の文章と English words mixed together 久石譲 달파란  with  double  spaces and a verylongunbrokenwordthatcannotbebrokenanywhereatallbecauseithasnospaces ".repeat(3));
+        texts.push("  leading spaces and a trailing one ".into());
+        texts.push(String::new());
+        for t in &texts {
+            for (size, w) in [(20.0, 820.0), (19.0, 820.0), (20.0, 940.0), (18.0, 300.0), (20.0, 60.0)] {
+                assert_eq!(f.wrap(t, size, w), wrap_naive(&f, t, size, w), "{t} at {size}/{w}");
+            }
+        }
+    }
+
+    /// The fitting rules run on the card's body text, which is the sans.
+    fn sans() -> Font {
+        font(FontKind::Jp)
     }
 
     #[test]
     fn a_title_that_fits_is_left_alone() {
-        let f = serif();
+        let f = sans();
         assert_eq!(f.fit_title("Ghost Rider: Spirit of Vengeance (Denmark)", 18.0, 2000.0), "Ghost Rider: Spirit of Vengeance (Denmark)");
     }
 
     #[test]
     fn the_subtitle_after_the_colon_goes_first_and_the_country_stays() {
-        let f = serif();
+        let f = sans();
         let long = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
         let short = "Ghost Rider (United Arab Emirates)";
         let w = f.width(short, 18.0, 0.0) + 1.0;
@@ -241,7 +506,7 @@ mod title_tests {
 
     #[test]
     fn if_still_too_long_the_title_is_cut_at_a_word_boundary_with_an_ellipsis() {
-        let f = serif();
+        let f = sans();
         let long = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
         let w = f.width("Ghost… (United Arab Emirates)", 18.0, 0.0) + 1.0;
         assert_eq!(f.fit_title(long, 18.0, w), "Ghost… (United Arab Emirates)");
@@ -252,7 +517,7 @@ mod title_tests {
 
     #[test]
     fn never_cuts_inside_a_word_at_any_width() {
-        let f = serif();
+        let f = sans();
         let src = "Ghost Rider: Spirit of Vengeance (United Arab Emirates)";
         let words: Vec<&str> = src.split([' ', ':']).map(|w| w.trim_matches(|c| c == '(' || c == ')')).filter(|w| !w.is_empty()).collect();
         for w in (120..460).step_by(7) {
@@ -270,7 +535,7 @@ mod title_tests {
 
     #[test]
     fn the_signature_line_is_cut_mid_word_by_plain_fit_and_not_by_fit_signature() {
-        let f = serif();
+        let f = sans();
         assert!(f.width(LONG_SIG, 20.0, 0.0) > 940.0);
         let old = f.fit(LONG_SIG, 20.0, 940.0);
         assert!(old.ends_with('…') && !old.ends_with(" …") && !old.contains("ratings"), "the old cut ends inside the line: {old}");
@@ -281,7 +546,7 @@ mod title_tests {
 
     #[test]
     fn a_signature_title_without_a_colon_is_cut_at_a_word_boundary_and_keeps_the_numbers() {
-        let f = serif();
+        let f = sans();
         let s = "Signature film: The Lord of the Rings the Fellowship of the Ring Extended Edition Director's Cut (2001), 4.5★ against the crowd's 3.46★ (+1.04), 192,136 ratings.";
         let r = f.fit_signature(s, 20.0, 940.0);
         assert!(f.width(&r, 20.0, 0.0) <= 940.0, "{r}");
@@ -296,7 +561,7 @@ mod title_tests {
 
     #[test]
     fn a_one_word_signature_title_is_shortened_so_the_numbers_after_it_stay() {
-        let f = serif();
+        let f = sans();
         // this line was cut after "(-3.55)," by the word-boundary rule, which dropped the rating count
         let s = "Signature film: themuppetchristmascarol (1992), 0.5★ against the crowd's 4.05★ (-3.55), 388,056 ratings.";
         assert!(f.width(s, 20.0, 0.0) > 940.0);
@@ -310,7 +575,7 @@ mod title_tests {
 
     #[test]
     fn a_single_word_wider_than_the_box_falls_back_to_a_character_cut() {
-        let f = serif();
+        let f = sans();
         let r = f.fit_title("Supercalifragilisticexpialidocious", 18.0, 100.0);
         assert!(r.ends_with('…') && f.width(&r, 18.0, 0.0) <= 100.0);
     }

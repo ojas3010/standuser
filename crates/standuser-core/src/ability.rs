@@ -163,6 +163,32 @@ fn ability_text(id: u8, f: &Facts, top_label: &str, top_letter: &str, top_pct: &
     }
 }
 
+/// The longest sentence the card carries under the ability name, in words.
+pub const CARD_LINE_WORDS: usize = 20;
+
+/// The card's one sentence for template `id`: the template's image and the one figure behind it (`ability_text` keeps the full line).
+fn card_line(id: u8, f: &Facts, top_label: &str, top_letter: &str, top_pct: &str) -> String {
+    match id {
+        1 => format!("Every film it touches becomes a bomb: it rates {:.2} stars below the crowd on average.", f.b.abs()),
+        2 => format!("It heals what the crowd wounded: it rates {:.2} stars above the crowd on average.", f.b.abs()),
+        3 => format!("A barrage too fast to follow: {:.1} films per active month.", f.pace),
+        4 => format!("Time speeds up around it: {:.1} films per active month, a pace almost no one reaches.", f.pace),
+        5 => format!("A slow mist drifts rather than strikes: {:.1} films per active month.", f.pace),
+        6 => format!("It unravels into tendrils that cross borders: {:.1} effective production countries per 50 films.", f.d_range),
+        7 => format!("Fiction from every nation walks into the world: {:.1} effective production countries per 50 films.", f.d_range),
+        8 => format!("It locks everything in place: {} of your films come from {}.", pct0(f.top_share), f.top_country),
+        9 => format!("It never stops tracking: films in {} of {} months.", f.active, f.months),
+        10 => format!("It keeps growing on whatever it touches: films in every one of {} months.", f.months),
+        11 => format!("Time vanishes and only the result remains: {} of {} months hold no film.", f.silent, f.months),
+        12 => format!("It reads the air and answers it: it agrees with the crowd on {} of film pairs.", pct0(f.pa25)),
+        13 => format!("Its verdicts scatter without regard for the crowd: it agrees on only {} of film pairs.", pct0(f.pa25)),
+        14 => format!("Every unfamiliar name becomes a new life: {} of your director credits are directors seen once.", pct0(f.gt)),
+        15 => format!("It divines through familiar vines: it keeps returning to {} ({} films).", f.top_dir, f.top_dir_n),
+        16 => format!("Complete: the frontier has closed, with only {} of your director credits one-offs.", pct0(f.gt)),
+        _ => format!("It copies whoever stands before it: your strongest stat is {top_label} {top_letter} ({top_pct} percentile)."),
+    }
+}
+
 fn weak_phrase(stat: &str, tier: &str, l: &str, f: &Facts) -> String {
     let b_abs = f.b.abs();
     let b_dir = if f.b < 0.0 { "below" } else { "above" };
@@ -187,7 +213,19 @@ fn status_tag(s: Status) -> &'static str {
     if s == Status::Provisional { " [provisional]" } else { "" }
 }
 
-/// Every sentence the engine can put on the card, written with sample numbers (for the glyph-coverage test).
+/// Every sentence the card can carry under an ability name, written with sample numbers (for the glyph-coverage test).
+pub fn all_card_lines() -> Vec<String> {
+    let f = Facts {
+        b: -0.12, n_elig: 1234, pace: 6.5, peak_n: 14, peak_month: "Mar 2023".into(), months: 48, active: 40, streak: 17, start: "Jan 2023".into(),
+        silent: 8, silent_run: 3, d_range: 3.4, top_country: "the United States".into(), top_share: 0.62, n_films_cty: 500, pa25: 0.81, pairs: 70211,
+        dpa: 0.88, n1: 120, credits: 240, gt: 0.5, top_dir: "Director Seven".into(), top_dir_n: 6, ..Default::default()
+    };
+    let mut v: Vec<String> = (1..=17u8).map(|id| card_line(id, &f, "Precision", "A", "97.8th")).collect();
+    v.push("Too few stats could be graded to reveal an ability (?).".into());
+    v
+}
+
+/// Every sentence the engine can put on the page, written with sample numbers (for the glyph-coverage test).
 pub fn all_sample_sentences() -> Vec<String> {
     let f = Facts {
         b: -0.12, n_elig: 1234, pace: 6.5, peak_n: 14, peak_month: "Mar 2023".into(), months: 48, active: 40, streak: 17, start: "Jan 2023".into(),
@@ -266,6 +304,8 @@ pub struct Rendered {
     pub template: Option<u8>,
     pub ability_name: String,
     pub ability: String,
+    /// The one sentence the card carries under the ability name: at most CARD_LINE_WORDS words, with the one figure that decides the template.
+    pub card_line: String,
     pub film: Option<String>,
     pub film_name: Option<String>,
     pub weakness: String,
@@ -278,8 +318,9 @@ pub fn render(grades: &[Grade; 6], f: &Facts, films: &[RatedFilm]) -> Rendered {
     let Some(sig) = pick_signature(grades) else {
         return Rendered {
             template: None,
-            ability_name: String::new(),
+            ability_name: "Not yet revealed".into(),
             ability: "Ability: not yet revealed (?).".into(),
+            card_line: "Too few stats could be graded to reveal an ability (?).".into(),
             film: None,
             film_name: None,
             weakness: "Weakness: not yet revealed (?).".into(),
@@ -331,7 +372,7 @@ pub fn render(grades: &[Grade; 6], f: &Facts, films: &[RatedFilm]) -> Rendered {
         why.push_str(&format!("{} {} is your lowest graded stat, so the limitation comes from it.", LABEL[stat_ix(s)], l));
     }
     let _ = phi;
-    Rendered { template: Some(t.id), ability_name: t.name.into(), ability, film_name: sf.as_ref().map(|(s, _)| s.name.clone()), film, weakness: wk.text, why, runner: sig.runner.clone(), signature: Some(sig) }
+    Rendered { template: Some(t.id), ability_name: t.name.into(), ability, card_line: card_line(t.id, f, &tl, &tp, &tpct), film_name: sf.as_ref().map(|(s, _)| s.name.clone()), film, weakness: wk.text, why, runner: sig.runner.clone(), signature: Some(sig) }
 }
 
 #[cfg(test)]
@@ -381,6 +422,22 @@ mod tests {
         assert_eq!(r.film.as_deref(), Some("Signature film: Synthetic Film One (2008), 1.0★ against the crowd's 3.54★ (-2.54), 166,934 ratings."));
         assert_eq!(r.weakness, "Soft spot: ordinary hands (Power C, “same as a human”). It rates 0.06★ below the crowd on average, about what a human would.");
         assert_eq!(r.why, "Why: Precision A (97.8th percentile, z +2.01; runner-up Stamina z +1.43) is your most extreme graded stat, which selects Wind Reading after Manhattan Transfer, whose canon Precision is A. Canon: “floating around and detecting the air movements near it”. Power C is your lowest graded stat, so the limitation comes from it.");
+    }
+
+    #[test]
+    fn the_card_sentence_is_one_sentence_of_at_most_20_words() {
+        let f = Facts {
+            b: -0.12, n_elig: 1234, pace: 6.5, peak_n: 14, peak_month: "Mar 2023".into(), months: 48, active: 40, streak: 17, start: "Jan 2023".into(),
+            silent: 8, silent_run: 3, d_range: 3.4, top_country: "the United Arab Emirates".into(), top_share: 0.62, n_films_cty: 500, pa25: 0.81, pairs: 70211,
+            dpa: 0.88, n1: 120, credits: 240, gt: 0.5, top_dir: "Apichatpong Weerasethakul".into(), top_dir_n: 16, ..Default::default()
+        };
+        for id in 1..=17 {
+            let s = card_line(id, &f, "Precision", "A", "97.8th");
+            let words = s.split_whitespace().count();
+            assert!(words >= 6 && words <= CARD_LINE_WORDS, "{id}: {words} words: {s}");
+            // one sentence: it ends at its single closing full stop, and has no other sentence break or bracketed tag
+            assert!(s.ends_with('.') && !s[..s.len() - 1].contains(". ") && !s.contains('['), "{id}: {s}");
+        }
     }
 
     #[test]

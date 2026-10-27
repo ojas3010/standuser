@@ -1,0 +1,163 @@
+{
+ "note": "Written from tools/ref_palette.py's samples of local/ref (the images stay out of git). Each colour is an exact bin colour of the cover named; area is that bin's share of the cover. crates/standuser-core/src/palette.rs carries these values and a test checks they agree.",
+ "grounds": {
+  "PWR": {
+   "light": {
+    "bg": "#f32267",
+    "bg_from": "Volume_88.png",
+    "bg_area": 0.111,
+    "fill": "#57b82f",
+    "fill_from": "Volume_41.png",
+    "fill_area": 0.354
+   },
+   "dark": {
+    "bg": "#c61544",
+    "bg_from": "61MuvJWIRVL._SX354_BO1,204,203,200_.jpg",
+    "bg_area": 0.068,
+    "fill": "#57b82f",
+    "fill_from": "Volume_41.png",
+    "fill_area": 0.354
+   }
+  },
+  "SPD": {
+   "light": {
+    "bg": "#f0ab0b",
+    "bg_from": "JumpComics38.jpg",
+    "bg_area": 0.082,
+    "fill": "#c22cb5",
+    "fill_from": "Volume_11.jpg",
+    "fill_area": 0.07
+   },
+   "dark": {
+    "bg": "#884294",
+    "bg_from": "Volume_97.png",
+    "bg_area": 0.019,
+    "fill": "#f0ab0b",
+    "fill_from": "JumpComics38.jpg",
+    "fill_area": 0.082
+   }
+  },
+  "RNG": {
+   "light": {
+    "bg": "#1d9efa",
+    "bg_from": "Volume_70.png",
+    "bg_area": 0.032,
+    "fill": "#ec834a",
+    "fill_from": "D-tPq_DXsAAQrOB.jpg",
+    "fill_area": 0.125
+   },
+   "dark": {
+    "bg": "#036ab1",
+    "bg_from": "Rohan_At_the_Louvre.jpg",
+    "bg_area": 0.26,
+    "fill": "#ec834a",
+    "fill_from": "D-tPq_DXsAAQrOB.jpg",
+    "fill_area": 0.125
+   }
+  },
+  "STA": {
+   "light": {
+    "bg": "#57b82f",
+    "bg_from": "Volume_41.png",
+    "bg_area": 0.354,
+    "fill": "#f32267",
+    "fill_from": "Volume_88.png",
+    "fill_area": 0.111
+   },
+   "dark": {
+    "bg": "#0e724d",
+    "bg_from": "JosephWSJWinterSpecial.png",
+    "bg_area": 0.21,
+    "fill": "#f32267",
+    "fill_from": "Volume_88.png",
+    "fill_area": 0.111
+   }
+  },
+  "PRC": {
+   "light": {
+    "bg": "#c22cb5",
+    "bg_from": "Volume_11.jpg",
+    "bg_area": 0.07,
+    "fill": "#f0ab0b",
+    "fill_from": "JumpComics38.jpg",
+    "fill_area": 0.082
+   },
+   "dark": {
+    "bg": "#6834c0",
+    "bg_from": "Volume_11.jpg",
+    "bg_area": 0.025,
+    "fill": "#f0ab0b",
+    "fill_from": "JumpComics38.jpg",
+    "fill_area": 0.082
+   }
+  },
+  "DEV": {
+   "light": {
+    "bg": "#ec834a",
+    "bg_from": "D-tPq_DXsAAQrOB.jpg",
+    "bg_area": 0.125,
+    "fill": "#1d9efa",
+    "fill_from": "Volume_70.png",
+    "fill_area": 0.032
+   },
+   "dark": {
+    "bg": "#064677",
+    "bg_from": "Rohan_At_the_Louvre.jpg",
+    "bg_area": 0.066,
+    "fill": "#ec834a",
+    "fill_from": "D-tPq_DXsAAQrOB.jpg",
+    "fill_area": 0.125
+   }
+  },
+  "NONE": {
+   "light": {
+    "bg": "#51bc99",
+    "bg_from": "JumpComics38.jpg",
+    "bg_area": 0.109,
+    "fill": "#f0ab0b",
+    "fill_from": "JumpComics38.jpg",
+    "fill_area": 0.082
+   },
+   "dark": {
+    "bg": "#136f97",
+    "bg_from": "UJ2003No8LivesT.png",
+    "bg_area": 0.035,
+    "fill": "#f0ab0b",
+    "fill_from": "JumpComics38.jpg",
+    "fill_area": 0.082
+   }
+  }
+ },
+ "family_picks": {
+  "PWR": {
+   "hex": "#da1b50",
+   "from": "Volume_56.png",
+   "area": 0.238
+  },
+  "SPD": {
+   "hex": "#eeb243",
+   "from": "Volume_56.png",
+   "area": 0.111
+  },
+  "RNG": {
+   "hex": "#036ab1",
+   "from": "Rohan_At_the_Louvre.jpg",
+   "area": 0.26
+  },
+  "STA": {
+   "hex": "#57b82f",
+   "from": "Volume_41.png",
+   "area": 0.354
+  },
+  "PRC": {
+   "hex": "#b22487",
+   "from": "JumpComicsSO17.jpg",
+   "area": 0.226
+  },
+  "DEV": {
+   "hex": "#ec834a",
+   "from": "D-tPq_DXsAAQrOB.jpg",
+   "area": 0.125
+  }
+ }
+}

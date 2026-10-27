@@ -289,6 +289,12 @@ const T_RATING: &str = " ({rating}★)";
 const T_FIT_CORE: &str = ". \"{word}\" fits your {ability} ability.";
 const T_FIT_RING: &str = ". \"{word}\" is close to your {ability} ability.";
 const T_END: &str = ".";
+// Shorter forms, used only when the full line would take more than the card's 3 rows (see `why_line`): the quoted source is
+// replaced by a plain statement (a medley's whole track list can be 300 characters), and then the artist is left out.
+const T_HEAD_SHORT: &str = "Why 「{name}」: {how} a longer title, ";
+const T_HEAD_SHORT_VERBATIM: &str = "Why 「{name}」: verbatim, ";
+const T_LINK_FAV_SHORT: &str = "; this film is one of your Favourite Films";
+const T_LINK_TOP_SHORT: &str = "; this film ranks {rank} of {pool_films} films in your pool by affinity";
 const T_BARE: &str = "Why 「{name}」: track {track} of the {film} {kind} ({year}).";
 
 /// Words of the templates themselves; every other number or capitalised word must come from a slot.
@@ -367,36 +373,77 @@ fn why_line(w: &Row, pool: &[&UserFilm], template: u8) -> String {
     if named {
         slots.push(("artist_poss", possessive(&album.artist)));
     }
-    let mut parts: Vec<&str> = vec![T_HEAD, if named { T_PLACE_ARTIST } else { T_PLACE_PLAIN }];
-    if w.film.fav {
-        parts.push(T_LINK_FAV);
+    let (link, link_short) = if w.film.fav {
+        (T_LINK_FAV, T_LINK_FAV_SHORT)
     } else {
         // the rank of the film among the pool's films by affinity (films with equal A share a rank)
         let rank = 1 + pool.iter().filter(|f| f.a > w.film.a).count();
         slots.push(("rank", rank.to_string()));
         slots.push(("pool_films", pool.len().to_string()));
-        parts.push(T_LINK_TOP);
-    }
+        (T_LINK_TOP, T_LINK_TOP_SHORT)
+    };
+    let has_rating = w.film.rating.is_some();
     if let Some(r) = w.film.rating {
         slots.push(("rating", format!("{r:.1}")));
-        parts.push(T_RATING);
     }
     let word = if w.f > 0.0 { w.word.and_then(|i| name_words(&w.cand.name).get(i).map(|x| x.to_lowercase())) } else { None };
-    match word {
+    let end = match word {
         Some(word) => {
             slots.push(("word", word));
             slots.push(("ability", template_by_id(template).name.to_string()));
-            parts.push(if w.f >= 1.0 { T_FIT_CORE } else { T_FIT_RING });
+            if w.f >= 1.0 { T_FIT_CORE } else { T_FIT_RING }
         }
-        None => parts.push(T_END),
-    }
+        None => T_END,
+    };
     let values: Vec<String> = slots.iter().map(|(_, v)| v.clone()).collect();
-    let text = parts.iter().map(|t| render(t, &slots)).collect::<Option<String>>();
-    match text {
-        Some(text) if slots_ok(&text.replace('「', " ").replace('」', " "), &values) => text,
-        // a rendering the slot check rejects (should not happen): fall back to the bare facts
-        _ => render(T_BARE, &slots).unwrap_or_default(),
+    let build = |head: &'static str, place: &'static str, link: &'static str, rating: bool| -> Option<String> {
+        let mut parts: Vec<&str> = vec![head, place, link];
+        if rating && has_rating {
+            parts.push(T_RATING);
+        }
+        parts.push(end);
+        let text = parts.iter().map(|t| render(t, &slots)).collect::<Option<String>>()?;
+        slots_ok(&text.replace('「', " ").replace('」', " "), &values).then_some(text)
+    };
+    let place = if named { T_PLACE_ARTIST } else { T_PLACE_PLAIN };
+    let short = if w.cand.kind == 'v' { T_HEAD_SHORT_VERBATIM } else { T_HEAD_SHORT };
+    // The full line whenever it fits the card's rows. Only a longer one gives up, in this order: the rating, the quoted source
+    // (the name and the track number still say where it came from), the film's title in the link, the artist.
+    let ladder: [(&'static str, &'static str, &'static str, bool); 5] =
+        [(T_HEAD, place, link, true), (T_HEAD, place, link, false), (short, place, link, false), (short, place, link_short, false), (short, T_PLACE_PLAIN, link_short, false)];
+    let mut last = None;
+    for (head, place, link, rating) in ladder {
+        if let Some(text) = build(head, place, link, rating) {
+            if why_rows_needed(&text) <= WHY_MAX_ROWS {
+                return text;
+            }
+            last = Some(text);
+        }
     }
+    // a rendering the slot check rejects (should not happen), or a line too long even in its shortest form: the last one, or the bare facts
+    last.or_else(|| render(T_BARE, &slots)).unwrap_or_default()
+}
+
+/// Rows the why line takes on the card.
+/// The why line is the page's now, not the card's; names are still chosen so that it fits 3 rows of the old card's width and size (the
+/// size and width it was drawn at), which keeps every name unchanged.
+pub const WHY_SIZE: f64 = 20.0;
+pub const WHY_WIDTH: f64 = 940.0;
+pub const WHY_MAX_ROWS: usize = 3;
+
+/// The why line wrapped to WHY_WIDTH, at most WHY_MAX_ROWS rows. Only a line longer than that is cut with "…".
+pub fn why_rows(f: &crate::font::Font, why: &str) -> Vec<String> {
+    let all = f.wrap(why, WHY_SIZE, WHY_WIDTH);
+    all.iter()
+        .take(WHY_MAX_ROWS)
+        .enumerate()
+        .map(|(i, ln)| if i + 1 == WHY_MAX_ROWS && all.len() > WHY_MAX_ROWS { f.fit(&format!("{ln} …"), WHY_SIZE, WHY_WIDTH) } else { ln.clone() })
+        .collect()
+}
+
+fn why_rows_needed(text: &str) -> usize {
+    use crate::font::{font, FontKind};
+    font(FontKind::Jp).wrap(text, WHY_SIZE, WHY_WIDTH).len()
 }
 
 #[cfg(test)]
@@ -669,5 +716,46 @@ mod tests {
         let p = pick(&ex, &lk, 1, "u").unwrap();
         let ft = p.first_track.unwrap();
         assert_eq!((ft.name.as_str(), ft.track), ("EARLY", 2));
+    }
+
+    /// The why line is shown in full. Build the longest why each candidate in names.json can get (a film that is not a favourite, so the
+    /// "ranks 8 of 8 films" link; a rating; a ring word, whose template is the longest; the longest ability name) and check the longest of
+    /// them wraps to at most 3 rows at the card's size, with no "…". The table keeps film titles without spaces, so one is put back
+    /// every 5 letters (an average English word).
+    #[test]
+    fn the_longest_why_line_in_names_json_is_never_cut() {
+        use crate::font::{font, FontKind};
+        let mut lk = Lookup::from_json(include_str!("../data/films.json")).unwrap();
+        lk.load_names(include_str!("../data/names.json")).unwrap();
+        let f = font(FontKind::Jp);
+        let ability = (1..=17u8).max_by(|a, b| f.width(template_by_id(*a).name, 20.0, 0.0).total_cmp(&f.width(template_by_id(*b).name, 20.0, 0.0))).unwrap();
+        let film = |tmdb: u32, title: &str, year: i32, a: f64| UserFilm { tmdb, title: title.into(), year, rating: Some(5.0), crowd: None, fav: false, rewatch: 0, composer: None, a, composers: vec![] };
+        let others: Vec<UserFilm> = (0..7).map(|i| film(1000 + i, "x", 2000, 1.0)).collect();
+        let (mut worst, mut worst_w, mut n) = (String::new(), 0.0, 0);
+        for m in &lk.films {
+            let Some(names) = lk.names.get(&m.tmdb_id) else { continue };
+            let letters: Vec<char> = m.key.rsplit_once('|').map_or(m.key.as_str(), |k| k.0).chars().collect();
+            let title = letters.chunks(5).map(|c| c.iter().collect::<String>()).collect::<Vec<_>>().join(" ");
+            let me = film(m.tmdb_id, &title, m.year, 0.0);
+            let mut pool: Vec<&UserFilm> = others.iter().collect();
+            pool.push(&me);
+            for cand in &names.cands {
+                n += 1;
+                // the debug build wraps slowly, so skip the candidates that cannot reach 3 rows: the template words, the longest ability name
+                // and the digits come to under 150 characters, and 3 rows of 940 px hold at least 225 characters of this font at 20 px
+                if 150 + 2 * cand.name.len() + cand.src.len() + names.albums[cand.album].artist.len() + 2 * title.len() < 225 {
+                    continue;
+                }
+                let row = Row { film: &me, names, cand, s: 0.0, cool: 0.0, f: 0.5, word: if name_words(&cand.name).is_empty() { None } else { Some(0) } };
+                let why = why_line(&row, &pool, ability);
+                let w = f.width(&why, 20.0, 0.0);
+                if w > worst_w {
+                    (worst, worst_w) = (why, w);
+                }
+            }
+        }
+        assert!(n > 20000, "{n}");
+        let rows = why_rows(&f, &worst);
+        assert!(rows.len() <= WHY_MAX_ROWS && rows.iter().all(|r| !r.contains('…')) && rows.join(" ") == worst, "the longest of {n} why lines is cut ({} rows):\n{worst}", f.wrap(&worst, 20.0, 940.0).len());
     }
 }

@@ -165,10 +165,14 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         coverage: st.coverage.iter().map(|c| c.text()).collect(),
         evidence,
         ability: ab.ability.clone(),
+        ability_name: ab.ability_name.clone(),
+        ability_line: ab.card_line.clone(),
         weakness: ab.weakness.clone(),
         nearest: if nearest.is_empty() { vec!["needs 4 graded stats".into()] } else { nearest.iter().map(|m| m.name.clone()).collect() },
         signature: ab.film.clone().unwrap_or_else(|| "Signature film: not enough crowd data".into()),
         badge: any_prov,
+        credit: crate::svg::CREDIT.to_string(),
+        accent: ab.signature.as_ref().and_then(|s| crate::palette::accent_key(&s.stat, s.top.as_deref())),
     };
     let coverage = Coverage {
         watched: st.facts.n_watched,

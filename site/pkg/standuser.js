@@ -1,6 +1,27 @@
 /* @ts-self-types="./standuser.d.ts" */
 
 /**
+ * Render a card from its data alone (`card_json` is `analysis.card`): no export, no table. Returns JSON { svgs: { light, dark, auto } } or
+ * { error }. The page uses it for the sample card.
+ * @param {string} card_json
+ * @returns {string}
+ */
+export function render_card(card_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(card_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.render_card(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
  * Analyse an export entirely in the page: no network. `table_json` is the film lookup table; films missing from it are
  * skipped by every stat that needs film data. `names_json` is names.json (the track-title name candidates; "" leaves the composer route). `today` ("YYYY-MM-DD") is only used to warn about an out-of-date table. `joined` ("YYYY-MM-DD") and `username` override the profile.csv values when non-empty.
  * Returns JSON: { analysis, svgs: { light, dark, auto } } or { error }.
@@ -37,6 +58,47 @@ export function run(zip, file_name, table_json, names_json, joined, username, to
         return getStringFromWasm0(ret[0], ret[1]);
     } finally {
         wasm.__wbindgen_free(deferred8_0, deferred8_1, 1);
+    }
+}
+
+/**
+ * Open a share link: `hash` is `location.hash`. Returns JSON { card, svgs: { light, dark, auto } }, or { error } for anything that is not a
+ * well-formed card link (the page then shows its normal state).
+ * @param {string} hash
+ * @returns {string}
+ */
+export function share_decode(hash) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(hash, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.share_decode(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
+    }
+}
+
+/**
+ * The payload of the share link for a card (`card_json` is `analysis.card`): the page puts it after `#c=`. Empty when the data is not a card.
+ * @param {string} card_json
+ * @returns {string}
+ */
+export function share_encode(card_json) {
+    let deferred2_0;
+    let deferred2_1;
+    try {
+        const ptr0 = passStringToWasm0(card_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.share_encode(ptr0, len0);
+        deferred2_0 = ret[0];
+        deferred2_1 = ret[1];
+        return getStringFromWasm0(ret[0], ret[1]);
+    } finally {
+        wasm.__wbindgen_free(deferred2_0, deferred2_1, 1);
     }
 }
 function __wbg_get_imports() {
