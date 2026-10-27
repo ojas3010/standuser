@@ -199,7 +199,6 @@ function show(a, svg) {
   const agree = (card.type_note.match(/about (\d+)%/) || [])[1];
   $('why-type').textContent = `${card.type_en}. The type comes from your stats; it matches the canon Stand type about ${agree || 60}% of the time.` +
     (card.type_note.includes('low confidence') ? ' Confidence is low for this type.' : '');
-  $('why-credit').textContent = `${card.credit}. Grades marked * are provisional.`;
   const notes = $('notes');
   notes.replaceChildren();
   const c = a.coverage;

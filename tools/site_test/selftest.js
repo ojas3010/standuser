@@ -80,8 +80,8 @@ try {
   out('rows', rows.length, 6);
   out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*? \| -0\.049.+ \| .+ \| 210 of 250 films \| measured: 210 rated films with crowd data$/);
   out('Why these grades: six stats, each with value, film, graded on, status', [...rows].every((r) => r.cells.length === 6 && r.cells[0].textContent && r.cells[2].textContent && r.cells[3].textContent && r.cells[4].textContent && r.cells[5].textContent), true);
-  for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type', 'why-credit']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
-  out('Why these grades: the credits', document.getElementById('why-credit').textContent, /^Data: Letterboxd, TMDB, MusicBrainz\./);
+  for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
+  out('Why these grades: no Data credits section; the footer keeps the credits and the TMDB block', `${!!document.getElementById('why-credit')} ${/Letterboxd.*TMDB.*MusicBrainz/.test(document.querySelector('footer').textContent)} ${!!document.querySelector('footer .tmdb img')}`, 'false true true');
   out('Why these grades: the name line has no leading Why', /^Why\b/.test(document.getElementById('why-name').textContent), false);
   out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
   out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
