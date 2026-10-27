@@ -151,6 +151,22 @@ button:active { transform: scale(.97); }
 #field.flash { animation: flash 240ms ease-out; }
 @keyframes flash { from { background-color: var(--flash); } to { background-color: var(--field); } }
 
+/* the drop zone: while a file is dragged over it, ゴゴゴ beside it (a column left of the zone where the page has room, a row above it
+   where it has not; instant); while a file is read, the To Be Continued arrow in the zone */
+#dropgo { display: none; position: absolute; right: 100%; top: 0; width: 110px; margin-right: 12px; pointer-events: none; fill: var(--field-ink, var(--p-ink)); }
+#dropgo svg { display: block; width: 100%; height: auto; }
+#dropgo .row { display: none; }
+#drop.over #dropgo { display: block; }
+@media (max-width: 1059px) {
+  #dropgo { right: 0; top: -48px; width: 150px; margin: 0; }
+  #dropgo .col { display: none; }
+  #dropgo .row { display: block; }
+}
+#tbc { display: none; position: absolute; inset: 0; align-items: center; justify-content: center; gap: 16px; font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.375rem; }
+#tbc .arrow { flex: none; width: 64px; height: 36px; background: var(--p-ink); clip-path: polygon(0 28%, 52% 28%, 52% 0, 100% 50%, 52% 100%, 52% 72%, 0 72%); }
+#drop.reading { pointer-events: none; cursor: progress; }
+#drop.reading > :not(#tbc) { visibility: hidden; }
+#drop.reading #tbc { display: flex; }
 
 /* why these grades */
 td small { display: block; color: var(--mute); font-size: .8125rem; }

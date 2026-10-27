@@ -91,6 +91,9 @@ async function handle(file) {
   $('share').hidden = true;
   try {
     setStatus('Reading the export…');
+    // while the file is read the zone shows the To Be Continued arrow (style.css); a few frames are given to paint it before the wasm runs
+    drop.classList.add('reading');
+    await new Promise((r) => setTimeout(r, 40));
     const bytes = new Uint8Array(await file.arrayBuffer());
     const out = exec(bytes, file.name);
     last = { svgs: out.svgs, card: out.analysis.card, analysis: out.analysis };
@@ -120,6 +123,8 @@ async function handle(file) {
     $('filebar').hidden = true;
     $('share').hidden = true;
     setStatus(e.message, true);
+  } finally {
+    drop.classList.remove('reading');
   }
 }
 
@@ -151,7 +156,7 @@ function setAccent(svgs, key) {
 }
 
 // The ゴ of the card is the page's too: its outline path is read from the card's own SVG (no font, no request) and drawn big and faint
-// in the field.
+// in the field, and as the mark beside the drop zone while a file is dragged over it.
 function glyphOf(svg) {
   const d = (svg.match(/data-part="go"><g transform="rotate\([^)]*\)"><path d="([^"]+)"/) || [])[1];
   if (!d) return null;
@@ -167,6 +172,9 @@ function paintGlyphs(svg) {
   if (!g) return;
   const wide = (cls, box, glyphs) => `<svg class="${cls}" viewBox="${box}" preserveAspectRatio="xMinYMin slice" aria-hidden="true" focusable="false">${goPaths(g, glyphs)}</svg>`;
   $('field').innerHTML = wide('ghost', '0 0 1280 800', [[150, 200, 250], [235, 440, 205], [315, 640, 165], [1120, 250, 225], [1035, 470, 185], [1130, 650, 150]]);
+  const [col, row] = $('dropgo').children;
+  col.innerHTML = goPaths(g, [[44, 52, 84], [74, 138, 64], [100, 208, 48]]);
+  row.innerHTML = goPaths(g, [[26, 24, 46], [76, 24, 38], [122, 24, 30]]);
 }
 // The band is as tall as the header and the stage: it follows them as the stage changes between one column and two.
 const fieldHeight = () => root.style.setProperty('--field-h', `${Math.round($('stage').getBoundingClientRect().bottom + scrollY + 24)}px`);
