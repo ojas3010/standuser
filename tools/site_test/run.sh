@@ -26,11 +26,21 @@ cp tools/site_test/selftest.js "$W/"
 sed 's#</body>#<script type="module" src="selftest.js"></script></body>#' site/index.html > "$W/test.html"
 (cd "$W" && exec python3 -m http.server 8765 >/dev/null 2>&1) & SRV=$!
 sleep 1
+# The page runs under prefers-reduced-motion (--force-prefers-reduced-motion), so the reveal and the flash add no time to the test. The
+# virtual-time budget is 60 s. Chrome's virtual clock sometimes jumps 30 to 120 s while a Blob is read back (File.arrayBuffer(), a canvas
+# PNG): about one run in ten, on any page. selftest.js reads its PNG through an object URL, which is steady, but the page's own read of a
+# dropped file cannot be changed for a test. A run whose clock ran out (no report, or a "timed out waiting" error) says nothing about the
+# page, so it is run again, up to 4 times with the same budget; a FAIL or any other ERROR is never run again.
 for page in test; do
-  timeout 90 "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$PROFILE$page" --virtual-time-budget=60000 \
-    --dump-dom "http://localhost:8765/$page.html" > "$W/$page.dom" 2>/dev/null || true
+  for attempt in 1 2 3 4; do
+    timeout 90 "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$PROFILE$page$attempt" --virtual-time-budget=60000 --force-prefers-reduced-motion \
+      --dump-dom "http://localhost:8765/$page.html" > "$W/$page.dom" 2>/dev/null || true
+    sed -n '/<pre id="\(selftest\|out\)">/,/<\/pre>/p' "$W/$page.dom" | sed 's/<[^>]*>//g' > "$W/$page.out"
+    if grep -q '\[ok\]' "$W/$page.out" && ! grep -q '^ERROR: Error: timed out waiting' "$W/$page.out"; then break; fi
+    echo "the virtual clock ran out (run $attempt of 4)"
+  done
   echo "== $page"
-  sed -n '/<pre id="\(selftest\|out\)">/,/<\/pre>/p' "$W/$page.dom" | sed 's/<[^>]*>//g' | tee "$W/$page.out"
+  cat "$W/$page.out"
   # every line is asserted by selftest.js; a missing report, a FAIL or an ERROR fails the run
   grep -q '\[ok\]' "$W/$page.out" || { echo "no test report"; exit 1; }
   if grep -q 'FAIL\|^ERROR' "$W/$page.out"; then echo "site test FAILED"; exit 1; fi

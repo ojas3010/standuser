@@ -54,10 +54,12 @@ def load(browser, base, w, h, scheme="light", motion="no-preference"):
     return ctx, page, reqs, phase
 
 
-def drop(page, phase, z):
+def drop(page, phase, z, settle=True):
     phase[0] = "drop"
     page.set_input_files("#file", str(z))
     page.wait_for_function("!document.getElementById('result').hidden")
+    if settle:   # the reveal plays for at most 2.2 s; the layout is measured at its end state
+        page.wait_for_function("!document.getElementById('cardlive') && !document.getElementById('card').classList.contains('playing')", timeout=5000)
 
 
 ALL = """() => [...document.querySelectorAll('body, body *')].map(e => { const s = getComputedStyle(e); return {
@@ -102,7 +104,9 @@ def main():
         check("R6 before a drop (1280 x 720): two columns, the drop zone on the left and the sample card labelled Sample on the right, both whole in the window; the share bar, the file line and the theme select are not displayed", pre[0] == "Sample" and pre[1] and pre[4] and pg1.evaluate("document.getElementById('theme').offsetParent === null"), f"label {pre[0]!r}, side by side and in the window without scrolling: {pre[1]}, share bar and file line not displayed: {pre[4]}")
         gaps0 = pg1.evaluate("(() => { const r = [...document.querySelectorAll('main > *')].filter(e => e.offsetParent !== null).map(e => e.getBoundingClientRect()); return r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)); })()")
         check("R6 48 px between sections (before a drop)", gaps0 and all(g == 48 for g in gaps0), f"gaps {gaps0}")
-        check("R2 before a drop the accent is the ink colour", pre[5] == pre[3], f"the wordmark's rule is {pre[5]}, the ink is {pre[3]}; no accent set")
+        fld = pg1.evaluate("""() => { const r = getComputedStyle(document.documentElement), c = (k) => r.getPropertyValue(k).trim();
+          return [c('--accent'), c('--p-ink'), document.documentElement.dataset.accent || '', c('--field'), getComputedStyle(document.getElementById('field')).backgroundColor, getComputedStyle(document.querySelector('.lede')).color, c('--field-mute')]; }""")
+        check("R2 before a drop the accent is the page's ink colour and none is set; the field is the sample card's ground", fld[0] == fld[1] and fld[2] == "" and fld[3].startswith("#") and rgb(fld[4]) == [int(fld[3][i:i + 2], 16) for i in (1, 3, 5)], f"accent {fld[0]} (ink {fld[1]}), data-accent {fld[2]!r}, field {fld[3]} painted as {fld[4]}")
         ctx1.close()
         ctx1, pg1, _, _ = load(browser, base, 390, 844)
         ph = pg1.evaluate("(() => { const d = document.getElementById('drop').getBoundingClientRect(), c = document.getElementById('card').getBoundingClientRect(); return [d.bottom <= c.top, Math.round(d.left) === Math.round(c.left)]; })()")
@@ -113,15 +117,17 @@ def main():
         text = page.evaluate("document.body.innerText")
         cjk = re.findall(r"[　-ヿ一-鿿]", text)
         check("R1 chrome is quiet: no JoJo identity (no kana, kanji, 【】) in page text", not cjk, f"{len(cjk)} such characters")
-        bad7 = [w for w in ("ゴ", "To Be Continued", "Menacing", "➤", "➡", "→", "▶") if w in text + html]
-        check("R7 ban: no ゴゴゴ, To Be Continued arrow or Menacing overlay in the chrome", not bad7, f"found {bad7}" if bad7 else "none in text or markup")
+        outside_tbc = re.sub(r'<div id="tbc".*?</div>', "", html, flags=re.S)
+        bad7 = [w for w in ("ゴ", "To Be Continued", "Menacing", "➤", "➡", "→", "▶") if w in text + outside_tbc]
+        check("R7 ban: no kana in the page's text, no Menacing overlay; ゴゴゴ and the To Be Continued arrow only in the field, beside the drop zone while dragging, and in the zone while reading", not bad7 and 'id="tbc"' in html and 'id="dropgo"' in html and 'id="field"' in html, f"found {bad7}" if bad7 else "the ゴ are SVG paths, not text; the arrow is in #tbc only")
 
         # --- rule 3: ground and flat fills
         bg = rgb(page.evaluate("getComputedStyle(document.body).backgroundColor"))
         check("R3 ground is neutral with zero hue: #ffffff (light)", bg == [255, 255, 255], f"rgb{tuple(bg)}")
-        check("R3 ban: no gradients", not any(e["bgimg"] != "none" for e in els) and "gradient" not in css + html, "background-image none on every element; no gradient in CSS")
+        grad = [e["id"] or e["tag"] for e in els if e["bgimg"] != "none"]
+        check("R3 ban: no gradients but the field's screentone (one radial-gradient of dots on #field)", grad == ["field"] and css.count("gradient") == 1 and css.count("radial-gradient(") == 1 and "linear-gradient" not in css + html, f"background-image on {grad}; {css.count('radial-gradient(')} radial-gradient in style.css")
         check("R3 ban: no shadows or glows", not any(e["shadow"] != "none" or e["tshadow"] != "none" or "drop-shadow" in e["filter"] for e in els) and "shadow" not in css, "box-shadow, text-shadow, filter all none on every element")
-        NEUTRAL = """() => [...document.querySelectorAll('body, body *')].filter(e => e.closest('[hidden]') === null && e.tagName !== 'IMG').flatMap(e => { const s = getComputedStyle(e);
+        NEUTRAL = """() => [...document.querySelectorAll('body, body *')].filter(e => e.closest('[hidden]') === null && e.tagName !== 'IMG' && !e.closest('header, #stage, #field') && !(e instanceof SVGElement)).flatMap(e => { const s = getComputedStyle(e);
           return ['color', 'backgroundColor', 'borderTopColor', 'borderBottomColor', 'borderLeftColor', 'borderRightColor', 'outlineColor'].map(k => [e.tagName + (e.id ? '#' + e.id : ''), k, s[k]]); })"""
         def hued(rows):
             out = []
@@ -132,11 +138,11 @@ def main():
             return out
         ctx0, pg0, _, _ = load(browser, base, 1280, 900)
         h0 = hued(pg0.evaluate(NEUTRAL))
-        check("R3 before a drop every colour in the chrome has equal channels: no warm, brown or beige tone (light)", not h0, f"{len(h0)} coloured values{': ' + str(h0[:3]) if h0 else ''}")
+        check("R3 every colour in the chrome outside the field (the header and the stage) has equal channels: no warm, brown or beige tone (light)", not h0, f"{len(h0)} coloured values{': ' + str(h0[:3]) if h0 else ''}")
         ctx0.close()
         ctxd, paged, _, _ = load(browser, base, 1280, 900, scheme="dark")
         h1 = hued(paged.evaluate(NEUTRAL))
-        check("R3 before a drop every colour in the chrome has equal channels (dark)", not h1, f"{len(h1)} coloured values{': ' + str(h1[:3]) if h1 else ''}")
+        check("R3 every colour in the chrome outside the field has equal channels (dark)", not h1, f"{len(h1)} coloured values{': ' + str(h1[:3]) if h1 else ''}")
         bgd = rgb(paged.evaluate("getComputedStyle(document.body).backgroundColor"))
         check("R3 ground is neutral with zero hue: #0e0e0e (dark)", bgd == [14, 14, 14], f"rgb{tuple(bgd)}")
         ctxd.close()
@@ -146,8 +152,8 @@ def main():
         serif_chrome = [e for e in els if "Serif" in e["font"] or "Mincho" in e["font"]]
         heads = page.evaluate("[...document.querySelectorAll('h1, h2, .drop-title')].filter(e => !e.closest('[hidden]')).map(e => getComputedStyle(e).fontFamily.split(',')[0])")
         check("R5 body is Archivo; the wordmark and headings are Archivo Black; no serif in the chrome", fam.startswith("Archivo") and heads and all(h.strip('"') == "Archivo Black" for h in heads) and not serif_chrome and "Inter" not in css, f"body font-family: {fam}; headings {sorted(set(heads))}")
-        tilted = [e for e in vis if e["transform"] not in ("none", "")]
-        check("R5 the wordmark has one tilt; nothing else tilts", len(tilted) == 1 and tilted[0]["tag"] == "H1", f"{len(tilted)} transformed element(s): {[t['tag'] for t in tilted]}")
+        tilted = [e for e in vis if e["tag"].isupper() and e["transform"] not in ("none", "")]   # HTML elements: the SVG ゴ of the field lean like the card's
+        check("R5 the wordmark has one tilt; nothing else in the page's boxes tilts", len(tilted) == 1 and tilted[0]["tag"] == "H1", f"{len(tilted)} transformed element(s): {[t['tag'] for t in tilted]}")
         check("R6 at most one diagonal", len(tilted) <= 1, f"{len(tilted)} rotated element(s) at rest")
 
         # --- rule 6: order and single column
@@ -188,42 +194,78 @@ def main():
         check("S3 no bordered container around the card (no double frame)", card[0] == "0px" and card[1] == "0px", f"img border {card[0]}, parent border {card[1]}")
         check("S3 TMDB disclaimer is on the site", "not endorsed, certified, or otherwise approved by TMDB" in html, "site footer")
 
-        # --- rule 2 and 4: colour per user, contrast, timeline
+        # --- rule 2: colour per user; rule 3: the field's contrast
         ctx.close()
         out = []
         for scheme in ("light", "dark"):
             for z in zips:
                 c2, pg, _, ph = load(browser, base, 1280, 900, scheme=scheme)
                 drop(pg, ph, z)
-                pg.wait_for_timeout(1300)
-                r = pg.evaluate("""async () => { const s = getComputedStyle(document.getElementById('dl-png')); const svg = await (await fetch(document.getElementById('card').src)).text();
-                  return [document.documentElement.dataset.accent || '', s.backgroundColor, s.color, svg.match(/\\.f-bg\\{fill:(#[0-9a-f]{6})\\}/)[1]]; }""")
+                r = pg.evaluate("""async () => { const rs = getComputedStyle(document.documentElement), c = (k) => rs.getPropertyValue(k).trim(), s = getComputedStyle(document.getElementById('dl-png'));
+                  const svg = await (await fetch(document.getElementById('card').src)).text();
+                  return [document.documentElement.dataset.accent || '', c('--accent'), c('--field'), c('--field-ink'), c('--field-mute'), c('--dot'), c('--ghost'), svg.match(/\\.f-bg\\{fill:(#[0-9a-f]{6})\\}/)[1],
+                    svg.match(/\\.f-ink\\{fill:(#[0-9a-f]{6})\\}/)[1], s.backgroundColor, s.color, getComputedStyle(document.querySelector('.lede')).color, getComputedStyle(document.getElementById('field')).backgroundColor]; }""")
                 hexrgb = lambda h: [int(h[i:i + 2], 16) for i in (1, 3, 5)]
-                out.append((scheme, z.name[-30:-4], r[0], rgb(r[1]) == hexrgb(r[3]), cr(rgb(r[1]), rgb(r[2]))))
+                chex = lambda h, k: cr(hexrgb(h), hexrgb(k))
+                # the dots and the ghost ゴ sit under the text: the ink and the muted ink keep 4.5:1 on them as well as on the ground
+                text_pairs = [chex(r[2], r[3]), chex(r[2], r[4]), chex(r[5], r[3]), chex(r[5], r[4]), chex(r[6], r[3]), chex(r[6], r[4])]
+                out.append((scheme, z.name[-30:-4], r[0], r[1] == r[7] and r[2] == r[7] and r[3] == r[8] and rgb(r[12]) == hexrgb(r[7]), min(text_pairs), cr(rgb(r[9]), rgb(r[10])), rgb(r[11]) == hexrgb(r[4])))
                 c2.close()
         keys = {o[2] for o in out}
-        worst = min(o[4] for o in out)
         check("R2 one accent per user, from the card's signature stat", "" not in keys, f"{len(zips)} users give accents {sorted(keys)}")
-        check("R2 the accent is the exact ground colour of the card on show", all(o[3] for o in out), f"{sum(o[3] for o in out)} of {len(out)} renders: the filled button equals the card's .f-bg")
-        check("R2 the text on the accent (the card's ink) passes WCAG AA (4.5:1), light and dark", worst >= 4.5, f"lowest ratio over {len(out)} renders: {worst:.2f}")
+        check("R2 the accent and the field are the exact ground colour of the card on show, and the field's ink is the card's ink", all(o[3] for o in out), f"{sum(o[3] for o in out)} of {len(out)} renders: --accent, --field and #field's paint equal the card's .f-bg; --field-ink equals its .f-ink")
+        check("R2 the filled button (the card's ink on its ground) passes WCAG AA (4.5:1), light and dark", min(o[5] for o in out) >= 4.5, f"lowest ratio over {len(out)} renders: {min(o[5] for o in out):.2f}")
+        check("R3 all text on the field keeps WCAG AA (4.5:1): the card's ink and muted ink on the ground, on the dots and on the big ゴ, light and dark", min(o[4] for o in out) >= 4.5 and all(o[6] for o in out), f"lowest ratio over {len(out)} renders: {min(o[4] for o in out):.2f}; the lede is the card's muted ink in every render")
 
-        c3, pg, _, ph = load(browser, base, 1280, 900)
-        pg.evaluate("window.__t = []; new MutationObserver(() => window.__t.push(['accent', performance.now()])).observe(document.documentElement, {attributes: true, attributeFilter: ['data-accent']})")
-        t0 = pg.evaluate("performance.now()")
+        # --- rule 8: the reveal
+        c3, pg, reqs3, ph3 = load(browser, base, 1280, 900)
         pg.set_input_files("#file", str(zips[0]))
-        pg.wait_for_function("!document.getElementById('result').hidden")
-        early = pg.evaluate("[document.documentElement.dataset.accent || '', getComputedStyle(document.getElementById('card')).animationName, getComputedStyle(document.getElementById('card')).animationDuration, getComputedStyle(document.getElementById('card')).animationTimingFunction]")
-        pg.wait_for_timeout(1300)
-        t = pg.evaluate("window.__t")
-        lag = (t[0][1] - t0) if t else None
-        check("R4 colour event: the card lands, holds, then one palette shift", early[0] in ("", "none") and early[1] == "land" and bool(t) and len(t) == 1 and 800 <= lag <= 2500, f"accent unset while the card lands ({early[1]} {early[2]} {early[3]}); one shift {lag:.0f} ms after the drop" if t else "no shift")
+        pg.wait_for_function("document.getElementById('cardlive')")
+        anim = pg.evaluate("""() => document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#cardlive')).map(a => { const t = a.effect.getComputedTiming(), e = a.effect.target;
+          return { name: a.animationName, part: e.getAttribute('data-part'), i: e.getAttribute('data-i'), start: t.delay, end: t.endTime, dur: t.duration }; })""")
+        flash = pg.evaluate("[document.getElementById('field').classList.contains('flash'), getComputedStyle(document.getElementById('field')).animationName, getComputedStyle(document.getElementById('field')).animationDuration, getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), getComputedStyle(document.documentElement).getPropertyValue('--field').trim()]")
+        parts = lambda n: [a for a in anim if a["part"] == n]
+        gos, name, fill, grades = parts("go"), parts("name"), parts("fill"), sorted(parts("grade"), key=lambda a: int(a["i"]))
+        total = max([a["end"] for a in anim] + [0])
+        ordered = (len(gos) == 6 and len(name) == 1 and len(fill) == 1 and len(grades) == 6
+                   and all(gos[k]["start"] < gos[k + 1]["start"] for k in range(5)) and gos[-1]["start"] < name[0]["start"] <= max(g["end"] for g in gos) + 100
+                   and name[0]["end"] <= fill[0]["start"] + 1 and fill[0]["end"] <= grades[0]["start"] + 1
+                   and all(grades[k]["start"] < grades[k + 1]["start"] for k in range(5)))
+        check("R8 reveal: at most 2.2 s in all; the ゴ fade in one at a time down the cascade, then the name drops in, then the radar fill grows, then the six grades pop in clockwise from the top", ordered and total <= 2200, f"{len(anim)} part animations end at {total:.0f} ms; ゴ start {[round(g['start']) for g in gos]}, name {name[0]['start']:.0f}-{name[0]['end']:.0f}, fill {fill[0]['start']:.0f}-{fill[0]['end']:.0f}, grades {[round(g['start']) for g in grades]}")
+        check("R8 reveal: the name's drop has a shake of 3 held frames, the fill grows from the centre of the chart, each part under 400 ms", "nameDrop" in css and css.count("steps(1, end)") == 4 and "transform-origin: 540px 664px" in css and all(a["dur"] <= 400 for a in anim), f"longest part {max(a['dur'] for a in anim):.0f} ms; nameDrop holds frames with steps(1, end)")
+        check("R8 reveal: at the drop the field flashes (240 ms) to the card's ground and the accent shifts with it, at once", flash[0] and flash[1] == "flash" and flash[2] == "0.24s" and flash[3] == flash[4], f"flash {flash[1]} {flash[2]}; --accent {flash[3]}, --field {flash[4]}")
+        t0 = pg.evaluate("performance.now()")
+        pg.mouse.click(5, 300)
+        pg.wait_for_function("!document.getElementById('cardlive')", timeout=1000)
+        skipped = pg.evaluate("[!document.getElementById('card').classList.contains('playing'), document.getAnimations().filter(a => a.effect && a.effect.target && a.effect.target.closest && a.effect.target.closest('#cardlive')).length, document.getElementById('field').classList.contains('flash')]")
+        check("R8 a click skips to the end state at once: the inline card is gone, the image shows, no flash", skipped == [True, 0, False], f"image shown {skipped[0]}, part animations left {skipped[1]}, flash left {skipped[2]}")
+        c3.close()
+        c3, pg, _, _ = load(browser, base, 1280, 900)
+        pg.set_input_files("#file", str(zips[0]))
+        pg.wait_for_function("document.getElementById('cardlive')")
+        pg.keyboard.press("Shift")
+        pg.wait_for_function("!document.getElementById('cardlive')", timeout=1000)
+        check("R8 a key press skips to the end state at once", pg.evaluate("!document.getElementById('card').classList.contains('playing')"), "the inline card is gone and the image shows")
+        c3.close()
+        c3, pg, _, _ = load(browser, base, 1280, 900)
+        pg.set_input_files("#file", str(zips[0]))
+        pg.wait_for_function("document.getElementById('cardlive')")
+        pg.wait_for_function("!document.getElementById('cardlive')", timeout=4000)
+        check("R8 left alone the reveal ends by itself within 2.2 s", True, "the inline card is removed by the timer (2150 ms) or by the last animation")
         c3.close()
         c4, pg, _, ph = load(browser, base, 1280, 900, motion="reduce")
-        drop(pg, ph, zips[0])
-        pg.wait_for_timeout(100)
-        r = pg.evaluate("[document.documentElement.dataset.accent || '', getComputedStyle(document.getElementById('card')).animationName]")
-        check("R4 the colour event is off under prefers-reduced-motion", r[0] != "" and r[1] == "none", f"accent at once ({r[0]}), animation {r[1]}")
+        drop(pg, ph, zips[0], settle=False)
+        r = pg.evaluate("[document.documentElement.dataset.accent || '', !document.getElementById('cardlive'), document.getAnimations().length, document.getElementById('field').classList.contains('flash'), getComputedStyle(document.getElementById('field')).animationName]")
+        check("R8 under prefers-reduced-motion the end state is there at once: accent and field set, no inline card, no flash, no animation", r[0] != "" and r[1] and r[2] == 0 and not r[3] and r[4] == "none", f"accent {r[0]}, inline card {not r[1]}, {r[2]} animations")
         c4.close()
+        ctx, page, reqs, phase = load(browser, base, 1280, 900)
+        drop(page, phase, zips[0], settle=False)
+        page.wait_for_timeout(2600)
+        check("R8 the reveal makes no request: 0 requests after the drop, over the whole reveal", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests in 2.6 s")
+        svg_static = page.evaluate("fetch(document.getElementById('card').src).then(r => r.text())")
+        png_static = page.evaluate("document.getElementById('dl-svg').href && fetch(document.getElementById('dl-svg').href).then(r => r.text())")
+        check("R8 the card that is downloaded is static: no animation, no style attribute of the reveal in the SVG (the PNG is drawn from it)", not re.search(r"<animate|<set |@keyframes|animation|--i:|class=\"playing", svg_static + png_static), "the SVG shown and the SVG downloaded are the card as the renderer wrote it; the PNG is drawn from that SVG string, never from the inline copy")
+        ctx.close()
 
         # --- rule 8: motion
         ctx, page, reqs, phase = load(browser, base, 1280, 900)
@@ -231,7 +273,7 @@ def main():
         page.wait_for_timeout(1300)
         els = page.evaluate(ALL)
         longest = max(max(secs(e["td"]), secs(e["ad"])) for e in els)
-        check("R8 all motion under 300 ms", longest < 0.3, f"longest transition or animation {longest * 1000:.0f} ms")
+        check("R8 all motion outside the reveal under 300 ms", longest < 0.3, f"longest transition or animation {longest * 1000:.0f} ms")
         kf = re.search(r"@keyframes land \{([^}]*\{[^}]*\}[^}]*\{[^}]*\})", css)
         check("R8 card reveal: opacity 0 and scale 0.98 to 1, 200 ms, ease-out", bool(kf) and "opacity: 0" in kf.group(1) and "scale(.98)" in kf.group(1) and "scale(1)" in kf.group(1) and "animation: land 200ms ease-out" in css, "keyframes land and #card.land in style.css")
         check("R8 buttons: scale(0.97) on :active in about 120 ms", "button:active { transform: scale(.97); }" in css and "transform 120ms ease-out" in css, "style.css")
@@ -241,12 +283,12 @@ def main():
         check("R8 ban: no hover lifts", not hov, "no transform, translate or shadow in any :hover rule")
         check("R8 ban: no scroll fades", not re.search(r"IntersectionObserver|animation-timeline|scroll-timeline|addEventListener\(.scroll", js + css), "no scroll listener, observer or scroll-driven animation")
         sv = page.evaluate("fetch(document.getElementById('card').src).then(r => r.text())")
-        check("R8 ban: no animated radar", not re.search(r"<animate|@keyframes|<set |animation", sv), "card SVG has no animate, set or keyframes")
+        check("R8 the card file itself is static: no <animate>, <set> or keyframes inside the SVG (the reveal animates an inline copy from style.css)", not re.search(r"<animate|@keyframes|<set |animation", sv), "card SVG has no animate, set or keyframes")
 
         # --- rule 9
         emoji = re.findall(r"[☀-➿\U0001f300-\U0001faff]", (text + html).replace("★", ""))   # ★ is the Letterboxd rating unit in the data lines, not decoration
         check("R9 ban: no emoji or icon sprinkles", not emoji, f"{len(emoji)} found")
-        check("R9 ban: no gradient text", "background-clip" not in css and "gradient" not in css, "no background-clip:text, no gradient")
+        check("R9 ban: no gradient text", "background-clip" not in css and css.count("gradient") == 1, "no background-clip:text; the one gradient is the field's dots")
         check("R9 ban: no uniform rounded cards with shadows", not any(e["shadow"] != "none" for e in els) and all(e["radius"] in ("0px", "") for e in els if e["tag"] in ("SECTION", "DIV", "TABLE", "IMG")), "no shadow, no radius on boxes")
         words = [w for w in ("unleash", "seamless", "powered by ai") if w in (text + html).lower()]
         check("R9 ban: no \"unleash\", \"seamless\", \"powered by AI\" copy", not words, "none in text or markup")

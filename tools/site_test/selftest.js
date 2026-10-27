@@ -12,7 +12,8 @@ const out = (k, v, expect) => {
   const ok = same(v, expect);
   log.push(`${k}: ${v} [${ok ? 'ok' : 'FAIL: expected ' + (expect instanceof Function ? 'predicate' : expect)}]`);
 };
-const until = async (what, cond, ms = 20000) => {
+// (the waits are in the virtual clock of run.sh, which sometimes jumps 5 to 30 s while the page works; the run's own budget is 60 s)
+const until = async (what, cond, ms = 45000) => {
   const t0 = performance.now();
   while (!cond()) {
     if (performance.now() - t0 > ms) throw new Error('timed out waiting for ' + what);
@@ -30,7 +31,7 @@ const settled = (what) => new Promise((res, rej) => {
     else if (started) { obs.disconnect(); clearTimeout(to); res(); }
   });
   obs.observe(statusEl(), { childList: true, characterData: true, subtree: true });
-  const to = setTimeout(() => { obs.disconnect(); rej(new Error('timed out waiting for the page to finish ' + what)); }, 20000);
+  const to = setTimeout(() => { obs.disconnect(); rej(new Error('timed out waiting for the page to finish ' + what)); }, 45000);
 });
 try {
   const bytes = new Uint8Array(await (await fetch('synth.zip')).arrayBuffer());
@@ -52,6 +53,24 @@ try {
   out('sample username is sample', (await (await fetch(card0.src)).text()).includes('>Stand card for sample: '), true);
   out('card theme select is not displayed before a drop', document.getElementById('theme').offsetParent === null, true);
   out('no accent before a drop', document.documentElement.dataset.accent || '', '');
+  // the field behind the header and the stage: the sample card's ground colour, with the halftone dots and the big faint ゴ; the ink on it is the card's
+  const sampleSvg = await (await fetch(card0.src)).text();
+  const rs0 = getComputedStyle(document.documentElement), fieldEl = document.getElementById('field');
+  out('before a drop the field is the sample card\'s ground', rs0.getPropertyValue('--field').trim(), cardColours(sampleSvg).ground);
+  out('the field paints that colour, with dots 7 px apart', `${getComputedStyle(fieldEl).backgroundColor === 'rgb(' + [1, 3, 5].map((i) => parseInt(cardColours(sampleSvg).ground.slice(i, i + 2), 16)).join(', ') + ')'} ${/radial-gradient/.test(getComputedStyle(fieldEl).backgroundImage)} ${getComputedStyle(fieldEl).backgroundSize}`, 'true true 7px 7px');
+  out('the field holds six big faint ゴ, made from the card\'s own path', `${fieldEl.querySelectorAll('svg.ghost path').length} ${fieldEl.getAttribute('aria-hidden')}`, '6 true');
+  out('the field behind the header and the stage ends under the stage', Math.abs(fieldEl.getBoundingClientRect().bottom - (document.getElementById('stage').getBoundingClientRect().bottom + 24)) < 2, true);
+  const v0 = (k) => rs0.getPropertyValue(k).trim();
+  out('text on the field keeps 4.5:1: the ink and the muted ink on the ground, on the dots and on the ghost ゴ', [[v0('--field'), v0('--field-ink')], [v0('--field'), v0('--field-mute')], [v0('--dot'), v0('--field-ink')], [v0('--ghost'), v0('--field-ink')], [v0('--ghost'), v0('--field-mute')]].every(([a, b]) => contrast(a, b) >= 4.5), true);
+  // the drop zone: ゴゴゴ beside it only while a file is dragged over it, the To Be Continued arrow in it only while a file is read
+  const dzone = document.getElementById('drop');
+  out('the drag-over ゴゴゴ and the arrow are not displayed at rest', `${document.getElementById('dropgo').offsetParent === null} ${document.getElementById('tbc').offsetParent === null}`, 'true true');
+  dzone.classList.add('over');
+  out('on drag-over the ゴゴゴ are displayed beside the zone', document.getElementById('dropgo').offsetParent !== null && document.querySelectorAll('#dropgo svg path').length >= 6, true);
+  dzone.classList.remove('over');
+  dzone.classList.add('reading');
+  out('while a file is read the To Be Continued arrow is displayed and the zone text is hidden', `${document.getElementById('tbc').offsetParent !== null} ${getComputedStyle(dzone.querySelector('.drop-title')).visibility} ${document.getElementById('tbc').textContent}`, 'true hidden To Be Continued');
+  dzone.classList.remove('reading');
   out('share bar and file line are not displayed before a drop', ['share', 'filebar', 'result'].map((id) => document.getElementById(id).offsetParent === null).join(), 'true,true,true');
   const before = seen();
   const result = document.getElementById('result');
@@ -106,13 +125,18 @@ try {
   out('Share is hidden exactly where the API cannot share files', document.getElementById('share-btn').hidden, !(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'a.png', { type: 'image/png' })] })));
   // Copy image puts a PNG on the clipboard
   if (!document.getElementById('copy-img').hidden) {
+    // The page hands the clipboard a ClipboardItem holding a promise of the PNG. The item is captured as the page makes it and its promise is
+    // read directly, through an object URL: Blob.arrayBuffer() on a canvas blob, and getType() on the item, make the virtual clock jump 30 to
+    // 120 s (it is read through another process), which would end the 60 s budget before the report is written.
     let copied = null;
-    Object.defineProperty(navigator.clipboard, 'write', { configurable: true, value: async (items) => { copied = items; } });
+    const Item = window.ClipboardItem;
+    window.ClipboardItem = function (data) { copied = data; return new Item(data); };
+    Object.defineProperty(navigator.clipboard, 'write', { configurable: true, value: async () => {} });
     document.getElementById('copy-img').click();
     await until('Copy image to write', () => copied, 5000);
-    const blob = await copied[0].getType('image/png');
-    const head = [...new Uint8Array(await blob.arrayBuffer()).slice(0, 8)].map((x) => x.toString(16)).join(' ');
-    out('Copy image puts a PNG on the clipboard', `${copied[0].types.join()} ${head}`, 'image/png 89 50 4e 47 d a 1a a');
+    window.ClipboardItem = Item;
+    const head = [...new Uint8Array(await (await fetch(URL.createObjectURL(await copied['image/png']))).arrayBuffer()).slice(0, 8)].map((x) => x.toString(16)).join(' ');
+    out('Copy image puts a PNG on the clipboard', `${Object.keys(copied).join()} ${head}`, 'image/png 89 50 4e 47 d a 1a a');
     out('Copy image says so', document.getElementById('sharenote').textContent, 'Image copied.');
   }
   for (const [n, id] of [[1, 'dl-png'], [2, 'dl-svg'], [3, 'dl-json']]) {
@@ -136,6 +160,8 @@ try {
   const root = getComputedStyle(document.documentElement);
   const colours = cardColours(await (await fetch(img.src)).text());
   out('accent is the card ground', root.getPropertyValue('--accent').trim(), colours.ground);
+  out('the field is the card ground too, with the card ink and muted ink', [root.getPropertyValue('--field'), root.getPropertyValue('--field-ink')].map((x) => x.trim()).join(' '), `${colours.ground} ${colours.ink}`);
+  out('with reduced motion the reveal is not played: no inline card, no flash, the image shows', `${!document.getElementById('cardlive')} ${!img.classList.contains('playing')} ${!document.getElementById('field').classList.contains('flash')} ${matchMedia('(prefers-reduced-motion: reduce)').matches}`, 'true true true true');
   out('text on the accent is the card ink', root.getPropertyValue('--on-accent').trim(), colours.ink);
   out('accent label contrast', contrast(colours.ground, colours.ink).toFixed(2), (x) => Number(x) >= 4.5);
   out('Download PNG is the one primary button', document.querySelectorAll('button.primary').length, 1);
