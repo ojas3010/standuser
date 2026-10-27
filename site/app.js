@@ -51,7 +51,8 @@ async function boot() {
 const ready = boot();
 
 function showSample() {
-  if (sample) showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
+  if (!sample) return;
+  showCard(sample.svgs[resolvedTheme()], 'Sample', 'Sample Stand card, made from synthetic data');
 }
 
 // A share link (#c=...) holds the data the card needs: it renders the card with no file and no request. A fragment that is not a
@@ -82,6 +83,7 @@ function exec(bytes, name) {
 async function handle(file) {
   await ready;
   if (!table) return;
+  endReveal();
   $('result').hidden = true;
   $('downloads').hidden = true;
   $('share').hidden = true;
@@ -106,8 +108,7 @@ async function handle(file) {
     // back to the first state: the sample card, the ink accent, the drop zone
     last = null;
     if (location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);
-    clearTimeout(accentTimer);
-    const root = document.documentElement;
+    endReveal();
     root.style.removeProperty('--accent');
     root.style.removeProperty('--on-accent');
     delete root.dataset.accent;
@@ -120,12 +121,7 @@ async function handle(file) {
   }
 }
 
-// The one colour event. The card lands (opacity 0 and scale 0.98 to 1, 200 ms, ease-out), holds, then the page's accent shifts once
-// from the ink colour to the exact ground colour of the card on show (a 250 ms colour transition in style.css), with the card's own ink
-// as the colour of the text on it. With reduced motion there is no landing and no hold: the card and the accent are simply there.
-const LAND_MS = 200;
-const HOLD_MS = 700;
-let accentTimer = 0;
+// The page's accent (the filled rules and the headings' rules) is the card's ground colour after a drop.
 // The card starts in the theme of the system and follows it until the user picks one.
 const resolvedTheme = () => $('theme').value;
 const systemDark = matchMedia('(prefers-color-scheme: dark)');
@@ -138,24 +134,49 @@ systemDark.addEventListener('change', (e) => {
   $('theme').dispatchEvent(new Event('change'));
   picked = false;
 });
+const root = document.documentElement;
 function setAccent(svgs, key) {
-  const root = document.documentElement;
   const { ground, ink } = cardColours(svgs[resolvedTheme()]);
   root.style.setProperty('--accent', ground);
   root.style.setProperty('--on-accent', ink);
   root.dataset.accent = key || 'none';
 }
+
+// The reveal, at most 2.2 s (docs/DESIGN.md rule 8). At the drop the accent shifts to the card's ground colour at once.
+// The card's own parts (data-part in its SVG) are played from an inline copy laid over the card (#cardlive; the PNG and the SVG that are
+// downloaded are the card, static): the ゴ one at a time down the cascade, the name dropping in with a short shake, the radar fill growing
+// from the centre, then the six grades popping in clockwise from the top, as in the anime's eyecatch. The delays and durations are in
+// style.css. A click or a key press ends it at the card's end state; with reduced motion there is no copy and no flash, the end state is
+// simply there.
+const REVEAL_MS = 2150;
+let live = null; // { svg, timer, off } while a reveal plays
+function endReveal() {
+  if (!live) return;
+  clearTimeout(live.timer);
+  live.off();
+  live.svg.remove();
+  $('card').classList.remove('playing');
+  live = null;
+}
 function reveal(card, svgs) {
+  endReveal();
+  setAccent(svgs, card.accent);
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const tpl = document.createElement('template');
+  tpl.innerHTML = svgs[resolvedTheme()];
+  const svg = tpl.content.firstElementChild;
+  for (const e of svg.querySelectorAll('title, desc')) e.remove();
+  for (const a of ['width', 'height', 'role', 'aria-labelledby']) svg.removeAttribute(a);
+  svg.id = 'cardlive';
+  svg.setAttribute('aria-hidden', 'true'); // the card image stays in the page for screen readers
+  svg.querySelectorAll('[data-part=go]').forEach((e, i) => e.style.setProperty('--i', i));
+  svg.querySelectorAll('[data-part=grade]').forEach((e) => e.style.setProperty('--i', e.dataset.i));
   const img = $('card');
-  const still = matchMedia('(prefers-reduced-motion: reduce)').matches;
-  clearTimeout(accentTimer);
-  img.classList.remove('land');
-  if (!still) {
-    void img.offsetWidth; // restart the animation for a second file
-    img.classList.add('land');
-  }
-  if (still) setAccent(svgs, card.accent);
-  else accentTimer = setTimeout(() => setAccent(svgs, card.accent), LAND_MS + HOLD_MS);
+  img.classList.add('playing');
+  img.after(svg);
+  const off = () => ['pointerdown', 'keydown'].forEach((t) => removeEventListener(t, endReveal, true));
+  ['pointerdown', 'keydown'].forEach((t) => addEventListener(t, endReveal, true));
+  live = { svg, off, timer: setTimeout(endReveal, REVEAL_MS) };
 }
 
 function showCard(svg, label, alt) {
@@ -251,6 +272,7 @@ async function pngBlob(svg) {
 }
 
 $('theme').addEventListener('change', () => {
+  endReveal();
   if (!last) return showSample();
   if (last.analysis) show(last.analysis, last.svgs[resolvedTheme()]);
   else showCard(last.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${last.card.user}`);

@@ -106,9 +106,32 @@ button:active { transform: scale(.97); }
 #sharenote { flex-basis: 100%; min-height: 1.5em; color: var(--mute); font-size: .875rem; }
 .downloads a { color: var(--ink); text-underline-offset: 4px; }
 .actions select { height: 40px; }
-#card { display: block; width: 100%; height: auto; }
-#card.land { animation: land 200ms ease-out; }
+#card, #cardlive { display: block; width: 100%; height: auto; }
 @keyframes land { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
+
+/* the reveal (app.js, docs/DESIGN.md rule 8): while it plays, an inline copy of the card (#cardlive) stands in the card's place and the
+   image waits beside it, hidden from sight but not from screen readers. The card lands (200 ms), then its parts play in this order:
+   the six ゴ one at a time (150 ms on, 90 ms apart, 120 ms each), the name dropping in with a shake of three frames (700 ms, 350 ms), the
+   radar fill growing from the centre (1050 ms, 400 ms), the six grades popping in clockwise from the top (1450 ms on, 80 ms apart,
+   160 ms each): the last ends at 2010 ms. */
+#card.playing { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); opacity: 0; }
+#cardlive { animation: land 200ms ease-out; }
+#cardlive [data-part=go] { animation: goIn 120ms ease-out both; animation-delay: calc(150ms + var(--i) * 90ms); }
+#cardlive [data-part=name] { animation: nameDrop 350ms linear 700ms both; }
+#cardlive [data-part=fill] { transform-origin: 540px 664px; animation: grow 400ms ease-out 1050ms both; }
+#cardlive [data-part=grade] { transform-box: fill-box; transform-origin: center; animation: pop 160ms ease-out both; animation-delay: calc(1450ms + var(--i) * 80ms); }
+@keyframes goIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes nameDrop {   /* the drop, then three frames of shake that are held, not tweened */
+  0% { opacity: 0; transform: translateY(-110px); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  35% { opacity: 1; transform: translate(0, 0); animation-timing-function: steps(1, end); }
+  50% { transform: translate(10px, -4px); animation-timing-function: steps(1, end); }
+  65% { transform: translate(-8px, 3px); animation-timing-function: steps(1, end); }
+  80% { transform: translate(5px, -2px); animation-timing-function: steps(1, end); }
+  100% { opacity: 1; transform: translate(0, 0); }
+}
+@keyframes grow { from { transform: scale(0); } to { transform: scale(1); } }
+@keyframes pop { 0% { opacity: 0; transform: scale(0); } 70% { opacity: 1; transform: scale(1.18); } 100% { opacity: 1; transform: scale(1); } }
+
 
 /* why these grades */
 td small { display: block; color: var(--mute); font-size: .8125rem; }
