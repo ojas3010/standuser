@@ -190,7 +190,9 @@ function show(a, svg) {
   $('why-weakness').textContent = card.weakness;
   // the card's corner brackets are card lettering; the page quotes the name in plain quotes
   $('why-name').textContent = (a.name.why || card.why || 'No name line.').replace(/「/g, '“').replace(/」/g, '”');
-  $('why-film').textContent = card.signature;
+  // the section's own heading says it is the signature film, so the line drops its label
+  const sig = card.signature.replace(/^Signature film:\s*/, '');
+  $('why-film').textContent = sig.startsWith('not enough') ? sig[0].toUpperCase() + sig.slice(1) : sig;
   $('why-type').textContent = `${card.type_en}. ${card.type_note}`;
   $('why-credit').textContent = `${card.credit}. Grades marked * are provisional.`;
   const notes = $('notes');
