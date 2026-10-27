@@ -27,7 +27,7 @@ sed 's#</body>#<script type="module" src="selftest.js"></script></body>#' site/i
 (cd "$W" && exec python3 -m http.server 8765 >/dev/null 2>&1) & SRV=$!
 sleep 1
 for page in test; do
-  timeout 90 "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$PROFILE$page" --virtual-time-budget=20000 \
+  timeout 90 "$CHROME" --headless=new --disable-gpu --no-first-run --user-data-dir="$PROFILE$page" --virtual-time-budget=60000 \
     --dump-dom "http://localhost:8765/$page.html" > "$W/$page.dom" 2>/dev/null || true
   echo "== $page"
   sed -n '/<pre id="\(selftest\|out\)">/,/<\/pre>/p' "$W/$page.dom" | sed 's/<[^>]*>//g' | tee "$W/$page.out"

@@ -7,8 +7,8 @@ tools/make_fonts.py.
 The card's four faces, and what each is for (docs/DESIGN.md section 4, rule 7):
 display.ttf  Dela Gothic One, subset: kana, the kanji of the labels and the Stand types, 【】「」・―. Japanese at 48 px or larger, with the
              black outline (the ゴ). No Latin: the Latin display text is Archivo Black.
-name.ttf     Archivo Black, subset: Basic Latin, Latin-1, Latin Extended-A and punctuation. The Stand name and the other Latin display text
-             (the ability's name, the grades). Archivo Black has no 「」, so those two glyphs are copied from Dela Gothic One (both 1000 units per
+name.ttf     Archivo Black, subset: Basic Latin, Latin-1, Latin Extended-A and punctuation. The other Latin display text (the ability's name,
+             the grades; the Stand name is the serif since the eyecatch pass, see make_serif_font.py). Archivo Black has no 「」, so those two glyphs are copied from Dela Gothic One (both 1000 units per
              em), and no ∅, which is copied from Archivo at weight 900 (the same family).
 body.ttf     Archivo (variable font) cut to weight 700, width 100, same character set. All other Latin text.
 sans.ttf     Noto Sans JP Bold, no outline. Japanese below 48 px (made by make_fonts.py; its licence is OFL-NotoSansJP.txt).

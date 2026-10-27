@@ -1,6 +1,7 @@
 //! Text as outlines: glyph paths from the embedded font subsets, so the SVG renders the same everywhere with no font files (all
 //! SIL OFL; the licence texts sit beside the fonts in data/). Sans is Noto Sans JP Bold, for body text; Display is Dela Gothic One,
-//! the manga lettering (katakana, the stat labels, ゴゴゴ); Name is Archivo Black, the Stand name. Characters missing from the
+//! the manga lettering (the stat labels, ゴゴゴ); Name is Archivo Black, the grades and the ability's name; Serif is Noto Serif JP, the
+//! Stand name and the eyecatch labels. Characters missing from the
 //! subset are drawn as □.
 
 use ttf_parser::{Face, OutlineBuilder};
@@ -9,11 +10,12 @@ static JP: &[u8] = include_bytes!("../data/sans.ttf");
 static BODY: &[u8] = include_bytes!("../data/body.ttf");
 static NAME: &[u8] = include_bytes!("../data/name.ttf");
 static DISPLAY: &[u8] = include_bytes!("../data/display.ttf");
+static SERIF: &[u8] = include_bytes!("../data/serif.ttf");
 
-/// The card's four faces, all SIL OFL (licence texts in data/):
+/// The card's five faces, all SIL OFL (licence texts in data/):
 /// Jp is Noto Sans JP Bold: Japanese below 48 px, no outline. Body is Archivo at weight 700: all the Latin text that is not display.
 /// Name is Archivo Black: the Stand name and the other Latin display text. Display is Dela Gothic One: Japanese at 48 px or larger, with
-/// the black outline. (sans.ttf also carries the Latin of Noto Sans JP; the card never draws it, the page's name choice measures with it.)
+/// the black outline. Serif is Noto Serif JP Bold: the header and the corner of the eyecatch, no outline. (sans.ttf also carries the Latin of Noto Sans JP; the card never draws it, the page's name choice measures with it.)
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum FontKind {
     /// Noto Sans JP Bold.
@@ -24,6 +26,8 @@ pub enum FontKind {
     Name,
     /// Dela Gothic One: kana, the kanji of the labels and the Stand types, 【】「」・―.
     Display,
+    /// Noto Serif JP Bold, the eyecatch's lettering: the Stand name, 【STAND NAME】, 【STAND MASTER】 and the user name. Plain, no outline.
+    Serif,
 }
 
 pub struct Font {
@@ -37,6 +41,7 @@ pub fn font(kind: FontKind) -> Font {
         FontKind::Body => BODY,
         FontKind::Name => NAME,
         FontKind::Display => DISPLAY,
+        FontKind::Serif => SERIF,
     };
     let face = Face::parse(data, 0).expect("embedded font");
     let upm = face.units_per_em() as f64;
@@ -93,6 +98,60 @@ impl BodyText {
 
     pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
         fit_by(s, maxw, |t| self.width(t, size, 0.0))
+    }
+}
+
+/// The eyecatch's serif text: Noto Serif JP Bold, and for a character it does not have (a Cyrillic, Greek or Korean letter in a user
+/// name, say) the body text's faces, so a user name always draws.
+pub struct SerifText {
+    serif: Font,
+    rest: BodyText,
+}
+
+pub fn serif_text() -> SerifText {
+    SerifText { serif: font(FontKind::Serif), rest: body_text() }
+}
+
+impl SerifText {
+    fn adv(&self, c: char, size: f64) -> f64 {
+        if self.serif.has(c) { self.serif.adv(c, size) } else { self.rest.adv(c, size) }
+    }
+
+    pub fn fit(&self, s: &str, size: f64, maxw: f64) -> String {
+        fit_by(s, maxw, |t| self.width(t, size, 0.0))
+    }
+
+    /// Side bearings of a serif glyph (left, right) at `size`, so a label's ink can line up with the text under it.
+    pub fn bearings(&self, c: char, size: f64) -> (f64, f64) {
+        self.serif.bearings(c, size)
+    }
+}
+
+impl Draw for SerifText {
+    fn width(&self, s: &str, size: f64, ls: f64) -> f64 {
+        if s.is_empty() {
+            return 0.0;
+        }
+        s.chars().map(|c| self.adv(c, size) + ls).sum::<f64>() - ls
+    }
+
+    fn path(&self, s: &str, x: f64, y: f64, size: f64, ls: f64) -> String {
+        let mut out = String::new();
+        let mut cx = x;
+        for c in s.chars() {
+            let t = c.to_string();
+            out.push_str(&if self.serif.has(c) { self.serif.path(&t, cx, y, size, 0.0) } else { self.rest.path(&t, cx, y, size, 0.0) });
+            cx += self.adv(c, size) + ls;
+        }
+        out
+    }
+
+    fn ink_extent(&self, s: &str, size: f64) -> (f64, f64) {
+        s.chars().fold((0.0f64, 0.0f64), |(u, d), c| {
+            let t = c.to_string();
+            let (cu, cd) = if self.serif.has(c) { self.serif.ink_extent(&t, size) } else { self.rest.ink_extent(&t, size) };
+            (u.max(cu), d.max(cd))
+        })
     }
 }
 
@@ -211,6 +270,14 @@ impl Font {
             }
         }
         (up * size / self.upm, down * size / self.upm)
+    }
+
+    /// The blank between a glyph's ink and its advance box, at `size`: (left, right). The fullwidth brackets 【 and 】 carry a wide one.
+    pub fn bearings(&self, c: char, size: f64) -> (f64, f64) {
+        match self.glyph(c).and_then(|g| Some((self.face.glyph_bounding_box(g)?, self.face.glyph_hor_advance(g)?))) {
+            Some((b, a)) => (b.x_min as f64 * size / self.upm, (a as f64 - b.x_max as f64) * size / self.upm),
+            None => (0.0, 0.0),
+        }
     }
 
     /// SVG path data for `s` with its baseline starting at (x, y).

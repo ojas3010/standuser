@@ -22,7 +22,7 @@ fn missing(s: &str, kinds: &[FontKind]) -> String {
     out
 }
 
-/// A composer-route Stand name is drawn in the name font (Archivo Black). Every composer in the table must give a name the card can draw
+/// A composer-route Stand name is drawn in the serif (Noto Serif JP Bold). Every composer in the table must give a name the card can draw
 /// (accents folded to ASCII, or the composer skipped), never a name with a hole in it.
 #[test]
 fn every_composer_in_the_table_gives_a_drawable_stand_name() {
@@ -54,11 +54,10 @@ fn every_composer_in_the_table_gives_a_drawable_stand_name() {
         f.insert("ratings.csv".to_string(), r.into_bytes());
         let ex = parse::parse_files(&f, Some("letterboxd-g-2026-10-19-13-22-utc.zip")).unwrap();
         let a = analysis::analyze(&ex, &lk);
-        // the card draws the name inside 「」 in the serif font, so the brackets are part of what must render
-        let miss = missing(&format!("「{}」", a.name.name), &[FontKind::Name]);
+        let miss = missing(&a.name.name, &[FontKind::Serif]);
         checked += 1;
         if !miss.is_empty() {
-            bad.push(format!("{name:?} -> 「{}」 missing {miss:?}", a.name.name));
+            bad.push(format!("{name:?} -> {} missing {miss:?}", a.name.name));
         }
     }
     assert!(checked > 1000);
@@ -76,7 +75,7 @@ fn stand_names_are_folded_to_ascii() {
     assert_eq!(ascii_fold("Łukasz Błaszczyk").as_deref(), Some("LUKASZ BLASZCZYK"));
     assert_eq!(ascii_fold("Ennio Morricone").as_deref(), Some("ENNIO MORRICONE"));
     assert_eq!(ascii_fold("Wayne \"The Train\" Hancock").as_deref(), Some("WAYNE \"THE TRAIN\" HANCOCK"), "a straight double quote is allowed");
-    assert_eq!(missing("「WAYNE \"THE TRAIN\" HANCOCK」", &[FontKind::Name]), "", "and the card font draws it");
+    assert_eq!(missing("WAYNE \"THE TRAIN\" HANCOCK", &[FontKind::Serif]), "", "and the card font draws it");
     assert_eq!(ascii_fold("久石 譲"), None, "a name with no ASCII form cannot be drawn");
     assert_eq!(ascii_fold("Сталкер"), None);
     assert_eq!(ascii_fold("   "), None);
@@ -86,9 +85,9 @@ fn stand_names_are_folded_to_ascii() {
 #[test]
 fn every_fixed_card_label_has_its_glyphs() {
     use standuser_core::{grading, name, svg, types};
-    // Japanese below 48 px is Noto Sans JP Bold: the stat labels, the master label, the type names, the 完成 grade
+    // Japanese below 48 px is Noto Sans JP Bold: the stat labels, the type names, the 完成 grade
     let jp: Vec<String> = svg::JP.iter().map(|s| s.to_string())
-        .chain(["本体―", "完成"].map(String::from))
+        .chain(["完成"].map(String::from))
         .chain([types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.jp().to_string()))
         .collect();
     for s in &jp {
@@ -96,6 +95,10 @@ fn every_fixed_card_label_has_its_glyphs() {
     }
     // Japanese at 48 px or larger is Dela Gothic One: the ゴ
     assert_eq!(missing("ゴ", &[FontKind::Display]), "");
+    // the eyecatch's labels are Noto Serif JP Bold, with their brackets
+    for s in [svg::NAME_LABEL, svg::MASTER_LABEL] {
+        assert_eq!(missing(s, &[FontKind::Serif]), "", "serif: {s}");
+    }
     // Latin display text is Archivo Black: the grades, with the asterisk, and the ability names
     let grades: Vec<String> = ["A", "B", "C", "D", "E", "?", "∞", "∅", "A*", "B*", "C*", "D*", "E*", "?*", "∞*"].map(String::from).into();
     let abilities: Vec<String> = (1..=17u8).map(|i| standuser_core::ability::template_by_id(i).name.to_string()).chain(["Not yet revealed", "Ability"].map(String::from)).collect();
@@ -105,6 +108,7 @@ fn every_fixed_card_label_has_its_glyphs() {
     // all other Latin text is Archivo 700: the type names in English, the footer, the nearest canon line
     let body: Vec<String> = [types::StandType::Automatic, types::StandType::LongDistance, types::StandType::CloseRange, types::StandType::Unclassified].iter().map(|t| t.en().to_string())
         .chain(grading::LABEL.iter().map(|s| s.to_string()))
+        .chain(svg::FOOTER_ROWS.map(String::from))
         .chain([svg::FOOTER.to_string(), "Nearest canon: ".into()])
         .collect();
     for s in &body {
@@ -114,11 +118,10 @@ fn every_fixed_card_label_has_its_glyphs() {
     for s in &canon {
         assert_eq!(missing(s, &[FontKind::Body]), "", "nearest canon: {s}");
     }
-    let name_font: Vec<String> = ["「」", "…"].map(String::from).into_iter().chain(name::tarot_names()).collect();
+    // the Stand name is drawn in the serif, the ellipsis of a cut name too
+    let name_font: Vec<String> = ["…"].map(String::from).into_iter().chain(name::tarot_names()).collect();
     for s in &name_font {
-        assert_eq!(missing(s, &[FontKind::Name]), "", "name font: {s}");
-        // as drawn on the card: inside the corner brackets
-        assert_eq!(missing(&format!("「{s}」"), &[FontKind::Name]), "", "name font, bracketed: {s}");
+        assert_eq!(missing(s, &[FontKind::Serif]), "", "serif: {s}");
     }
 }
 
@@ -137,6 +140,9 @@ fn the_card_fonts_keep_to_their_job() {
     let name = font(FontKind::Name);
     assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 '&-.,!?:\"「」…∞∅*".chars().all(|c| name.has(c)));
     assert!(!name.has('ひ') && !name.has('Ж'));
+    let serif = font(FontKind::Serif);
+    assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 '&-.,!?:\"…【】".chars().all(|c| serif.has(c)));
+    assert!(serif.has('ひ') && !serif.has('ع') && !serif.has('ก'), "the serif is cut to what names.json (its artist credits too) and the labels use");
     let display = font(FontKind::Display);
     assert!("ゴスピードニガテひらがな【】「」破壊力".chars().all(|c| display.has(c)));
     assert!(!display.has('Ж') && !display.has('ά') && !"ABCDEabcde0123456789".chars().any(|c| display.has(c)), "Dela Gothic One is for Japanese only");
@@ -144,22 +150,23 @@ fn the_card_fonts_keep_to_their_job() {
     assert!("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789 '&-.,!?:\"()·–—…%*".chars().all(|c| body.has(c)));
     assert!(!body.has('ひ') && !body.has('★'));
     let jp = font(FontKind::Jp);
-    assert!("本体―破壊力スピード射程距離持続力精密動作性成長性完成近距離パワー型遠隔自動操縦未分類".chars().all(|c| jp.has(c)));
+    assert!("破壊力スピード射程距離持続力精密動作性成長性完成近距離パワー型遠隔自動操縦未分類".chars().all(|c| jp.has(c)));
 }
 
-/// A track-title Stand name is drawn in the name font inside 「」. Every character of every candidate title in names.json must
-/// have a glyph in name.ttf; a failure lists each missing character with the names that use it.
+/// A track-title Stand name is drawn in the serif. Every character of every candidate title in names.json must have a glyph in serif.ttf;
+/// a failure lists each missing character with the names that use it. (The artist credits in names.json are in serif.ttf too wherever
+/// Noto Serif JP has the character: see tools/make_serif_font.py; none of them is drawn on the card.)
 #[test]
-fn every_stand_name_in_names_json_is_drawable_in_the_name_font() {
+fn every_stand_name_in_names_json_is_drawable_in_the_serif() {
     let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
-    let serif = font(FontKind::Name);
+    let serif = font(FontKind::Serif);
     let mut by_char: BTreeMap<char, Vec<String>> = BTreeMap::new();
     let mut total = 0;
     for v in names["names"].as_object().unwrap().values() {
         for cand in v[1].as_array().unwrap() {
             let title = cand[0].as_str().unwrap();
             total += 1;
-            for c in format!("「{title}」").chars().filter(|c| !c.is_whitespace() && !serif.has(*c)) {
+            for c in title.chars().filter(|c| !c.is_whitespace() && !serif.has(*c)) {
                 let e = by_char.entry(c).or_default();
                 if !e.contains(&title.to_string()) {
                     e.push(title.to_string());
@@ -169,5 +176,5 @@ fn every_stand_name_in_names_json_is_drawable_in_the_name_font() {
     }
     assert!(total > 20000, "{total}");
     let report: Vec<String> = by_char.iter().map(|(c, n)| format!("{c:?} U+{:04X} ({} names): {:?}", *c as u32, n.len(), &n[..n.len().min(8)])).collect();
-    assert!(by_char.is_empty(), "{} characters missing from name.ttf over {total} names:\n{}", by_char.len(), report.join("\n"));
+    assert!(by_char.is_empty(), "{} characters missing from serif.ttf over {total} names:\n{}", by_char.len(), report.join("\n"));
 }

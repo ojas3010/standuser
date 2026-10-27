@@ -2,11 +2,12 @@
 //!
 //! All text is drawn as paths with class="f-{cls}" (fill colour from the palette CSS), so it renders identically in
 //! browsers, GitHub READMEs and PNG renderers. Fixes gen_card.py line 121, where text lost its `f-` prefix.
-//! The look is the manga's: a flat saturated cover colour for the ground, heavy lettering (Dela Gothic One for the katakana, labels and
-//! ゴゴゴ, Archivo Black for the Stand name) with a black outline drawn as a second, thicker black path under the fill path, and the
-//! Part 5 stat chart: a hexagon with a ring per grade and a grade (outlined lettering) at each vertex.
+//! The look is the manga's: a flat saturated cover colour for the ground, heavy lettering (Dela Gothic One for the stat labels and
+//! ゴゴゴ, Archivo Black for the grades) with a black outline drawn as a second, thicker black path under the fill path, and the
+//! Part 5 stat chart: a hexagon with a ring per grade and a grade (outlined lettering) at each vertex. The header follows the anime
+//! eyecatch: 【STAND NAME】 and the name in Noto Serif JP Bold, level and plain, top left; 【STAND MASTER】 and the user bottom right.
 
-use crate::font::{body_text, font, BodyText, Draw, Font, FontKind};
+use crate::font::{body_text, font, serif_text, BodyText, Draw, Font, FontKind, SerifText};
 use crate::palette::{self, Pal};
 use serde::{Deserialize, Serialize};
 use std::fmt::Write;
@@ -18,6 +19,8 @@ pub const JP: [&str; 6] = ["破壊力", "スピード", "射程距離", "持続�
 pub const EN: [&str; 6] = ["Destructive Power", "Speed", "Range", "Stamina", "Precision", "Potential"];
 /// The one footer line at the bottom of the card; the data credit and the TMDB disclaimer are on the page.
 pub const FOOTER: &str = "standuser.pages.dev · Fan work, not affiliated · * provisional";
+/// The footer as drawn: two rows at the bottom left, beside the Stand master (a test checks they say FOOTER).
+pub const FOOTER_ROWS: [&str; 2] = ["standuser.pages.dev · Fan work,", "not affiliated · * provisional"];
 /// The data credit the card used to carry; the page gets it in the analysis JSON (`card.credit`).
 pub const CREDIT: &str = "Data: Letterboxd, TMDB, MusicBrainz";
 /// The archetype caveat: it is a reading of the stats, not a canon fact. Not drawn on the card; the page gets it in `card.type_note`.
@@ -125,6 +128,8 @@ struct Ctx {
     name: Font,
     /// Dela Gothic One, Japanese at 48 px or larger.
     display: Font,
+    /// Noto Serif JP Bold: the Stand name, the master and their labels.
+    serif: SerifText,
     els: Vec<String>,
     runs: Vec<Run>,
 }
@@ -139,6 +144,7 @@ impl Ctx {
             FontKind::Body => &self.body,
             FontKind::Name => &self.name,
             FontKind::Display => &self.display,
+            FontKind::Serif => &self.serif,
         }
     }
 
@@ -182,6 +188,31 @@ impl Ctx {
         self.runs.push(Run { text: s.into(), size, kind, outlined: true, rotated: false, bbox: [x0 - ow / 2.0, y - up - ow / 2.0, x0 + w + ow / 2.0, y + down + ow / 2.0] });
         self.els.push(format!("<path d=\"{d}\" class=\"o\" stroke-width=\"{ow}\"/><path d=\"{d}\" class=\"f-{cls}\"/>"));
     }
+
+    /// A 【label】 in the serif, set so the ink of its bracket (not the blank beside it) is at x: the left edge for "start", the right
+    /// edge for "end". The run's box is the ink's.
+    fn bracket_label(&mut self, s: &str, x: f64, y: f64, size: f64, anchor: &str) {
+        let (lb, rb) = (self.serif.bearings('【', size).0, self.serif.bearings('】', size).1);
+        let w = self.serif.width(s, size, 0.0);
+        let x0 = if anchor == "end" { x + rb - w } else { x - lb };
+        self.text(s, x0, y, size, FontKind::Serif, "ink", "start", 0.0);
+        let r = self.runs.last_mut().unwrap();
+        r.bbox[0] += lb;
+        r.bbox[2] -= rb;
+    }
+
+    /// One ゴ of the cascade: outlined lettering centred on (cx, cy), tilted about its centre. Its run's box is that of the tilted ink.
+    fn gogo(&mut self, size: f64, cx: f64, cy: f64) {
+        let (up, down) = self.display.ink_extent("ゴ", size);
+        let w = self.display.width("ゴ", size, 0.0);
+        let (x0, y) = (cx - w / 2.0, cy + (up - down) / 2.0);
+        let d = self.display.path("ゴ", x0, y, size, 0.0);
+        let (hw, hh) = (w / 2.0 + OUTLINE / 2.0, (up + down) / 2.0 + OUTLINE / 2.0);
+        let th = GOGOGO_TILT.to_radians();
+        let (ex, ey) = (hw * th.cos().abs() + hh * th.sin().abs(), hw * th.sin().abs() + hh * th.cos().abs());
+        self.runs.push(Run { text: "ゴ".into(), size, kind: FontKind::Display, outlined: true, rotated: true, bbox: [cx - ex, cy - ey, cx + ex, cy + ey] });
+        self.els.push(format!("<g transform=\"rotate({GOGOGO_TILT} {} {})\"><path d=\"{d}\" class=\"o\" stroke-width=\"{OUTLINE}\"/><path d=\"{d}\" class=\"f-fill\"/></g>", n1(cx), n1(cy)));
+    }
 }
 
 /// The chart: centre height and the hexagon's circumradius (the ∞ ring; a grade E to A is the ring k of 6 for k = 1 to 5). The hexagon
@@ -206,22 +237,30 @@ pub const MIN_TEXT: f64 = 34.0;
 /// The left edge of the text, and the right edge.
 pub const MARGIN: f64 = 48.0;
 pub const RIGHT: f64 = W - MARGIN;
-/// The Stand master sits in the free corner above the name's low left end; the type sits in the free corner under its high right end.
-const MASTER_Y: f64 = 90.0;
-const MASTER_SIZE: f64 = MIN_TEXT;
+/// The eyecatch's two labels, in capitals, in the serif.
+pub const NAME_LABEL: &str = "【STAND NAME】";
+pub const MASTER_LABEL: &str = "【STAND MASTER】";
+/// The Stand master is the bottom right corner: its label above the user name, both right-aligned to the margin, in a box this wide.
+pub const MASTER_W: f64 = 420.0;
+const MASTER_LABEL_Y: f64 = 1262.0;
+const MASTER_USER_Y: f64 = 1312.0;
+const MASTER_USER_SIZE: f64 = 44.0;
 const TYPE_SIZE: f64 = MIN_TEXT;
-const TYPE_JP_Y: f64 = 214.0;
-const TYPE_EN_Y: f64 = 262.0;
+const TYPE_JP_Y: f64 = 220.0;
+const TYPE_EN_Y: f64 = 266.0;
 
-/// The bottom of the card is laid out from the foot up: the footer, the nearest canon line, the ability's sentence (at most 3 rows) and
-/// above it the ability's name.
+/// The bottom of the card is laid out from the foot up: the bottom band (the footer at the left in two rows, the Stand master at the
+/// right), the nearest canon line, the ability's sentence (at most 3 rows) and above it the ability's name.
 const LINE_SIZE: f64 = MIN_TEXT;
 const LINE_PITCH: f64 = 42.0;
 const LINE_WIDTH: f64 = RIGHT - MARGIN;
 const LINE_MAX_ROWS: usize = 3;
 const ABILITY_SIZE: f64 = 44.0;
 pub const FOOT_Y: f64 = 1312.0;
-pub const NEAR_Y: f64 = 1262.0;
+pub const FOOT_PITCH: f64 = 50.0;
+/// The footer is wrapped to the left of the master's box.
+pub const FOOT_W: f64 = RIGHT - MARGIN - MASTER_W - 24.0;
+pub const NEAR_Y: f64 = 1212.0;
 const NEAR_SIZE: f64 = MIN_TEXT;
 /// Baseline of the last row of the sentence, and of the ability's name above the first row.
 const LINE_LAST_Y: f64 = NEAR_Y - 48.0;
@@ -233,99 +272,65 @@ pub fn ability_rows(rows: usize) -> (f64, f64) {
     (first - ABILITY_RISE, first)
 }
 
-/// The ゴゴゴ: three ゴ on a diagonal down the left side, staggered, each smaller than the last (a Dela Gothic One ゴ is one em wide):
-/// (size, centre x, centre y). They stand in the free strip between the card's edge and the hexagon, clear of every text.
-pub const GOGOGO: [(f64, f64, f64); 3] = [(66.0, 90.0, 560.0), (56.0, 112.0, 654.0), (48.0, 130.0, 740.0)];
+/// The ゴゴゴ: six ゴ in one diagonal cascade, from under the Stand name down the left side toward the hexagon's lower left, each smaller
+/// than the one before (a Dela Gothic One ゴ is one em wide): (size, centre x, centre y). They stand in the free strip between the card's
+/// edge and the hexagon, clear of every text and of the plate.
+pub const GOGOGO: [(f64, f64, f64); 6] = [(96.0, 86.0, 257.0), (84.0, 94.0, 373.0), (74.0, 103.0, 476.0), (64.0, 130.0, 568.0), (56.0, 156.0, 650.0), (48.0, 184.0, 723.0)];
+/// The cascade's one tilt, in degrees as SVG's rotate() takes them (negative climbs to the right): the slant of the manga's sound effects.
+/// It is the only rotation on the card; the slant belongs to series logos and sound effects, not to a Stand name.
+pub const GOGOGO_TILT: f64 = -8.0;
 /// Width of the black outline of the display lettering, in px (half of it shows outside the glyph).
 pub const OUTLINE: f64 = 6.0;
-/// The Stand name's outline, which is heavier: the name is the card's logo.
-pub const NAME_OUTLINE: f64 = 12.0;
-/// The Stand name's one tilt, in degrees as SVG's rotate() takes them: negative is counter-clockwise, so the name climbs to the right,
-/// like the slant of a Part logo. Nothing else on the card is rotated.
-pub const NAME_TILT: f64 = -8.0;
-/// The header box the tilted name stays inside. Its low left corner is the box's low left corner, so the name's bottom edge is one fixed
-/// line whatever the name, and the corners above and below that line stay free for the master and the type.
-pub const NAME_X0: f64 = MARGIN;
-pub const NAME_X1: f64 = RIGHT;
-pub const NAME_TOP: f64 = 30.0;
-pub const NAME_BOTTOM: f64 = 270.0;
-pub const NAME_MAX_SIZE: f64 = 120.0;
-pub const NAME_MIN_SIZE: f64 = 34.0;
-/// Letter spacing of the Stand name.
-const NAME_LS: f64 = 1.0;
 
-/// Where the name goes: the text in 「」, its size, and the baseline start (x, y) it is rotated about, plus the corners of the tilted box
-/// (the ink and its outline).
+/// The Stand name follows the anime eyecatch (local/ref/iuhipmy89x781.png): level, Noto Serif JP Bold, plain (no outline, no shadow, no
+/// tilt), at the top left under 【STAND NAME】. Its baseline is one fixed line; its size is the largest from NAME_MAX_SIZE down to
+/// NAME_MIN_SIZE that keeps it inside the margins, and the label sits just over its tallest letter.
+pub const NAME_BASELINE: f64 = 170.0;
+pub const NAME_MAX_SIZE: f64 = 104.0;
+pub const NAME_MIN_SIZE: f64 = 40.0;
+pub const NAME_WIDTH: f64 = RIGHT - MARGIN;
+const LABEL_SIZE_HEAD: f64 = MIN_TEXT;
+/// Between the label's lowest ink and the name's highest.
+const HEAD_GAP: f64 = 12.0;
+
+/// Where the name goes: its text, its size, its baseline start (x, y), and the baseline of the label above it.
 pub struct NamePlace {
     pub text: String,
     pub size: f64,
     pub x: f64,
     pub y: f64,
-    pub corners: [(f64, f64); 4],
+    pub label_y: f64,
 }
 
-fn name_box(f: &Font, text: &str, size: f64) -> NamePlace {
-    let w = f.width(text, size, NAME_LS);
-    let (up, down) = f.ink_extent(text, size);
-    let pad = NAME_OUTLINE / 2.0;
-    let th = NAME_TILT.to_radians();
-    let rot = |(x, y): (f64, f64)| (x * th.cos() - y * th.sin(), x * th.sin() + y * th.cos());
-    let raw = [rot((-pad, -up - pad)), rot((w + pad, -up - pad)), rot((w + pad, down + pad)), rot((-pad, down + pad))];
-    let (min_x, max_y) = (raw.iter().map(|p| p.0).fold(f64::MAX, f64::min), raw.iter().map(|p| p.1).fold(f64::MIN, f64::max));
-    // as far left and as low as the box allows: that leaves the most room for the right end to climb
-    let (x, y) = (NAME_X0 - min_x, NAME_BOTTOM - max_y);
-    NamePlace { text: text.to_string(), size, x, y, corners: raw.map(|(px, py)| (px + x, py + y)) }
+fn name_at(f: &SerifText, text: &str, size: f64) -> NamePlace {
+    let (up, _) = f.ink_extent(text, size);
+    let (_, label_down) = f.ink_extent(NAME_LABEL, LABEL_SIZE_HEAD);
+    NamePlace { text: text.to_string(), size, x: MARGIN, y: NAME_BASELINE, label_y: NAME_BASELINE - up - HEAD_GAP - label_down }
 }
 
-/// Where the master and the type stand, as boxes (left, top, right, bottom) the name must stay clear of: the widest master the card
-/// draws (470 px), and the widest type lines (Automatic, in Japanese and in English). A test checks the real text is inside them.
-pub const MASTER_BOX: [f64; 4] = [MARGIN, MASTER_Y - 32.0, MARGIN + 470.0, MASTER_Y + 10.0];
-pub const TYPE_JP_BOX: [f64; 4] = [RIGHT - 250.0, TYPE_JP_Y - 32.0, RIGHT, TYPE_JP_Y + 8.0];
-pub const TYPE_EN_BOX: [f64; 4] = [RIGHT - 600.0, TYPE_EN_Y - 28.0, RIGHT, TYPE_EN_Y + 10.0];
-
-/// Does the convex quadrilateral `q` touch the box `r` (left, top, right, bottom)? Separating axis test.
-pub fn quad_hits(q: &[(f64, f64); 4], r: &[f64; 4]) -> bool {
-    let rc = [(r[0], r[1]), (r[2], r[1]), (r[2], r[3]), (r[0], r[3])];
-    let mut axes = vec![(1.0, 0.0), (0.0, 1.0)];
-    for i in 0..2 {
-        let (a, b) = (q[i], q[i + 1]);
-        axes.push((-(b.1 - a.1), b.0 - a.0));
-    }
-    axes.iter().all(|&(ax, ay)| {
-        let proj = |pts: &[(f64, f64)]| pts.iter().map(|p| p.0 * ax + p.1 * ay).fold((f64::MAX, f64::MIN), |(lo, hi), v| (lo.min(v), hi.max(v)));
-        let (ql, qh) = proj(q);
-        let (rl, rh) = proj(&rc);
-        ql <= rh && rl <= qh
-    })
+pub fn name_fits(f: &SerifText, text: &str, size: f64) -> bool {
+    f.width(text, size, 0.0) <= NAME_WIDTH
 }
 
-fn name_fits(p: &NamePlace) -> bool {
-    let c = &p.corners;
-    c.iter().all(|q| q.0 >= NAME_X0 - 0.01 && q.0 <= NAME_X1 && q.1 >= NAME_TOP && q.1 <= NAME_BOTTOM + 0.01) && ![MASTER_BOX, TYPE_JP_BOX, TYPE_EN_BOX].iter().any(|r| quad_hits(c, r))
-}
-
-/// The largest size from NAME_MAX_SIZE down to NAME_MIN_SIZE at which the tilted name fits the header. Only a name that does not fit
-/// even at the smallest size is cut, with an ellipsis; none in names.json is (a test checks every one).
-pub fn place_name(f: &Font, name: &str) -> NamePlace {
-    let text = format!("「{name}」");
+/// The largest size from NAME_MAX_SIZE down to NAME_MIN_SIZE at which the name fits the line. Only a name that does not fit even at the
+/// smallest size is cut, with an ellipsis; none in names.json is (a test checks every one).
+pub fn place_name(f: &SerifText, name: &str) -> NamePlace {
     let mut size = NAME_MAX_SIZE;
     while size >= NAME_MIN_SIZE {
-        let p = name_box(f, &text, size);
-        if name_fits(&p) {
-            return p;
+        if name_fits(f, name, size) {
+            return name_at(f, name, size);
         }
         size -= 1.0;
     }
-    let mut inner: Vec<char> = name.chars().collect();
-    loop {
-        let cut = format!("「{}…」", inner.iter().collect::<String>().trim_end());
-        let p = name_box(f, &cut, NAME_MIN_SIZE);
-        if inner.is_empty() || name_fits(&p) {
-            return p;
-        }
-        inner.pop();
-    }
+    let cut = f.fit(name, NAME_MIN_SIZE, NAME_WIDTH);
+    name_at(f, &cut, NAME_MIN_SIZE)
 }
+
+/// Where the master stands, as a box (left, top, right, bottom), and the type lines: the widest master the card draws and the widest type
+/// lines (Automatic, in Japanese and in English). A test checks the real text is inside them.
+pub const MASTER_BOX: [f64; 4] = [RIGHT - MASTER_W, MASTER_LABEL_Y - 34.0, RIGHT, MASTER_USER_Y + 14.0];
+pub const TYPE_JP_BOX: [f64; 4] = [RIGHT - 250.0, TYPE_JP_Y - 32.0, RIGHT, TYPE_JP_Y + 8.0];
+pub const TYPE_EN_BOX: [f64; 4] = [RIGHT - 600.0, TYPE_EN_Y - 28.0, RIGHT, TYPE_EN_Y + 10.0];
 
 /// The hexagon's six vertices at radius `r` about (cx, cy), clockwise from the top.
 fn hex(cx: f64, cy: f64, r: f64) -> Vec<(f64, f64)> {
@@ -356,44 +361,24 @@ pub fn card_svg(d: &CardData, theme: Theme) -> String {
 
 /// The card's SVG and every piece of text on it, as drawn (for the tests that measure the card).
 pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
-    use FontKind::{Body, Name};
-    let mut c = Ctx { jp: font(FontKind::Jp), body: body_text(), name: font(Name), display: font(FontKind::Display), els: vec![], runs: vec![] };
+    use FontKind::{Body, Name, Serif};
+    let mut c = Ctx { jp: font(FontKind::Jp), body: body_text(), name: font(Name), display: font(FontKind::Display), serif: serif_text(), els: vec![], runs: vec![] };
     let (cx, cy, r_chart) = (CX, CY, CHART_R);
 
     // the ground, and the one frame: the thick black border of a manga panel, flush with the card's edge (no margin outside it, no
     // line inside it)
     c.els.push(format!("<rect width=\"{W}\" height=\"{H}\" class=\"f-bg\"/>"));
     c.els.push(format!("<rect x=\"{0}\" y=\"{0}\" width=\"{1}\" height=\"{2}\" class=\"s-bk\" fill=\"none\" stroke-width=\"{FRAME}\"/>", FRAME / 2.0, W - FRAME, H - FRAME));
-    // the ゴゴゴ of the scene, on a diagonal down the left side
+    // the ゴゴゴ of the scene: one diagonal cascade down the left side
     for (sz, gx, gy) in GOGOGO {
-        let (up, down) = c.display.ink_extent("ゴ", sz);
-        c.jp_text("ゴ", gx, gy + (up - down) / 2.0, sz, "fill", "middle");
+        c.gogo(sz, gx, gy);
     }
-    // the Stand name: the card's one diagonal, largest size that keeps its tilted box in the header; the outline and the fill share the tilt
-    let np = place_name(&c.name, &d.name);
-    {
-        let dpath = c.name.path(&np.text, np.x, np.y, np.size, NAME_LS);
-        let xs = np.corners.map(|p| p.0);
-        let ys = np.corners.map(|p| p.1);
-        c.runs.push(Run {
-            text: np.text.clone(),
-            size: np.size,
-            kind: Name,
-            outlined: true,
-            rotated: true,
-            bbox: [xs.iter().cloned().fold(f64::MAX, f64::min), ys.iter().cloned().fold(f64::MAX, f64::min), xs.iter().cloned().fold(f64::MIN, f64::max), ys.iter().cloned().fold(f64::MIN, f64::max)],
-        });
-        c.els.push(format!(
-            "<g transform=\"rotate({} {} {})\"><path d=\"{dpath}\" class=\"o\" stroke-width=\"{NAME_OUTLINE}\"/><path d=\"{dpath}\" class=\"f-paper\"/></g>",
-            NAME_TILT, n1(np.x), n1(np.y)
-        ));
-    }
-    // the Stand master (top left, above the name's low end) and the type in Japanese and English (right, under the name's high end)
-    let label = "本体―";
-    c.jp_text(label, MARGIN, MASTER_Y, MASTER_SIZE, "ink", "start");
-    let lw = c.jp.width(label, MASTER_SIZE, 0.0);
-    let user = c.body.fit(&d.user, MASTER_SIZE, 470.0 - lw - 10.0);
-    c.text(&user, MARGIN + lw + 10.0, MASTER_Y, MASTER_SIZE, Body, "ink", "start", 0.0);
+    // the Stand name as in the eyecatch: 【STAND NAME】 over it, both level, plain, in the serif
+    let np = place_name(&c.serif, &d.name);
+    // the brackets carry blank at their sides: the labels are set so the ink of the bracket lines up with the margin
+    c.bracket_label(NAME_LABEL, MARGIN, np.label_y, LABEL_SIZE_HEAD, "start");
+    c.text(&np.text, np.x, np.y, np.size, Serif, "ink", "start", 0.0);
+    // the type in Japanese and English, right, under the name
     c.jp_text(&d.type_jp, RIGHT, TYPE_JP_Y, TYPE_SIZE, "ink", "end");
     c.text(&d.type_en, RIGHT, TYPE_EN_Y, TYPE_SIZE, Body, "ink", "end", 0.0);
 
@@ -461,10 +446,15 @@ pub fn card_build(d: &CardData, theme: Theme) -> (String, Vec<Run>) {
     for (i, ln) in rows.iter().enumerate() {
         c.text(ln, MARGIN, first_y + i as f64 * LINE_PITCH, LINE_SIZE, Body, "ink", "start", 0.0);
     }
-    // the nearest canon line, and the one footer line
+    // the nearest canon line, then the bottom band: the footer at the left in two rows, the Stand master at the right
     let near = nearest_line(&c.body, &d.nearest);
     c.text(&near, MARGIN, NEAR_Y, NEAR_SIZE, Body, "ink", "start", 0.0);
-    c.text(FOOTER, MARGIN, FOOT_Y, NEAR_SIZE, Body, "mute", "start", 0.0);
+    for (i, ln) in FOOTER_ROWS.iter().enumerate() {
+        c.text(ln, MARGIN, FOOT_Y - (FOOTER_ROWS.len() - 1 - i) as f64 * FOOT_PITCH, NEAR_SIZE, Body, "mute", "start", 0.0);
+    }
+    c.bracket_label(MASTER_LABEL, RIGHT, MASTER_LABEL_Y, LABEL_SIZE_HEAD, "end");
+    let user = c.serif.fit(&d.user, MASTER_USER_SIZE, MASTER_W);
+    c.text(&user, RIGHT, MASTER_USER_Y, MASTER_USER_SIZE, Serif, "ink", "end", 0.0);
 
     // assemble
     let key = d.accent.as_deref();
@@ -562,52 +552,52 @@ mod tests {
     fn very_long_names_are_cut_inside_the_frame() {
         let mut d = sample();
         d.name = "THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE".into();
-        let f = font(FontKind::Name);
-        // the whole name does not fit the header even at the smallest size, so it is cut with an ellipsis and then does fit
-        assert!(!name_fits(&name_box(&f, &format!("「{}」", d.name), NAME_MIN_SIZE)));
+        let f = serif_text();
+        // the whole name does not fit the line even at the smallest size, so it is cut with an ellipsis and then does fit
+        assert!(!name_fits(&f, &d.name, NAME_MIN_SIZE));
         let p = place_name(&f, &d.name);
-        assert!(p.text.ends_with("…」") && p.size == NAME_MIN_SIZE && name_fits(&p), "{} at {}", p.text, p.size);
+        assert!(p.text.ends_with('…') && p.size == NAME_MIN_SIZE && name_fits(&f, &p.text, p.size), "{} at {}", p.text, p.size);
         assert!(card_svg(&d, Theme::Light).contains("class=\"f-ink\""));
     }
 
     #[test]
-    fn every_name_in_names_json_fits_the_tilted_header_uncut() {
+    fn every_name_in_names_json_fits_the_header_uncut() {
         let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
-        let f = font(FontKind::Name);
+        let f = serif_text();
         let mut all: Vec<(f64, String)> = vec![];
         for v in names["names"].as_object().unwrap().values() {
             for cand in v[1].as_array().unwrap() {
                 let n = cand[0].as_str().unwrap().to_string();
-                // the card draws the name in upper case, as names.json stores it; a fit at the smallest size is what "never clips" needs
-                let b = name_box(&f, &format!("「{n}」"), NAME_MIN_SIZE);
-                assert!(name_fits(&b), "{n:?} does not fit the header even at {NAME_MIN_SIZE} px");
-                all.push((f.width(&n, NAME_MIN_SIZE, 2.0), n));
+                // the card draws the name in upper case, as names.json stores it; a fit at the smallest size is what "never clipped" needs
+                assert!(name_fits(&f, &n, NAME_MIN_SIZE), "{n:?} does not fit the line even at {NAME_MIN_SIZE} px");
+                all.push((f.width(&n, NAME_MIN_SIZE, 0.0), n));
             }
         }
         assert!(all.len() > 20000);
-        // the widest ones get their real size: never cut, never below the floor, and every corner of the tilted box inside the header
+        // the widest ones get their real size: never cut, never below the floor
         all.sort_by(|a, b| b.0.total_cmp(&a.0));
         for (_, n) in all.iter().take(100) {
             let p = place_name(&f, n);
-            assert!(p.text == format!("「{n}」") && p.size >= NAME_MIN_SIZE && name_fits(&p), "{n}: {} at {}", p.text, p.size);
+            assert!(p.text == *n && p.size >= NAME_MIN_SIZE && name_fits(&f, &p.text, p.size), "{n}: {} at {}", p.text, p.size);
         }
         println!("the widest name in names.json, {:?}, is drawn at {} px", all[0].1, place_name(&f, &all[0].1).size);
     }
 
     #[test]
-    fn the_name_is_the_one_tilt_and_the_fills_are_flat() {
+    fn only_the_gogogo_tilt_and_the_fills_are_flat() {
         for theme in [Theme::Light, Theme::Dark, Theme::Auto] {
             let mut d = sample();
             for key in [None, Some("PWR"), Some("SPD"), Some("RNG"), Some("STA"), Some("PRC"), Some("DEV")] {
                 d.accent = key.map(String::from);
                 let s = card_svg(&d, theme);
-                assert_eq!(s.matches("rotate(").count(), 1, "exactly one rotated element");
-                assert_eq!(s.matches("transform=").count(), 1);
-                // the tilted group is the name: its black outline path and its white fill path, nothing else
-                let at = s.find("<g transform=").unwrap();
-                let g = &s[at..at + s[at..].find("</g>").unwrap()];
-                assert!(g.contains(&format!("rotate({NAME_TILT} ")) && g.matches("<path").count() == 2, "{}", &g[..60]);
-                assert!(g.contains("class=\"o\"") && g.contains("class=\"f-paper\""));
+                // the six ゴ are the only rotated elements: each a group of its black outline path and its fill path
+                assert_eq!(s.matches("rotate(").count(), GOGOGO.len(), "one rotated group per ゴ");
+                assert_eq!(s.matches("transform=").count(), GOGOGO.len());
+                for g in s.split("<g transform=").skip(1) {
+                    let g = &g[..g.find("</g>").unwrap()];
+                    assert!(g.starts_with(&format!("\"rotate({GOGOGO_TILT} ")) && g.matches("<path").count() == 2, "{}", &g[..40]);
+                    assert!(g.contains("class=\"o\"") && g.contains("class=\"f-fill\""));
+                }
                 for banned in ["Gradient", "<pattern", "<filter", "filter:", "shadow", "<image", "<mask", "blur", "opacity"] {
                     assert!(!s.contains(banned), "{banned}");
                 }
@@ -617,10 +607,10 @@ mod tests {
 
     #[test]
     fn the_lettering_has_the_manga_outline() {
-        // every outlined text is a black path (class "o", with a stroke width) followed by the fill path of the same glyphs: the name
-        // each ゴ (3 of them) and each of the six grades
+        // every outlined text is a black path (class "o", with a stroke width) followed by the fill path of the same glyphs: each ゴ (6 of
+        // them) and each of the six grades. The Stand name is plain serif, with no outline.
         let s = card_svg(&sample(), Theme::Light);
-        assert_eq!(s.matches("class=\"o\"").count(), 1 + 3 + 6);
+        assert_eq!(s.matches("class=\"o\"").count(), 6 + 6);
         let mut pairs = 0;
         let parts: Vec<&str> = s.split("<path d=\"").skip(1).collect();
         for (k, part) in parts.iter().enumerate() {
@@ -630,7 +620,7 @@ mod tests {
                 pairs += 1;
             }
         }
-        assert_eq!(pairs, 1 + 3 + 6);
+        assert_eq!(pairs, 6 + 6);
         assert!(s.contains(".o{fill:#0b0b0b;stroke:#0b0b0b;stroke-linejoin:round}"));
     }
 
@@ -677,7 +667,7 @@ mod tests {
         assert!(f.fit("a very long film title ".repeat(10).as_str(), 19.0, 440.0).ends_with('…'));
     }
 
-    /// The text the card draws, in the order it is drawn (the Stand name in its 「」).
+    /// The text the card draws, in the order it is drawn.
     fn texts(d: &CardData) -> Vec<String> {
         card_build(d, Theme::Light).1.into_iter().map(|r| r.text).collect()
     }
@@ -687,16 +677,17 @@ mod tests {
         let d = sample();
         let t = texts(&d);
         let all = t.join("\n");
-        // kept: the Stand name, the Stand master, the type in Japanese and English, six grades with their asterisks, the ability name and
-        // sentence, the nearest canon line and the one footer line
-        assert!(t.iter().any(|s| s == "「DIRTY WEATHER」") && all.contains("本体―") && all.contains("jas3344"));
+        // kept: the Stand name under its label, the type in Japanese and English, six grades with their asterisks, the ability name and
+        // sentence, the nearest canon line, the footer, and the Stand master (label and user) in the corner
+        assert!(t.iter().any(|s| s == "DIRTY WEATHER") && t.iter().any(|s| s == NAME_LABEL) && t.iter().any(|s| s == MASTER_LABEL) && t.last().unwrap() == "jas3344");
         assert!(all.contains("近距離パワー型") && all.contains("Close-Range Power"));
         assert!(t.iter().any(|s| s == "B*") && t.iter().any(|s| s == "C") && t.iter().any(|s| s == "?"), "{t:?}");
         assert!(t.iter().any(|s| s == "Wind Reading") && all.replace('\n', " ").contains(&d.ability_line));
         assert!(t.iter().any(|s| s == "Nearest canon: D4C Love Train · Dolly Dagger · The World"));
-        assert_eq!(t.last().unwrap(), "standuser.pages.dev · Fan work, not affiliated · * provisional");
-        // removed: stat value lines, film titles, graded-on lines, weakness, signature film, why, archetype caveat, PROVISIONAL DATA, credit
-        for gone in ["metric 0", "Film 0", "graded on", "Soft spot", "Signature film", "Why", "archetype", "PROVISIONAL", "Data:", "Letterboxd", "TMDB", "MusicBrainz", "A―", "超スゴイ"] {
+        assert_eq!(FOOTER_ROWS.map(String::from).to_vec(), t[t.len() - 4..t.len() - 2].to_vec());
+        // removed: stat value lines, film titles, graded-on lines, weakness, signature film, why, archetype caveat, PROVISIONAL DATA, credit,
+        // and the old 本体― and the Stand name's corner brackets
+        for gone in ["metric 0", "Film 0", "graded on", "Soft spot", "Signature film", "Why", "archetype", "PROVISIONAL", "Data:", "Letterboxd", "TMDB", "MusicBrainz", "A―", "超スゴイ", "本体", "「"] {
             assert!(!all.contains(gone), "{gone} is still on the card");
         }
         // no hidden text: every grade and label is one of the listed runs
@@ -707,6 +698,12 @@ mod tests {
     fn the_footer_is_the_one_line() {
         assert_eq!(FOOTER, "standuser.pages.dev · Fan work, not affiliated · * provisional");
         assert!(!FOOTER.contains('\n') && !FOOTER.contains("endorsed") && !FOOTER.contains("Data:"));
+        // drawn as two rows beside the Stand master, saying the same words, each row in the room the master leaves
+        assert_eq!(FOOTER_ROWS.join(" "), FOOTER);
+        let f = body_text();
+        for r in FOOTER_ROWS {
+            assert!(f.width(r, NEAR_SIZE, 0.0) <= FOOT_W, "{r}: {} of {FOOT_W}", f.width(r, NEAR_SIZE, 0.0));
+        }
     }
 
     #[test]
@@ -727,10 +724,9 @@ mod tests {
     }
 
     #[test]
-    fn the_stand_name_is_larger_than_it_was() {
-        // the old card capped the name at 80 px and drew the median name in names.json at that cap; every name that was at the cap is
-        // now larger, and the median name is well above it
-        let f = font(FontKind::Name);
+    fn the_stand_name_is_large_and_level() {
+        // the name is drawn as large as the line allows, up to NAME_MAX_SIZE: the median name in names.json is well above the grades' 80 px
+        let f = serif_text();
         let names: serde_json::Value = serde_json::from_str(include_str!("../data/names.json")).unwrap();
         let mut sizes: Vec<f64> = vec![];
         for v in names["names"].as_object().unwrap().values() {
@@ -741,39 +737,48 @@ mod tests {
         sizes.sort_by(|a, b| a.total_cmp(b));
         let median = sizes[sizes.len() / 2];
         println!("{} names, drawn at {} px at the smallest, {median} px at the median, {} px at the largest", sizes.len(), sizes[0], sizes[sizes.len() - 1]);
-        assert!(median >= 85.0 && sizes[0] >= NAME_MIN_SIZE, "median {median}");
+        assert!(median >= 80.0 && sizes[0] >= NAME_MIN_SIZE, "median {median}");
+        // level and plain: its path is one fill path in the ink colour, with no outline, no group and no transform
+        let s = card_svg(&sample(), Theme::Light);
+        assert!(!s.contains("rotate(0") && !s.contains("skew") && !s.contains("matrix"));
+        let (_, runs) = card_build(&sample(), Theme::Light);
+        let name = runs.iter().find(|r| r.text == "DIRTY WEATHER").unwrap();
+        assert!(!name.outlined && !name.rotated && name.kind == FontKind::Serif);
     }
 
     #[test]
     fn every_text_is_in_the_face_its_role_names() {
-        // Archivo Black for the Stand name and the Latin display text; Archivo 700 for all other Latin; Dela Gothic One with the black
-        // outline for Japanese at 48 px or larger; Noto Sans JP Bold, no outline, for Japanese below 48 px. No other face.
+        // Noto Serif JP Bold, plain, for the Stand name, the user and the two eyecatch labels; Archivo Black for the grades and the ability's
+        // name; Archivo 700 for all other Latin; Dela Gothic One with the black outline for Japanese at 48 px or larger; Noto Sans JP Bold,
+        // no outline, for Japanese below 48 px. No other face.
         let mut d = sample();
         d.grades[5] = "完成".into();
         for theme in [Theme::Light, Theme::Dark] {
             for run in card_build(&d, theme).1 {
-                let japanese = |c: char| c as u32 >= 0x2E80 && c != '「' && c != '」';
+                let japanese = |c: char| c as u32 >= 0x2E80 && c != '【' && c != '】';
                 let all_jp = run.text.chars().all(|c| japanese(c) || c == '―');
                 match run.kind {
                     FontKind::Display => assert!(run.size >= JP_LETTERING_MIN && run.outlined && all_jp, "{run:?}"),
                     FontKind::Jp => assert!(run.size < JP_LETTERING_MIN && !run.outlined && all_jp, "{run:?}"),
-                    FontKind::Name => assert!(!run.text.chars().any(japanese) || run.text.starts_with('「'), "{run:?}"),
+                    FontKind::Name => assert!(!run.text.chars().any(japanese), "{run:?}"),
                     FontKind::Body => assert!(!run.outlined && !run.text.chars().any(|c| c as u32 >= 0x2E80), "{run:?}"),
+                    FontKind::Serif => assert!(!run.outlined && !run.rotated, "{run:?}"),
                 }
             }
         }
         // the roles of the pieces the rule names
         let runs = card_build(&d, Theme::Light).1;
         let kind = |t: &str| runs.iter().find(|r| r.text.starts_with(t)).unwrap_or_else(|| panic!("{t}")).kind;
-        assert_eq!(kind("「DIRTY"), FontKind::Name);
-        assert_eq!(kind("Wind Reading"), FontKind::Name);
+        assert_eq!(kind("DIRTY"), FontKind::Serif);
+        assert_eq!(kind("【STAND NAME】"), FontKind::Serif);
+        assert_eq!(kind("【STAND MASTER】"), FontKind::Serif);
+        assert_eq!(kind("jas3344"), FontKind::Serif);
         assert_eq!(kind("B*"), FontKind::Name);
         assert_eq!(kind("It reads"), FontKind::Body);
         assert_eq!(kind("standuser"), FontKind::Body);
         assert_eq!(kind("Close-Range"), FontKind::Body);
         assert_eq!(kind("ゴ"), FontKind::Display);
         assert_eq!(kind("近距離"), FontKind::Jp);
-        assert_eq!(kind("本体"), FontKind::Jp);
         assert_eq!(kind("完成"), FontKind::Display, "the 完成 grade is lettering, like the other grades");
     }
 
@@ -783,7 +788,7 @@ mod tests {
         let mut d = sample();
         for (name, user, line) in [
             ("A", "x", "Short."),
-            ("YORKTOWN AND THE RETURN HOME", "a_user_name_15ch", "It unravels into tendrils that cross borders: 3.4 effective production countries per 50 films, and then some more."),
+            ("YORKTOWN AND THE RETURN HOME", "abcdefghijklmno", "It unravels into tendrils that cross borders: 3.4 effective production countries per 50 films, and then some more."),
             ("THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE", "u", ""),
         ] {
             d.name = name.into();
@@ -824,28 +829,36 @@ mod tests {
     }
 
     #[test]
-    fn the_gogogo_are_three_staggered_on_a_diagonal_clear_of_all_text() {
+    fn the_gogogo_are_one_diagonal_cascade_clear_of_all_text() {
         for theme in [Theme::Light, Theme::Dark] {
             let mut d = sample();
             d.name = "YORKTOWN AND THE RETURN HOME".into();
+            d.grades[1] = "完成".into();
             let runs = card_build(&d, theme).1;
             let go: Vec<&Run> = runs.iter().filter(|r| r.text == "ゴ").collect();
-            assert_eq!(go.len(), 3, "three ゴ");
-            // three sizes, each smaller than the one before, all at least the lettering size
-            assert!(go[0].size > go[1].size && go[1].size > go[2].size && go[2].size >= JP_LETTERING_MIN, "{:?}", go.iter().map(|r| r.size).collect::<Vec<_>>());
-            // on a diagonal (each lower and further right) and staggered (no two share a column or a row)
+            assert!(go.len() == 6, "five or six ゴ: {}", go.len());
+            // each smaller than the one before, all at least the lettering size
+            let sizes: Vec<f64> = go.iter().map(|r| r.size).collect();
+            assert!(sizes.windows(2).all(|w| w[0] > w[1]) && sizes[5] >= JP_LETTERING_MIN, "{sizes:?}");
+            // one diagonal from the top left down to the right: each lower than the last and, over the cascade, further right; the first
+            // stands in the left half of the card's top third, the last lower and right of it
             let centre = |r: &Run| ((r.bbox[0] + r.bbox[2]) / 2.0, (r.bbox[1] + r.bbox[3]) / 2.0);
             for w in go.windows(2) {
                 let (a, b) = (centre(w[0]), centre(w[1]));
-                assert!(b.0 - a.0 >= 15.0 && b.1 - a.1 >= w[0].size / 2.0 + w[1].size / 2.0 - 40.0 && b.1 > a.1, "{a:?} {b:?}");
+                assert!(b.1 > a.1 && b.1 - a.1 >= (w[0].bbox[3] - w[0].bbox[1]) / 2.0 + (w[1].bbox[3] - w[1].bbox[1]) / 2.0 - 1.0, "{a:?} {b:?}: they overlap");
             }
-            // clear of every other piece of text by 10 px (the grades are text), and of the hexagon's plate
+            let (first, last) = (centre(go[0]), centre(go[5]));
+            assert!(first.0 < W / 4.0 && first.1 < H / 3.0 && last.0 - first.0 >= 60.0 && last.1 - first.1 >= 300.0, "{first:?} {last:?}");
+            // they lean (the cascade is the one rotation on the card) and are clear of every other piece of text by 10 px, of the plate,
+            // and of the frame
+            assert!(go.iter().all(|r| r.rotated) && runs.iter().filter(|r| r.rotated).count() == go.len());
             let apart = |a: &[f64; 4], b: &[f64; 4], pad: f64| a[2] + pad <= b[0] || b[2] + pad <= a[0] || a[3] + pad <= b[1] || b[3] + pad <= a[1];
             for g in &go {
                 for r in runs.iter().filter(|r| r.text != "ゴ") {
                     assert!(apart(&g.bbox, &r.bbox, 10.0), "ゴ {:?} touches {:?}", g.bbox, r);
                 }
                 assert!(g.bbox[2] + 10.0 <= CX - 3.0f64.sqrt() / 2.0 * CHART_R, "ゴ {:?} reaches the plate", g.bbox);
+                assert!(g.bbox[0] >= FRAME + 10.0, "ゴ {:?} is at the frame", g.bbox);
             }
         }
     }
@@ -874,11 +887,12 @@ mod tests {
     }
 
     #[test]
-    fn the_name_is_tilted_8_degrees_and_the_boxes_hold_the_real_text() {
-        assert_eq!(NAME_TILT, -8.0);
-        // the master and type boxes the name keeps clear of contain the widest real master and the type lines of every type
+    fn the_name_is_level_and_the_boxes_hold_the_real_text() {
+        // the Stand name has no tilt, the cascade's is the card's one
+        assert_eq!(GOGOGO_TILT, -8.0);
+        // the master and type boxes contain the widest real master and the type lines of every type
         let mut d = sample();
-        d.user = "a_user_name_15ch".into();
+        d.user = "abcdefghijklmno".into();
         for (jp, en) in [("遠隔自動操縦型", "Automatic, Far-Distance Autopilot"), ("遠隔操作型", "Long-Distance Operation"), ("近距離パワー型", "Close-Range Power"), ("未分類", "Unclassified")] {
             d.type_jp = jp.into();
             d.type_en = en.into();
@@ -887,41 +901,46 @@ mod tests {
                 let r = runs.iter().find(|r| r.text.starts_with(t)).unwrap();
                 assert!(r.bbox[0] >= b[0] && r.bbox[1] >= b[1] && r.bbox[2] <= b[2] && r.bbox[3] <= b[3], "{t}: {:?} is outside {b:?}", r.bbox);
             };
-            inside("本体", &MASTER_BOX);
-            inside("a_user", &MASTER_BOX);
+            inside("【STAND MASTER】", &MASTER_BOX);
+            inside("abcdefgh", &MASTER_BOX);
             inside(jp, &TYPE_JP_BOX);
             inside(en, &TYPE_EN_BOX);
         }
+        // the master is in the bottom right corner: right-aligned to the margin, below everything else on the right
+        let runs = card_build(&d, Theme::Light).1;
+        let user = runs.iter().find(|r| r.text == "abcdefghijklmno").unwrap();
+        assert!((user.bbox[2] - RIGHT).abs() < 6.0 && user.bbox[1] > H / 2.0 && user.bbox[3] > H - 60.0, "{user:?}");
+        let label = runs.iter().find(|r| r.text == MASTER_LABEL).unwrap();
+        assert!(label.bbox[2] <= RIGHT + 2.0 && label.bbox[3] < user.bbox[1] + 20.0 && label.bbox[1] > H * 0.9, "{label:?}");
     }
 
     #[test]
-    fn no_two_texts_overlap_and_the_name_clears_them_all() {
+    fn no_two_texts_overlap_and_the_label_sits_over_the_name() {
         let apart = |a: &[f64; 4], b: &[f64; 4], pad: f64| a[2] + pad <= b[0] || b[2] + pad <= a[0] || a[3] + pad <= b[1] || b[3] + pad <= a[1];
-        let f = font(FontKind::Name);
         let mut d = sample();
         for (name, jp, en) in [
             ("YORKTOWN AND THE RETURN HOME", "遠隔自動操縦型", "Automatic, Far-Distance Autopilot"),
             ("A", "近距離パワー型", "Close-Range Power"),
-            ("DIRTY WEATHER", "遠隔操作型", "Long-Distance Operation"),
+            ("DIRTY WEATHER, QUEEN OF JAZZ", "遠隔操作型", "Long-Distance Operation"),
             ("THE QUICK BROWN COMPOSER OF MANY LONG NAMES AND HOMAGES TO EVERYONE", "未分類", "Unclassified"),
         ] {
             d.name = name.into();
             d.type_jp = jp.into();
             d.type_en = en.into();
-            d.user = "a_user_name_15ch".into();
+            d.user = "abcdefghijklmno".into();
             d.grades[1] = "完成".into();
             let runs = card_build(&d, Theme::Light).1;
-            let np = place_name(&f, name);
-            for (i, a) in runs.iter().enumerate() {
-                if a.rotated {
-                    continue;
-                }
-                assert!(!quad_hits(&np.corners, &a.bbox), "the name {name:?} touches {a:?}");
+            // the badge letter sits beside its label and no text box touches another (the cascade has its own test)
+            for (i, a) in runs.iter().enumerate().filter(|(_, a)| !a.rotated) {
                 for b in runs.iter().skip(i + 1).filter(|b| !b.rotated) {
-                    // the badge letter sits inside its circle and the labels are beside the circles: no text box touches another
-                    assert!(apart(&a.bbox, &b.bbox, 2.0), "{a:?} touches {b:?}");
+                    assert!(apart(&a.bbox, &b.bbox, 2.0), "{name:?}: {a:?} touches {b:?}");
                 }
             }
+            // the label is directly over the name, both at the left margin
+            let label = runs.iter().find(|r| r.text == NAME_LABEL).unwrap();
+            let nm = runs.iter().find(|r| r.text.starts_with(&name[..1]) && r.kind == FontKind::Serif && r.size >= NAME_MIN_SIZE).unwrap();
+            assert!(label.bbox[3] <= nm.bbox[1] && nm.bbox[1] - label.bbox[3] < 30.0 && (label.bbox[0] - nm.bbox[0]).abs() < 4.0, "{label:?} over {nm:?}");
+            assert!(label.size < nm.size || label.size == NAME_MIN_SIZE.min(label.size));
         }
     }
 
@@ -940,12 +959,13 @@ mod tests {
                 assert!(g.outlined && g.size >= 72.0, "{g:?}");
                 assert_eq!(g.kind, if g.text.starts_with("完成") { FontKind::Display } else { FontKind::Name }, "{g:?}");
             }
-            // every other run is smaller than the smallest grade, bar the Stand name (the one rotated run)
+            // every other run is smaller than the smallest grade, bar the Stand name (the serif, as large as its line allows) and the
+            // cascade's ゴ (the rotated runs)
             let smallest = grades.iter().map(|g| g.size).fold(f64::MAX, f64::min);
-            for r in runs.iter().filter(|r| !r.rotated && !grades.iter().any(|g| std::ptr::eq(*g, *r))) {
+            for r in runs.iter().filter(|r| !r.rotated && r.text != d.name && !grades.iter().any(|g| std::ptr::eq(*g, *r))) {
                 assert!(r.size < smallest, "{r:?} is as large as a grade ({smallest} px)");
             }
-            assert!(svg.matches("class=\"o\" stroke-width=\"6\"").count() >= 6 + 3, "an outline under each grade and each ゴ");
+            assert!(svg.matches("class=\"o\" stroke-width=\"6\"").count() >= 6 + 6, "an outline under each grade and each ゴ");
         }
     }
 
