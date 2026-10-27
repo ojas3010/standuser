@@ -87,7 +87,7 @@ try {
   out('Why these grades: the name line has no leading Why', /^Why\b/.test(document.getElementById('why-name').textContent), false);
   out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
   out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
-  out('notes', document.getElementById('notes').children.length, 2);
+  out('notes: the film-table sentence is in the method text only', `${document.getElementById('notes').children.length} ${/film table/.test(document.getElementById('notes').textContent.replace(/Film table built/, ''))}`, '1 false');
   out('coverage cell', rows[0].cells[4].firstChild.textContent, '210 of 250 films');
   const img = document.getElementById('card');
   await img.decode();

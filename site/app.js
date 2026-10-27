@@ -208,7 +208,6 @@ function show(a, svg) {
   notes.replaceChildren();
   const c = a.coverage;
   const items = [
-    `${c.watched_in_table} of ${c.watched} watched films are in the built-in film table; the other ${c.not_in_table} are skipped by every stat that needs film data.`,
     `${c.eligible} of ${c.rated} rated films have a Letterboxd crowd average with enough ratings.`,
     ...(c.table_built ? [`Film table built ${c.table_built}.`] : []),
     ...a.notes,
