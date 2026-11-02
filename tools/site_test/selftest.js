@@ -189,23 +189,24 @@ try {
   out('link', copiedText.replace(/#c=.{12,}$/, '#c=…'), `${location.origin}${location.pathname}#c=…`);
   out('link payload is base64url', /#c=[A-Za-z0-9_-]{100,900}$/.test(copiedText), true);
   out('Copy link says so', document.getElementById('sharenote').textContent, 'Link copied.');
-  // Share: the PNG and the text "My JoJo Stand, from my Letterboxd: " plus the same link Copy link made, the link in text and no url; without the file
+  // Share: the PNG and the fixed text, with the site's fixed address (not location.origin, not the #c= card link), in text and no url; without the file
   // when the API refuses a file together with text. The API is replaced (headless Chrome has none); a click on a hidden button still runs the handler.
   const shared = [];
+  const SHARE_TEXT = 'My JoJo Stand, from my Letterboxd. Find yours: https://standuser.pages.dev';
   const resBefore = performance.getEntriesByType('resource').length;
   Object.defineProperty(navigator, 'share', { configurable: true, value: async (d) => { shared.push(d); } });
   Object.defineProperty(navigator, 'canShare', { configurable: true, value: (d) => !d.text || !d.files });
   document.getElementById('share-btn').click();
   await until('Share without the file to be called', () => shared.length >= 1, 5000);
-  out('Share, files refused with text: text', shared[0].text, `My JoJo Stand, from my Letterboxd: ${copiedText}`);
+  out('Share, files refused with text: text', shared[0].text, SHARE_TEXT);
   out('Share, files refused with text: no file, no url', `${'files' in shared[0]} ${'url' in shared[0]}`, 'false false');
   Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
   document.getElementById('share-btn').click();
   await until('Share with the file to be called', () => shared.length >= 2, 5000);
-  out('Share: text', shared[1].text, `My JoJo Stand, from my Letterboxd: ${copiedText}`);
+  out('Share: text', shared[1].text, SHARE_TEXT);
   out('Share: one PNG file, no url', `${shared[1].files.length} ${shared[1].files[0].type} ${'url' in shared[1]}`, '1 image/png false');
   out('Share: the PNG file is a PNG', [...new Uint8Array(await shared[1].files[0].arrayBuffer()).slice(0, 4)].map((b) => b.toString(16)).join(' '), '89 50 4e 47');
-  out('Share and Copy link use one link', shared[1].text.endsWith(copiedText), true);
+  out('Share text has no #c= card link and no location.origin', `${shared[0].text.includes('#c=')} ${shared[1].text.includes('#c=')} ${shared[1].text.includes(location.origin)}`, 'false false false');
   out('Share makes no request', performance.getEntriesByType('resource').length, resBefore);
   out('next to Copy link: what the link contains', document.getElementById('linknote').textContent.includes('The link contains your username and grades'), true);
   // opening the link: the card with no file, and no request beyond the page's own load

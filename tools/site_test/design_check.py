@@ -112,7 +112,7 @@ def main():
         check("0 requests after the drop", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests (blob: card images are in-memory)")
         fonts = page.evaluate("[...document.fonts].map(f => f.family + ' ' + f.status)")
         check("Fonts self-hosted: Archivo Black and Archivo load from fonts/, Overpass is gone", any("Archivo Black loaded" in f for f in fonts) and any("Archivo loaded" in f for f in fonts) and "/fonts/archivo-black.woff2" in "".join(reqs["load"]) and "/fonts/archivo.woff2" in "".join(reqs["load"]) and "overpass" not in (css + html + js).lower() and not (SITE / "fonts/overpass.woff2").exists(), str(fonts))
-        check("CSP allows only the site (no font or script host)", "default-src 'self'" in (SITE / "_headers").read_text() and "http" not in re.sub(r"https?://www\.themoviedb\.org", "", css + js), "default-src 'self'; no absolute URL in style.css or app.js")
+        check("CSP allows only the site (no font or script host)", "default-src 'self'" in (SITE / "_headers").read_text() and "http" not in re.sub(r"https?://www\.themoviedb\.org|https://standuser\.pages\.dev(?=')", "", css + js), "default-src 'self'; no absolute URL in style.css or app.js (the Share text names https://standuser.pages.dev, as text, never fetched)")
         els = page.evaluate(ALL)
         vis = [e for e in els if not e["hidden"]]
 

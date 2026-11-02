@@ -348,6 +348,7 @@ $('dl-png').addEventListener('click', async () => {
   try { download('card.png', await png()); } catch (e) { setStatus(e.message, true); }
 });
 
+const SHARE_TEXT = 'My JoJo Stand, from my Letterboxd. Find yours: https://standuser.pages.dev';
 // Copy image and Share need the clipboard and the Web Share API; each button stays hidden where its API is missing
 const note = (t) => { $('sharenote').textContent = t; };
 if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) $('copy-img').hidden = false;
@@ -363,7 +364,7 @@ $('copy-img').addEventListener('click', async () => {
     note('Image copied.');
   } catch (e) { note(`Could not copy the image: ${e.message}`); }
 });
-// The one link Copy link and Share both use: the card's data in the fragment, which the browser never sends anywhere
+// Copy link writes the card's data in the fragment, which the browser never sends anywhere
 const shareLink = () => `${location.origin}${location.pathname}#c=${share_encode(JSON.stringify(last.card))}`;
 $('copy-link').addEventListener('click', async () => {
   if (!last) return;
@@ -377,9 +378,9 @@ $('share-btn').addEventListener('click', async () => {
   if (!last) return;
   try {
     const file = new File([await png()], 'stand-card.png', { type: 'image/png' });
-    // the link goes in text, not url: many share targets drop url when files are present
-    const data = { title: 'My Stand card', text: `My JoJo Stand, from my Letterboxd: ${shareLink()}` };
-    // where the API refuses a file together with text, the text and the link go without the file
+    // the text carries the site's fixed address (not location.origin, and not the #c= card link), in text, not url: many share targets drop url when files are present
+    const data = { title: 'My Stand card', text: SHARE_TEXT };
+    // where the API refuses a file together with text, the text goes without the file
     await navigator.share(navigator.canShare({ ...data, files: [file] }) ? { ...data, files: [file] } : data);
   } catch (e) { if (e.name !== 'AbortError') note(`Could not share: ${e.message}`); }
 });
