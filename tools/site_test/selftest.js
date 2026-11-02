@@ -99,7 +99,8 @@ try {
 
   out('the To Be Continued arrow is not shown under reduced motion', `${matchMedia('(prefers-reduced-motion: reduce)').matches} ${sawArrow}`, 'true false');
   out('drop zone is replaced', document.getElementById('drop').hidden, true);
-  out('file line', document.getElementById('fileinfo').textContent, /^letterboxd-synthuser-2026-06-30-12-00-utc\.zip · \d[\d,]* films read$/);
+  out('file line', document.getElementById('filebar').textContent.replace(/\s+/g, ' ').trim(), /^\d[\d,]* films read · Change file$/);
+  out('file line does not show the ZIP file name', /zip|letterboxd-/i.test(document.getElementById('filebar').textContent), false);
   out('Change file button', document.getElementById('change').textContent, 'Change file');
   out('card scrolled into view', (() => { const r = document.getElementById('figure').getBoundingClientRect(); return r.top >= -2 && r.top < innerHeight; })(), true);
   const after = seen();

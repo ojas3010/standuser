@@ -107,8 +107,8 @@ async function handle(file) {
     const skipped = arrow ? await arrow.ended : false;
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     show(out.analysis, out.svgs[resolvedTheme()]);
-    // the drop zone gives way to one line: the file, the films read, and a way to pick another
-    $('fileinfo').textContent = `${file.name} · ${out.analysis.coverage.watched.toLocaleString('en-US')} films read`;
+    // the drop zone gives way to one line: the films read, and a way to pick another (the file's name is not shown)
+    $('fileinfo').textContent = `${out.analysis.coverage.watched.toLocaleString('en-US')} films read`;
     drop.hidden = true;
     $('filebar').hidden = false;
     $('share').hidden = false;

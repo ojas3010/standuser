@@ -203,6 +203,8 @@ def main():
         # --- rule 6: order and single column
         tops = page.evaluate("""() => ['card', 'share', 'stats'].map(id => document.getElementById(id).getBoundingClientRect().top + scrollY)""")
         check("R6 \"How the card was built\" is displayed once a card exists, after Why these grades, with the SVG and JSON links", page.evaluate("(() => { const m = document.getElementById('method'); return m.offsetParent !== null && m.getBoundingClientRect().top > document.getElementById('result').getBoundingClientRect().bottom && !!m.querySelector('#dl-svg') && !!m.querySelector('#dl-json'); })()"), "shown after the drop")
+        fl = page.evaluate("document.getElementById('filebar').textContent.replace(/\\s+/g, ' ').trim()")
+        check("R6 after a drop the file line reads \"N films read · Change file\" and shows no ZIP file name", re.fullmatch(r"\d[\d,]* films read · Change file", fl) is not None, repr(fl))
         check("R6 order after a drop: card, then share bar, then Why these grades", tops == sorted(tops) and page.evaluate("document.getElementById('drop').hidden && !document.getElementById('filebar').hidden"), f"tops {tops}; the drop zone is replaced by the file line")
         cols = page.evaluate("new Set([...document.querySelectorAll('main > *')].map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 right angles: boxes have no rounded corners", all(e["radius"] in ("0px", "") for e in vis if e["tag"] in ("BUTTON", "SECTION", "SELECT", "INPUT", "IMG", "TABLE")), "border-radius 0 on buttons, drop zone, inputs, card")

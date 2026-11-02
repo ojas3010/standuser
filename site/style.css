@@ -65,7 +65,8 @@ a { color: inherit; }   /* links are ink, not the browser's blue */
 button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
 #filebar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding: 12px 0; border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
-#fileinfo { overflow-wrap: anywhere; }
+#filebar { gap: 4px 8px; }
+#filebar .sep { margin-right: -4px; }   /* the button's own padding sits between the dot and its text */
 #filebar button { height: 32px; padding: 0 8px; margin-left: -8px; text-decoration: underline; text-underline-offset: 4px; }
 .opts { margin: 0; }   /* Advanced: collapsed, its own block after the method section */
 #notes:empty, #downloads[hidden] { display: none; }
