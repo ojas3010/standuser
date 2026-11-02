@@ -70,7 +70,9 @@ try {
   dzone.classList.remove('over');
   dzone.classList.add('reading');
   out('while a file is read the To Be Continued arrow is displayed and the zone text is hidden', `${document.getElementById('tbc').offsetParent !== null} ${getComputedStyle(dzone.querySelector('.drop-title')).visibility} ${document.getElementById('tbc').textContent}`, 'true hidden To Be Continued');
+  out('while a file is read the page behind is frozen: the overlay is displayed, and it is not at rest', `${getComputedStyle(document.getElementById('freeze')).display} ${document.getElementById('tbc').querySelectorAll('.words span span').length}`, 'block 13');
   dzone.classList.remove('reading');
+  out('the freeze is gone when the zone is not reading', getComputedStyle(document.getElementById('freeze')).display, 'none');
   out('share bar and file line are not displayed before a drop', ['share', 'filebar', 'result'].map((id) => document.getElementById(id).offsetParent === null).join(), 'true,true,true');
   const before = seen();
   const result = document.getElementById('result');

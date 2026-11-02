@@ -262,21 +262,39 @@ def main():
         c3, pg, _, _ = load(browser, base, 1280, 900)
         pg.evaluate(OBSERVE)
         pg.evaluate("window.__t0 = performance.now()")
+        # from the moment the zone is reading, every frame for 1.5 s: the arrow's left edge, the letters that are there, the freeze overlay
+        pg.evaluate("""() => { const arrow = document.querySelector('#tbc .arrow'), L = [...document.querySelectorAll('#tbc .words span span')], fr = document.getElementById('freeze'), out = [];
+          window.__smp = null;
+          const go = () => { const t0 = performance.now(); const tick = () => { const t = performance.now() - t0; out.push([Math.round(t), arrow.getBoundingClientRect().left, L.filter(e => getComputedStyle(e).opacity === '1').length, getComputedStyle(fr).display]);
+              if (t < 1500) requestAnimationFrame(tick); else { const r = fr.getBoundingClientRect(), cs = getComputedStyle(fr);
+                window.__smp = { s: out, n: L.length, rect: [r.width, r.height, innerWidth, innerHeight], pos: cs.position, bf: cs.backdropFilter || cs.webkitBackdropFilter, dot: getComputedStyle(fr.querySelector('circle')).fill }; } };
+            tick(); };
+          const mo = new MutationObserver(() => { if (document.getElementById('drop').classList.contains('reading')) { mo.disconnect(); go(); } });
+          mo.observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] }); }""")
         pg.set_input_files("#file", str(zips[0]))
         pg.wait_for_function("document.getElementById('drop').classList.contains('reading')")
         tbc = pg.evaluate("[getComputedStyle(document.getElementById('tbc')).display, document.getElementById('tbc').textContent, getComputedStyle(document.querySelector('#drop .drop-title')).visibility, document.getAnimations().filter(a => a.effect.target.closest && a.effect.target.closest('#tbc')).map(a => a.animationName + ' ' + a.effect.getComputedTiming().duration)]")
         pg.wait_for_function("document.getElementById('cardlive')")
         pg.wait_for_timeout(200)
         ev = dict(pg.evaluate("window.__ev"))
-        slide = re.search(r"@keyframes tbcIn \{ from \{[^}]*translateX\(-\d+px\)[^}]*\} to \{[^}]*translateX\(0\)", css)
-        check("R8 the To Be Continued arrow is shown from the drop for at least 1.0 s, however fast the file is read, and slides in from the left; its words come in behind it", tbc[0] == "flex" and "To Be Continued" in tbc[1] and tbc[2] == "hidden" and any(a.startswith("tbcIn") for a in tbc[3]) and bool(slide) and ev["arrow off"] - ev["arrow on"] >= 1000, f"arrow on at {ev['arrow on']} ms, off at {ev['arrow off']} ms ({ev['arrow off'] - ev['arrow on']} ms); animations {tbc[3]}")
+        pg.wait_for_function("window.__smp !== null")
+        smp = pg.evaluate("window.__smp")
+        lefts = [x[1] for x in smp["s"]]
+        final = lefts[-1]
+        letters = [x[2] for x in smp["s"]]
+        steps = [b_ - a_ for a_, b_ in zip(letters, letters[1:])]
+        check("R4 the arrow slides in from the left of the zone with a short overshoot: it starts left of its place, passes it by 1 to 40 px, and settles", min(lefts) < final - 100 and 1 <= max(lefts) - final <= 40 and abs(lefts[-1] - lefts[-5]) < 0.5 and re.search(r"@keyframes tbcIn \{[^@]*translateX\(-\d+px\)[^@]*translateX\(\d+px\)[^@]*translateX\(0\)", css) is not None, f"starts {min(lefts) - final:.0f} px from its place, overshoots by {max(lefts) - final:.1f} px, settles")
+        check("R4 the words are spelled out letter by letter: all 13 appear one after another (many distinct counts, a frame never adds more than 3), the first after the arrow has landed and the last before 1.8 s", smp["n"] == 13 and letters[0] == 0 and letters[-1] == 13 and max(steps) <= 3 and sum(1 for x in steps if x) >= 9 and next(x[0] for x in smp["s"] if x[2] >= 1) >= 550, f"{smp['n']} letters, first visible at {next(x[0] for x in smp['s'] if x[2] >= 1)} ms, all {letters[-1]} by {next(x[0] for x in smp['s'] if x[2] == 13)} ms, largest step {max(steps)}")
+        check("R4 the page behind the arrow is frozen in grey halftone: a fixed overlay over the whole viewport, a grayscale backdrop, dots in a neutral ink; no sepia, no brown, no hue", smp["rect"][0] == smp["rect"][2] and smp["rect"][1] == smp["rect"][3] and smp["pos"] == "fixed" and "grayscale(1)" in smp["bf"] and len(set(rgb(smp["dot"]))) == 1 and all(x[3] == "block" for x in smp["s"]) and "sepia" not in css.lower() and "hue-rotate" not in css and "brown" not in css.lower(), f"overlay {smp['rect'][0]:.0f} x {smp['rect'][1]:.0f} of {smp['rect'][2]} x {smp['rect'][3]}, backdrop {smp['bf']}, dots {smp['dot']}, no sepia or hue-rotate in style.css")
+        slide = re.search(r"@keyframes tbcIn \{\s*from \{[^}]*translateX\(-\d+px\)[^}]*\}\s*60% \{[^}]*translateX\(\d+px\)[^}]*\}\s*to \{[^}]*translateX\(0\)", css)
+        check("R8 the To Be Continued arrow is shown from the drop for at least 1.8 s, however fast the file is read, and slides in from the left; its words come in behind it", tbc[0] == "flex" and "To Be Continued" in tbc[1] and tbc[2] == "hidden" and any(a.startswith("tbcIn") for a in tbc[3]) and bool(slide) and ev["arrow off"] - ev["arrow on"] >= 1800, f"arrow on at {ev['arrow on']} ms, off at {ev['arrow off']} ms ({ev['arrow off'] - ev['arrow on']} ms); animations {tbc[3]}")
         check("R8 the reveal starts after the arrow ends, and the card is shown with it", ev["reveal start"] >= ev["arrow off"] and ev["card shown"] >= ev["arrow off"] - 5, f"arrow off {ev['arrow off']} ms, card shown {ev['card shown']} ms, reveal start {ev['reveal start']} ms")
         c3.close()
         for what, act in (("a click", lambda p_: p_.mouse.click(5, 300)), ("a key press", lambda p_: p_.keyboard.press("Shift"))):
             c3, pg, _, _ = load(browser, base, 1280, 900)
             ev = timeline(pg, zips[0], act)
-            done = pg.evaluate("[!document.getElementById('cardlive'), !document.getElementById('card').classList.contains('playing'), document.documentElement.dataset.accent || '']")
-            check(f"R8 {what} during the arrow skips the arrow and the reveal: the end state at once, no inline card", "reveal start" not in ev and ev["card shown"] < 1000 and done[0] and done[1] and done[2] != "", f"arrow off {ev.get('arrow off')} ms, card shown {ev.get('card shown')} ms, reveal never started: {'reveal start' not in ev}")
+            done = pg.evaluate("[!document.getElementById('cardlive'), !document.getElementById('card').classList.contains('playing'), document.documentElement.dataset.accent || '', getComputedStyle(document.getElementById('freeze')).display]")
+            check(f"R8 {what} during the arrow skips the arrow, the freeze and the reveal: the end state at once, no inline card", "reveal start" not in ev and ev["card shown"] < 1000 and done[0] and done[1] and done[2] != "" and done[3] == "none", f"the freeze is gone: {done[3] == 'none'}; arrow off {ev.get('arrow off')} ms, card shown {ev.get('card shown')} ms, reveal never started: {'reveal start' not in ev}")
             c3.close()
         c3, pg, _, _ = load(browser, base, 1280, 900, motion="reduce")
         ev = timeline(pg, zips[0])
@@ -326,8 +344,8 @@ def main():
         c4.close()
         ctx, page, reqs, phase = load(browser, base, 1280, 900)
         drop(page, phase, zips[0], settle=False)
-        page.wait_for_timeout(2600)
-        check("R8 the reveal makes no request: 0 requests after the drop, over the whole reveal", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests in 2.6 s")
+        page.wait_for_timeout(4600)   # the arrow (1.8 s) and the reveal (2.15 s)
+        check("R8 the reveal makes no request: 0 requests after the drop, over the whole reveal", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests in 4.6 s")
         svg_static = page.evaluate("fetch(document.getElementById('card').src).then(r => r.text())")
         png_static = page.evaluate("document.getElementById('dl-svg').href && fetch(document.getElementById('dl-svg').href).then(r => r.text())")
         check("R8 the card that is downloaded is static: no animation, no style attribute of the reveal in the SVG (the PNG is drawn from it)", not re.search(r"<animate|<set |@keyframes|animation|--i:|class=\"playing", svg_static + png_static), "the SVG shown and the SVG downloaded are the card as the renderer wrote it; the PNG is drawn from that SVG string, never from the inline copy")

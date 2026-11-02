@@ -92,8 +92,9 @@ async function handle(file) {
   let arrow = null;
   try {
     setStatus('Reading the export…');
-    // From the drop the zone shows the To Be Continued arrow, sliding in from the left (style.css), for at least ARROW_MS, however fast the
-    // file is read; the reveal starts when it ends. A click or a key press ends the arrow and skips the reveal. Reduced motion: no arrow.
+    // From the drop the zone shows the To Be Continued arrow, sliding in from the left with a short overshoot and spelling its words out
+    // letter by letter, with the page behind it held in grey halftone (style.css), for at least ARROW_MS, however fast the file is read; the
+    // reveal starts when it ends. A click or a key press ends the arrow and skips the reveal. Reduced motion: no arrow, no freeze.
     if (!reducedMotion()) {
       arrow = holdArrow(performance.now());
       drop.classList.add('reading');
@@ -195,7 +196,7 @@ addEventListener('load', fieldHeight);
 // style.css. A click or a key press ends it at the card's end state; with reduced motion there is no copy and no flash, the end state is
 // simply there.
 const REVEAL_MS = 2150;
-const ARROW_MS = 1000;
+const ARROW_MS = 1800;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 // The wait for the arrow: `ended` resolves false ARROW_MS after `from`, or true as soon as a click or a key press skips it.
 function holdArrow(from) {
