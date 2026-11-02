@@ -72,7 +72,7 @@ function openLink() {
   buildHots(null);
   $('downloads').hidden = true;
   $('share').hidden = false;
-  $('sharenote').textContent = '';
+  toast('');
   setDone(true);
   reveal(r.card, r.svgs);
   return true;
@@ -124,7 +124,7 @@ async function handle(file) {
     drop.hidden = true;
     $('filebar').hidden = false;
     $('share').hidden = false;
-    $('sharenote').textContent = '';
+    toast('');
     setDone(true);
     reveal(out.analysis.card, out.svgs, skipped);
     $('stage').scrollIntoView({ block: 'start' });
@@ -543,7 +543,17 @@ $('dl-png').addEventListener('click', async () => {
 
 const SHARE_TEXT = 'My JoJo Stand, from my Letterboxd. Find yours: https://standuser.pages.dev';
 // Copy image and Share need the clipboard and the Web Share API; each button stays hidden where its API is missing
-const note = (t) => { $('sharenote').textContent = t; };
+// A toast (#toast, an aria-live status region) says what a button did, for 2 s: "Image copied", "Link copied", or the error.
+const TOAST_MS = 2000;
+let toastTimer = null;
+function toast(t) {
+  const el = $('toast');
+  clearTimeout(toastTimer);
+  el.classList.toggle('show', !!t);
+  el.textContent = t;
+  if (t) toastTimer = setTimeout(() => { el.classList.remove('show'); el.textContent = ''; }, TOAST_MS);
+}
+const note = toast;
 if (window.ClipboardItem && navigator.clipboard && navigator.clipboard.write) $('copy-img').hidden = false;
 const canShareFile = () => {
   try { return !!(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'card.png', { type: 'image/png' })] })); } catch { return false; }
@@ -554,7 +564,7 @@ $('copy-img').addEventListener('click', async () => {
   try {
     // the PNG is handed over as a promise so that Safari keeps the click's permission while it is made
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': png() })]);
-    note('Image copied.');
+    note('Image copied');
   } catch (e) { note(`Could not copy the image: ${e.message}`); }
 });
 // Copy link writes the card's data in the fragment, which the browser never sends anywhere
@@ -564,8 +574,8 @@ $('copy-link').addEventListener('click', async () => {
   const url = shareLink();
   try {
     await navigator.clipboard.writeText(url);
-    note('Link copied.');
-  } catch { note(url); }
+    note('Link copied');
+  } catch { note('Could not copy the link'); }
 });
 $('share-btn').addEventListener('click', async () => {
   if (!last) return;

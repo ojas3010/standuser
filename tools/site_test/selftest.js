@@ -188,7 +188,7 @@ try {
     window.ClipboardItem = Item;
     const head = [...new Uint8Array(await (await fetch(URL.createObjectURL(await copied['image/png']))).arrayBuffer()).slice(0, 8)].map((x) => x.toString(16)).join(' ');
     out('Copy image puts a PNG on the clipboard', `${Object.keys(copied).join()} ${head}`, 'image/png 89 50 4e 47 d a 1a a');
-    out('Copy image says so', document.getElementById('sharenote').textContent, 'Image copied.');
+    out('Copy image says so, in the toast', document.getElementById('toast').textContent, 'Image copied');
   }
   for (const [n, id] of [[1, 'dl-png'], [2, 'dl-svg'], [3, 'dl-json']]) {
     document.getElementById(id).click();
@@ -235,7 +235,16 @@ try {
   await until('Copy link to write', () => copiedText, 5000);
   out('link', copiedText.replace(/#c=.{12,}$/, '#c=…'), `${location.origin}${location.pathname}#c=…`);
   out('link payload is base64url', /#c=[A-Za-z0-9_-]{100,900}$/.test(copiedText), true);
-  out('Copy link says so', document.getElementById('sharenote').textContent, 'Link copied.');
+  out('Copy link says so, in the toast', document.getElementById('toast').textContent, 'Link copied');
+  out('the toast is an aria-live status region and is shown', `${document.getElementById('toast').getAttribute('role')} ${document.getElementById('toast').getAttribute('aria-live')} ${document.getElementById('toast').classList.contains('show')} ${getComputedStyle(document.getElementById('toast')).position}`, 'status polite true fixed');
+  out('no share note in the share bar', !!document.getElementById('sharenote'), false);
+  await sleep(2300);
+  out('the toast is gone after 2 s', `${document.getElementById('toast').textContent === ''} ${document.getElementById('toast').classList.contains('show')}`, 'true false');
+  Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async () => { throw new Error('denied'); } });
+  document.getElementById('copy-link').click();
+  await until('the error toast', () => document.getElementById('toast').textContent !== '', 5000);
+  out('a failed copy says so in the toast', document.getElementById('toast').textContent, 'Could not copy the link');
+  Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async (t) => { copiedText = t; } });
   // Share: the PNG and the fixed text, with the site's fixed address (not location.origin, not the #c= card link), in text and no url; without the file
   // when the API refuses a file together with text. The API is replaced (headless Chrome has none); a click on a hidden button still runs the handler.
   const shared = [];

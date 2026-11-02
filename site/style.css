@@ -116,7 +116,6 @@ button:active { transform: scale(.97); }
   #stage.done #figure, #stage.done #share { width: min(100%, calc((100vh - 250px) * .8)); margin-inline: auto; }
   #stage.done #share { justify-content: flex-start; row-gap: 0; }
   #stage.done #share .quiet { padding: 0 8px; }   /* Download PNG, Copy image and Copy link share one row in the card's width */
-  #stage.done #sharenote { min-height: 0; }
 }
 
 /* subject */
@@ -125,7 +124,10 @@ button:active { transform: scale(.97); }
 #stage.done #cardlabel { font-size: 1rem; }
 #cardlabel { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-#sharenote { flex-basis: 100%; min-height: 1.5em; color: var(--mute); font-size: .875rem; }
+/* the toast: a flat, small box at the bottom of the window, in the page's ink on its ground inverted, 2 s (app.js) */
+#toast { position: fixed; left: 50%; bottom: 24px; translate: -50% 0; z-index: 10; max-width: min(90vw, 28em); padding: 10px 16px; background: var(--p-ink); color: var(--p-ground); font-size: .9375rem; font-weight: 600; opacity: 0; pointer-events: none; transition: opacity 150ms ease-out; }
+#toast:empty { display: none; }
+#toast.show { opacity: 1; }
 /* links are controls too: at least 44 px high and wide */
 a { display: inline-flex; align-items: center; justify-content: center; min-height: 44px; min-width: 44px; vertical-align: middle; }
 .downloads a { color: var(--ink); text-underline-offset: 4px; }

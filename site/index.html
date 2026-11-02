@@ -51,7 +51,6 @@
       <button id="share-btn" type="button" class="quiet" hidden>Share</button>
       <button id="copy-link" type="button" class="quiet">Copy link</button>
       <span id="theme" class="toggle" role="group" aria-label="Card theme" data-value="light"><button type="button" data-v="light" aria-pressed="true">Light</button><button type="button" data-v="dark" aria-pressed="false">Dark</button></span>
-      <span id="sharenote" role="status" aria-live="polite"></span>
     </div>
   </div>
 
@@ -92,6 +91,7 @@
     <p class="small">Fan project, not affiliated with Letterboxd or the JoJo's Bizarre Adventure rights holders. Data: Letterboxd (ratings), TMDB (films), MusicBrainz (soundtracks). A * on a grade means it is provisional.</p>
   </footer>
 </main>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script type="module" src="app.js"></script>
 </body>
 </html>
