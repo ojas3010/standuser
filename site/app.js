@@ -12,7 +12,8 @@ let sample = null; // { svgs, card } of the sample card
 
 // Before a card of the user's exists the stage has two columns (the drop zone, the sample); after a file or on an opened link it is one
 // column: the file line, the card, the share bar.
-const setDone = (on) => $('stage').classList.toggle('done', on);
+// "How the card was built" is there only once a card exists (a file's or an opened link's).
+const setDone = (on) => { $('stage').classList.toggle('done', on); $('method').hidden = !on; };
 
 const setStatus = (msg, error = false) => {
   statusEl.textContent = msg;

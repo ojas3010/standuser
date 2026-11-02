@@ -76,6 +76,7 @@ try {
   out('while a file is read the page behind is frozen: the overlay is displayed, and it is not at rest', `${getComputedStyle(document.getElementById('freeze')).display} ${document.getElementById('tbc').querySelectorAll('.words span span').length}`, 'block 13');
   dzone.classList.remove('reading');
   out('the freeze is gone when the zone is not reading', getComputedStyle(document.getElementById('freeze')).display, 'none');
+  out('How the card was built is not displayed before a drop', document.getElementById('method').offsetParent === null, true);
   out('share bar and file line are not displayed before a drop', ['share', 'filebar', 'result'].map((id) => document.getElementById(id).offsetParent === null).join(), 'true,true,true');
   const before = seen();
   const result = document.getElementById('result');
@@ -94,6 +95,8 @@ try {
   new MutationObserver(() => { if (document.getElementById('drop').classList.contains('reading')) sawArrow = true; }).observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] });
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('result visible', !result.hidden, true);
+  out('How the card was built is displayed once the card exists', document.getElementById('method').offsetParent !== null, true);
+
   out('the To Be Continued arrow is not shown under reduced motion', `${matchMedia('(prefers-reduced-motion: reduce)').matches} ${sawArrow}`, 'true false');
   out('drop zone is replaced', document.getElementById('drop').hidden, true);
   out('file line', document.getElementById('fileinfo').textContent, /^letterboxd-synthuser-2026-06-30-12-00-utc\.zip · \d[\d,]* films read$/);
@@ -231,6 +234,7 @@ try {
   const names = () => fr.contentWindow.performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname);
   const atLoad = names();
   out('opened link: card label', fd.getElementById('cardlabel').textContent, 'Shared card');
+  out('opened link: How the card was built is displayed', fd.getElementById('method').hidden, false);
   out('opened link: card', `${fd.getElementById('card').naturalWidth}x${fd.getElementById('card').naturalHeight}`, '1080x1350');
   out('opened link: same card as the file made', (await (await fetch(fd.getElementById('card').src)).text()) === (await (await fetch(img.src)).text()), true);
   out('opened link: share bar visible, why section hidden', `${!fd.getElementById('share').hidden} ${fd.getElementById('result').hidden}`, 'true true');
@@ -243,7 +247,7 @@ try {
   for (const bad of ['#c=%21%21%21', '#c=e30', '#c=', '#c=' + 'A'.repeat(5000), '#x=1']) {
     const g = await open(bad);
     const gd = g.contentDocument;
-    out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden}`, 'Sample false true');
+    out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden} ${gd.getElementById('method').hidden}`, 'Sample false true true');
     g.remove();
   }
   // theme switch: the card image changes to a new blob
