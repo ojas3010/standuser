@@ -133,7 +133,7 @@ try {
   out('Why these grades: no Data credits section; the footer keeps the credits and the TMDB block', `${!!document.getElementById('why-credit')} ${/Letterboxd.*TMDB.*MusicBrainz/.test(document.querySelector('footer').textContent)} ${!!document.querySelector('footer .tmdb img')}`, 'false true true');
   out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
   out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
-  out('notes: the film-table sentence is in the method text only', `${document.getElementById('notes').children.length} ${/film table/.test(document.getElementById('notes').textContent.replace(/Film table built/, ''))}`, '1 false');
+  out('How the card was built keeps the SVG and JSON links; the coverage bullets and the table date are in Advanced', `${!!document.querySelector('#method #dl-svg')} ${!!document.querySelector('#method #dl-json')} ${!!document.querySelector('#method #notes')} ${!!document.querySelector('#advanced #notes')} ${document.getElementById('notes').children.length > 0} ${/rated films have a Letterboxd crowd average/.test(document.getElementById('advanced').textContent)}`, 'true true false true true true');
   out('coverage cell', drows[0].cells[2].textContent, '210 of 250 films');
   const img = document.getElementById('card');
   await img.decode();
