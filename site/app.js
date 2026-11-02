@@ -199,6 +199,29 @@ new ResizeObserver(fieldHeight).observe(document.querySelector('main'));
 addEventListener('load', fieldHeight);
 document.fonts.ready.then(fieldHeight); // the headings change height when the web fonts swap in
 
+// The percentile numbers in Why these grades count up once, over at most 0.6 s, when the reveal has ended. A click or a key press that skips the
+// reveal, a new card, a theme change and prefers-reduced-motion all show the final numbers at once.
+const COUNT_MS = 550;
+let counting = null;
+const pcts = () => [...document.querySelectorAll('#stats .pct')];
+function settleNumbers() {
+  if (counting) cancelAnimationFrame(counting);
+  counting = null;
+  for (const e of pcts()) e.textContent = e.dataset.n;
+}
+function countUp() {
+  const els = pcts();
+  if (!els.length || reducedMotion()) return settleNumbers();
+  const t0 = performance.now();
+  const tick = (now) => {
+    const k = Math.min(1, (now - t0) / COUNT_MS), e = 1 - (1 - k) ** 3; // ease-out
+    for (const el of els) el.textContent = String(Math.round(Number(el.dataset.n) * e));
+    counting = k < 1 ? requestAnimationFrame(tick) : null;
+  };
+  for (const el of els) el.textContent = '0';
+  counting = requestAnimationFrame(tick);
+}
+
 // The reveal, at most 2.2 s, after the To Be Continued arrow (docs/DESIGN.md rule 8). At the drop the field flashes to the card's ground colour and the accent shifts with it.
 // The card's own parts (data-part in its SVG) are played from an inline copy laid over the card (#cardlive; the PNG and the SVG that are
 // downloaded are the card, static): the ゴ one at a time down the cascade, the name dropping in with a short shake, the radar fill growing
@@ -229,6 +252,7 @@ function endReveal() {
   $('field').classList.remove('flash');
   live = null;
   $('hots').hidden = false;
+  settleNumbers();
 }
 function reveal(card, svgs, skipped = false) {
   endReveal();
@@ -246,6 +270,7 @@ function reveal(card, svgs, skipped = false) {
   const img = $('card');
   closePop();
   $('hots').hidden = true;
+  for (const e of pcts()) e.textContent = '0'; // they count up when the reveal ends
   img.classList.add('playing');
   img.after(svg);
   const field = $('field');
@@ -254,7 +279,7 @@ function reveal(card, svgs, skipped = false) {
   field.classList.add('flash');
   const off = () => ['pointerdown', 'keydown'].forEach((t) => removeEventListener(t, endReveal, true));
   ['pointerdown', 'keydown'].forEach((t) => addEventListener(t, endReveal, true));
-  live = { svg, off, timer: setTimeout(endReveal, REVEAL_MS) };
+  live = { svg, off, timer: setTimeout(() => { endReveal(); countUp(); }, REVEAL_MS) };
 }
 
 function showCard(svg, label, alt) {
@@ -336,6 +361,10 @@ function show(a, svg) {
     const sentence = statSentence(i, metric, film);
     list.push({ name: names[i], letter: s.letter + (card.prov[i] ? '*' : ''), sentence, pct: topPct(s.p) });
     [names[i], s.letter + (card.prov[i] ? '*' : ''), sentence].forEach((t) => (tr.insertCell().textContent = t));
+    // the percentile beside the grade ("B · top 36%"); its number is counted up once after the reveal (countUp)
+    const pct = topPct(s.p);
+    if (pct != null) tr.cells[1].append(' \u00b7 top ', Object.assign(document.createElement('span'), { className: 'pct', textContent: String(pct) }), '%');
+    if (pct != null) tr.cells[1].querySelector('.pct').dataset.n = String(pct);
     // Advanced: the value, how many films or watches it was graded on, then the status and what the note adds. A count the first line
     // already gives is not said again: the note's leading count is dropped, and the minimum is left to the note when it says what is needed.
     const dr = dt.insertRow();

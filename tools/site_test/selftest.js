@@ -114,9 +114,9 @@ try {
   const rows = document.getElementById('stats').tBodies[0].rows;
   const drows = document.getElementById('detail').tBodies[0].rows;
   out('rows', `${rows.length} ${drows.length}`, '6 6');
-  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*? \| .+\.$/);
+  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*?( · top \d+%)? \| .+\.$/);
   out('Why these grades: three columns, Stat, Grade and one sentence', [...document.querySelectorAll('#stats th')].map((h) => h.textContent).join(' | '), 'Stat | Grade | Why');
-  out('Why these grades: six stats, each with a grade and one sentence', [...rows].every((r) => r.cells.length === 3 && r.cells[0].textContent && /^[A-E?∅∞]\*?$/.test(r.cells[1].textContent) && /\.$/.test(r.cells[2].textContent)), true);
+  out('Why these grades: six stats, each with a grade and one sentence', [...rows].every((r) => r.cells.length === 3 && r.cells[0].textContent && /^[A-E?∅∞]\*?( · top \d+%)?$/.test(r.cells[1].textContent) && /\.$/.test(r.cells[2].textContent)), true);
   out('Why these grades: the sentences name the user\'s films (at least four of six, in quotes)', [...rows].filter((r) => /\u201c.+\u201d/.test(r.cells[2].textContent)).length >= 4, true);
   out('Why these grades: no raw value, count, status word or provisional tag in the sentences', [...rows].some((r) => /DPA|★|\d+ of \d+|provisional|measured|\[|\d\.\d{2}/.test(r.cells[2].textContent)), false);
   out('Why these grades: each sentence is one sentence', [...rows].every((r) => (r.cells[2].textContent.match(/\. /g) || []).length <= 1), true);
@@ -132,11 +132,15 @@ try {
   out('Why these grades: the weakness line has no leading label and no tag', /^(Weakness|Soft spot):|\[provisional\]|\(\w+ [A-E]\)/.test(lines['why-weakness']), false);
   out('Why these grades: the name line', lines['why-name'], /^Track \d+ of .+ (score|soundtrack), from a (\d\.\d★ )?film of yours\.$/);
   out('Why these grades: the signature film line', lines['why-film'], /^“.+” \(\d{4}\) is where you and the crowd disagree most: you gave it \d(\.\d)?★, its average is \d(\.\d+)?★\.$/);
+  // the percentile beside each grade; the numbers are final at once under reduced motion; the popover says the same
+  out('Why these grades: the percentile beside each grade ("B · top 36%"), none for a stat that is not graded', [...rows].map((r) => r.cells[1].textContent).every((t) => /^[A-E]\*? · top \d+%$/.test(t) || /^[?∅∞]\*?$/.test(t)) && [...rows].some((r) => / · top \d+%$/.test(r.cells[1].textContent)), true);
+  out('Why these grades: under reduced motion the final numbers are there at once', [...document.querySelectorAll('#stats .pct')].every((e) => e.textContent === e.dataset.n && Number(e.dataset.n) >= 1 && Number(e.dataset.n) <= 100), true);
   // tap a grade: six targets over the card, one popover at a time, Escape closes
   const hotb = [...document.querySelectorAll('#hots button')];
   out('tap a grade: six targets, each named by stat and grade', hotb.length === 6 && hotb.every((b) => /, grade [A-E?∅∞]\*?: why$/.test(b.getAttribute('aria-label')) && b.getAttribute('aria-expanded') === 'false'), true);
   hotb[1].click();
   out('tap a grade: a tap opens the popover with the stat\'s sentence', `${!document.getElementById('statpop').hidden} ${document.getElementById('statpop').textContent.includes(rows[1].cells[2].textContent)} ${hotb[1].getAttribute('aria-expanded')}`, 'true true true');
+  out('tap a grade: the popover\'s percentile is the table\'s', (() => { hotb[0].click(); const t = document.getElementById('statpop').querySelector('.pop-top'); const m = rows[0].cells[1].textContent.match(/top (\d+)%/); return m ? t.textContent === `Top ${m[1]}%` : t.hidden; })(), true);
   hotb[3].click();
   out('tap a grade: only one popover is open at a time', `${document.querySelectorAll('#statpop:not([hidden])').length} ${document.querySelectorAll('#hots [aria-expanded=true]').length} ${hotb[3].getAttribute('aria-expanded')}`, '1 1 true');
   addEventListener('keydown', () => {}, { once: true });

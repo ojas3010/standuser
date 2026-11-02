@@ -211,6 +211,7 @@ a { display: inline-flex; align-items: center; justify-content: center; min-heig
 /* why these grades */
 #adv-result h3 { margin: 16px 0 8px; font-size: 1rem; }
 #notes { margin-top: 0; }
+#stats .pct { display: inline-block; min-width: 2ch; text-align: right; font-variant-numeric: tabular-nums; }
 td small { display: block; color: var(--mute); font-size: .8125rem; }
 #why { margin: 24px 0 0; }
 #why dt { margin: 16px 0 0; font-weight: 700; }

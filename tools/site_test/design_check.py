@@ -375,6 +375,32 @@ def main():
         check("R8 under prefers-reduced-motion the arrow is not shown and nothing waits", "arrow on" not in ev and "reveal start" not in ev and ev["card shown"] < 1000, f"events {ev}")
         c3.close()
 
+        # --- the percentile numbers count up once, over at most 0.6 s, after the reveal has ended
+        c5, pg5, _, _ = load(browser, base, 1280, 900)
+        pg5.evaluate("""() => { window.__pc = []; const t0 = performance.now(); const tick = () => { const els = [...document.querySelectorAll('#stats .pct')];
+            window.__pc.push([Math.round(performance.now() - t0), !!document.getElementById('cardlive'), els.map(e => e.textContent).join(','), els.map(e => e.dataset.n).join(',')]);
+            if (performance.now() - t0 < 7500) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }""")
+        pg5.set_input_files("#file", str(zips[0]))
+        pg5.wait_for_function("window.__pc.length && window.__pc[window.__pc.length - 1][0] > 7400", timeout=15000)
+        pc = pg5.evaluate("window.__pc")
+        live_rows = [r for r in pc if r[1]]
+        after = [r for r in pc if not r[1] and r[3]]
+        end_t = live_rows[-1][0] if live_rows else None
+        fin = after[-1][3].split(",") if after else []
+        vals = [[int(x) for x in r[2].split(",")] for r in after if r[0] > end_t]
+        started = next((r[0] for r in after if r[0] > end_t and any(int(x) for x in r[2].split(","))), None)
+        done = next((r[0] for r in after if r[0] > end_t and r[2] == r[3]), None)
+        mono = all(all(b >= a for a, b in zip(u, v)) for u, v in zip(vals, vals[1:]))
+        zeros = all(all(x == "0" for x in r[2].split(",")) for r in live_rows if r[3])
+        check("R19 the percentile numbers wait at 0 during the reveal, then count up once (never down) to their final values, over at most 0.6 s after the reveal ends", bool(live_rows) and zeros and mono and started is not None and done is not None and done - end_t <= 650 and all(p == f for p, f in zip(after[-1][2].split(","), fin)), f"reveal ends at {end_t} ms, numbers start rising at {started} ms and are final at {done} ms ({(done - end_t) if done else None} ms after the end); final {fin}")
+        c5.close()
+        c5, pg5, _, _ = load(browser, base, 1280, 900, motion="reduce")
+        pg5.set_input_files("#file", str(zips[0]))
+        pg5.wait_for_function("!document.getElementById('result').hidden")
+        rd = pg5.evaluate("[...document.querySelectorAll('#stats .pct')].map(e => [e.textContent, e.dataset.n])")
+        check("R19 under prefers-reduced-motion the final percentile numbers are there at once", bool(rd) and all(a == b for a, b in rd), f"{len(rd)} numbers, all final: {[a for a, _ in rd]}")
+        c5.close()
+
         # --- rule 8: the reveal
         c3, pg, reqs3, ph3 = load(browser, base, 1280, 900)
         pg.set_input_files("#file", str(zips[0]))
