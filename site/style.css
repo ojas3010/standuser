@@ -207,9 +207,9 @@ th, td { text-align: left; padding: 8px 8px 8px 0; border-bottom: 1px solid var(
 th { font-weight: 600; border-bottom: 2px solid var(--accent); transition: border-color 250ms ease-out; }
 #notes { margin: 16px 0 0; padding-left: 20px; color: var(--mute); font-size: .9375rem; }
 footer { padding-top: 16px; border-top: 1px solid var(--line); }
-.tmdb { margin: 0 0 8px; line-height: 0; }
+.tmdb { display: inline-block; margin-right: 8px; line-height: 0; vertical-align: -2px; }
 .tmdb img { height: 14px; width: auto; }
-footer .small { margin: 0 0 8px; max-width: 40em; }
+footer .small { margin: 0 0 8px; max-width: 48em; }
 
 @media (max-width: 560px) {
   main { padding-top: 24px; }

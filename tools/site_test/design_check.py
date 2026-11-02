@@ -237,7 +237,8 @@ def main():
         card = page.evaluate("""() => { const c = document.getElementById('card'), s = getComputedStyle(c), p = getComputedStyle(c.parentElement);
           return [s.borderTopWidth, p.borderTopWidth, p.backgroundColor, p.paddingTop]; }""")
         check("S3 no bordered container around the card (no double frame)", card[0] == "0px" and card[1] == "0px", f"img border {card[0]}, parent border {card[1]}")
-        check("S3 TMDB disclaimer is on the site", "not endorsed, certified, or otherwise approved by TMDB" in html, "site footer")
+        ft = page.evaluate("[document.querySelectorAll('footer p').length, !!document.querySelector('footer .tmdb img'), document.querySelector('footer').textContent.includes('This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.'), getComputedStyle(document.querySelector('footer p')).fontSize]")
+        check("S3 footer: two small lines at most; the TMDB logo and its required notice are kept", ft[0] <= 2 and ft[1] and ft[2] and "not endorsed, certified, or otherwise approved by TMDB" in html, f"{ft[0]} paragraphs at {ft[3]}, logo {ft[1]}, notice {ft[2]}")
 
         # --- rule 2: colour per user; rule 3: the field's contrast
         ctx.close()
