@@ -126,10 +126,14 @@ def main():
         fld = pg1.evaluate("""() => { const r = getComputedStyle(document.documentElement), c = (k) => r.getPropertyValue(k).trim();
           return [c('--accent'), c('--p-ink'), document.documentElement.dataset.accent || '', c('--field'), getComputedStyle(document.getElementById('field')).backgroundColor, getComputedStyle(document.querySelector('.lede')).color, c('--field-mute')]; }""")
         check("R2 before a drop the accent is the page's ink colour and none is set; the field is the sample card's ground", fld[0] == fld[1] and fld[2] == "" and fld[3].startswith("#") and rgb(fld[4]) == [int(fld[3][i:i + 2], 16) for i in (1, 3, 5)], f"accent {fld[0]} (ink {fld[1]}), data-accent {fld[2]!r}, field {fld[3]} painted as {fld[4]}")
+        ex = pg1.evaluate("""(() => { const e = document.querySelector('#drop .export'), lh = parseFloat(getComputedStyle(e).lineHeight); return [e.textContent, Math.round(e.getBoundingClientRect().height / lh), /Get it at|Settings, Data/.test(document.getElementById('drop').textContent)]; })()""")
+        check("Drop zone export line (1280 x 720): \"On letterboxd.com (not the app): Settings, Account data, Export your data.\" in one or two lines, the old wording gone", ex[0] == "On letterboxd.com (not the app): Settings, Account data, Export your data." and ex[1] <= 2 and not ex[2], f"{ex[1]} line(s): {ex[0]!r}")
         ctx1.close()
         ctx1, pg1, _, _ = load(browser, base, 390, 844)
         ph = pg1.evaluate("(() => { const d = document.getElementById('drop').getBoundingClientRect(), c = document.getElementById('card').getBoundingClientRect(); return [d.bottom <= c.top, Math.round(d.left) === Math.round(c.left)]; })()")
         check("R6 phone, before a drop: the drop zone comes first and the sample card is under it", ph[0] and ph[1], f"drop zone above the card: {ph[0]}, one column: {ph[1]}")
+        ex = pg1.evaluate("""(() => { const e = document.querySelector('#drop .export'), lh = parseFloat(getComputedStyle(e).lineHeight); return [e.textContent, Math.round(e.getBoundingClientRect().height / lh), /Get it at|Settings, Data/.test(document.getElementById('drop').textContent)]; })()""")
+        check("Drop zone export line (phone, 390 px): the same words in one or two lines", ex[0] == "On letterboxd.com (not the app): Settings, Account data, Export your data." and ex[1] <= 2, f"{ex[1]} line(s)")
         ctx1.close()
 
         # --- rule 1 and 7: chrome text
