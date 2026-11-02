@@ -109,11 +109,20 @@ try {
   out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /early.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /sample.json /selftest.js /style.css /tmdb.svg');
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
-  out('rows', rows.length, 6);
-  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*? \| -0\.049.+ \| .+ \| 210 of 250 filmsmeasured · rated films with crowd data$/);
-  out('Why these grades: six stats, each with value, your film and what it is based on', [...rows].every((r) => r.cells.length === 5 && r.cells[0].textContent && r.cells[2].textContent && r.cells[3].textContent && r.cells[4].textContent), true);
-  out('Why these grades: columns', [...document.querySelectorAll('#stats th')].map((h) => h.textContent).join(' | '), 'Stat | Grade | Value | Your film | Based on');
-  out('Why these grades: Based on does not repeat a count', [...rows].some((r) => { const n = r.cells[4].firstChild.textContent.match(/^(\d+) of/); return n && new RegExp(`(^|[^\\d])${n[1]}( |$)`).test(r.cells[4].querySelector('small').textContent); }), false);
+  const drows = document.getElementById('detail').tBodies[0].rows;
+  out('rows', `${rows.length} ${drows.length}`, '6 6');
+  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*? \| .+\.$/);
+  out('Why these grades: three columns, Stat, Grade and one sentence', [...document.querySelectorAll('#stats th')].map((h) => h.textContent).join(' | '), 'Stat | Grade | Why');
+  out('Why these grades: six stats, each with a grade and one sentence', [...rows].every((r) => r.cells.length === 3 && r.cells[0].textContent && /^[A-E?∅∞]\*?$/.test(r.cells[1].textContent) && /\.$/.test(r.cells[2].textContent)), true);
+  out('Why these grades: the sentences name the user\'s films (at least four of six, in quotes)', [...rows].filter((r) => /\u201c.+\u201d/.test(r.cells[2].textContent)).length >= 4, true);
+  out('Why these grades: no raw value, count, status word or provisional tag in the sentences', [...rows].some((r) => /DPA|★|\d+ of \d+|provisional|measured|\[|\d\.\d{2}/.test(r.cells[2].textContent)), false);
+  out('Why these grades: each sentence is one sentence', [...rows].every((r) => (r.cells[2].textContent.match(/\. /g) || []).length <= 1), true);
+  // the raw value, the coverage counts and the status words are in Advanced
+  out('Advanced: the numbers behind the grades, columns', [...document.querySelectorAll('#detail th')].map((h) => h.textContent).join(' | '), 'Stat | Value | Based on | Status');
+  out('Advanced: row0', [...drows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| -0\.049.+ \| 210 of 250 films \| measured · rated films with crowd data$/);
+  out('Advanced: six stats, each with value, counts and status', [...drows].every((r) => r.cells.length === 4 && r.cells[0].textContent && r.cells[1].textContent && r.cells[2].textContent && r.cells[3].textContent), true);
+  out('Advanced: the status does not repeat a count', [...drows].some((r) => { const n = r.cells[2].textContent.match(/^(\d+) of/); return n && new RegExp(`(^|[^\\d])${n[1]}( |$)`).test(r.cells[3].textContent); }), false);
+  out('Advanced is collapsed after a drop, and its numbers are not displayed until it is opened', `${!document.getElementById('advanced').open} ${!document.getElementById('detail').checkVisibility()}`, 'true true');
   for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
   out('footer: two small lines at most, the TMDB logo and its required notice kept', `${document.querySelectorAll('footer p').length <= 2} ${!!document.querySelector('footer a[href="https://www.themoviedb.org/"] img[alt=TMDB]')} ${document.querySelector('footer').textContent.includes('This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.')}`, 'true true true');
   out('Why these grades: no Data credits section; the footer keeps the credits and the TMDB block', `${!!document.getElementById('why-credit')} ${/Letterboxd.*TMDB.*MusicBrainz/.test(document.querySelector('footer').textContent)} ${!!document.querySelector('footer .tmdb img')}`, 'false true true');
@@ -122,7 +131,7 @@ try {
   out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
   out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
   out('notes: the film-table sentence is in the method text only', `${document.getElementById('notes').children.length} ${/film table/.test(document.getElementById('notes').textContent.replace(/Film table built/, ''))}`, '1 false');
-  out('coverage cell', rows[0].cells[4].firstChild.textContent, '210 of 250 films');
+  out('coverage cell', drows[0].cells[2].textContent, '210 of 250 films');
   const img = document.getElementById('card');
   await img.decode();
   out('img', `${img.naturalWidth}x${img.naturalHeight} ${img.src.slice(0, 5)}`, '1080x1350 blob:');

@@ -196,6 +196,7 @@ button:active { transform: scale(.97); }
 #drop.reading #freeze { display: block; }
 
 /* why these grades */
+#adv-result h3 { margin: 16px 0 8px; font-size: 1rem; }
 td small { display: block; color: var(--mute); font-size: .8125rem; }
 #why { margin: 24px 0 0; }
 #why dt { margin: 16px 0 0; font-weight: 700; }
@@ -211,17 +212,21 @@ footer { padding-top: 16px; border-top: 1px solid var(--line); }
 .tmdb img { height: 14px; width: auto; }
 footer .small { margin: 0 0 8px; max-width: 48em; }
 
-@media (max-width: 560px) {
+@media (max-width: 599px) {
   main { padding-top: 24px; }
   #drop { padding: 24px 16px; }
-  /* one row per stat: name, grade and value on a line, then your film, then what it is based on */
   table, tbody { display: block; }
   thead { display: none; }
-  tr { display: grid; grid-template-columns: 1fr auto auto; gap: 0 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
-  td { padding: 0; border: 0; }
-  td:nth-child(1) { font-weight: 600; }
-  td:nth-child(2), td:nth-child(3) { text-align: right; }
-  td:nth-child(n+4) { grid-column: 1 / -1; color: var(--mute); font-size: .875rem; }
+  /* Why these grades: each stat is one line of running text: the name and the grade, then the sentence */
+  #stats tr { display: block; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  #stats td { display: inline; padding: 0; border: 0; }
+  #stats td:nth-child(1), #stats td:nth-child(2) { font-weight: 700; margin-right: 8px; }
+  /* Advanced: the numbers behind the grades, one row per stat: name and value on a line, then the counts, then the status */
+  #detail tr { display: grid; grid-template-columns: 1fr auto; gap: 0 16px; padding: 8px 0; border-bottom: 1px solid var(--line); }
+  #detail td { padding: 0; border: 0; }
+  #detail td:nth-child(1) { font-weight: 600; }
+  #detail td:nth-child(2) { text-align: right; }
+  #detail td:nth-child(n+3) { grid-column: 1 / -1; color: var(--mute); font-size: .875rem; }
   tbody { border-top: 2px solid var(--accent); transition: border-color 250ms ease-out; }
 }
 @media (prefers-reduced-motion: reduce) {

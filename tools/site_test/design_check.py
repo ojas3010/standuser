@@ -212,6 +212,10 @@ def main():
         page.click("#theme [data-v=light]"); page.wait_for_timeout(300)
         d2 = page.evaluate("[document.getElementById('card').src, document.getElementById('theme').dataset.value]")
         check("R10 the card theme is a small Light/Dark toggle in the share bar (the card changes with it); the link note under the share bar is gone", tg[0] and tg[1] == "Light/Dark" and tg[3] <= 40 and not tg[4] and d1[0] != src0 and d1[1:] == ["dark", "true"] and d2[1] == "light" and d2[0] != d1[0], f"toggle in share bar {tg[0]}, buttons {tg[1]}, pressed at first {tg[2]}, height {tg[3]:.0f} px, link note present {tg[4]}; card changed on Dark {d1[0] != src0} and on Light {d2[0] != d1[0]}")
+        wy = page.evaluate("""() => ({ heads: [...document.querySelectorAll('#stats th')].map(h => h.textContent).join('/'), rows: [...document.getElementById('stats').tBodies[0].rows].map(r => [...r.cells].map(c => c.textContent)),
+          detail: [...document.querySelectorAll('#detail th')].map(h => h.textContent).join('/'), adv: document.getElementById('advanced').open, display: getComputedStyle(document.getElementById('stats')).display }); """)
+        sent = [r[2] for r in wy["rows"]]
+        check("R12 Why these grades: three columns, Stat, Grade and one plain-English sentence that names the user's film; the raw value, counts and status words are in Advanced (Stat/Value/Based on/Status), collapsed", wy["heads"] == "Stat/Grade/Why" and len(wy["rows"]) == 6 and sum(1 for t in sent if "\u201c" in t) >= 4 and not any(re.search(r"DPA|★|\d+ of \d+|provisional|measured|\[", t) for t in sent) and wy["detail"] == "Stat/Value/Based on/Status" and not wy["adv"] and wy["display"] == "table", f"columns {wy['heads']}; e.g. {sent[0]!r}; {sum(1 for t in sent if chr(0x201c) in t)} of 6 sentences name a film")
         check("R6 order after a drop: card, then share bar, then Why these grades", tops == sorted(tops) and page.evaluate("document.getElementById('drop').hidden && !document.getElementById('filebar').hidden"), f"tops {tops}; the drop zone is replaced by the file line")
         cols = page.evaluate("new Set([...document.querySelectorAll('main > *')].map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 right angles: boxes have no rounded corners", all(e["radius"] in ("0px", "") for e in vis if e["tag"] in ("BUTTON", "SECTION", "SELECT", "INPUT", "IMG", "TABLE")), "border-radius 0 on buttons, drop zone, inputs, card")
@@ -222,6 +226,8 @@ def main():
         sw = pagep.evaluate("[document.documentElement.scrollWidth, innerWidth]")
         cols = pagep.evaluate("new Set([...document.querySelectorAll('main > *, #result > *')].filter(e => !e.hidden).map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 single column on mobile; no sideways scroll at 390 px", sw[0] <= sw[1] and cols == 1, f"scrollWidth {sw[0]} for viewport {sw[1]}; {cols} distinct left edge(s)")
+        one = pagep.evaluate("""() => [...document.getElementById('stats').tBodies[0].rows].map(r => { const c = [...r.cells].map(x => x.getClientRects()[0]); return [getComputedStyle(r).display, Math.round(c[0].top), Math.round(c[1].top), Math.round(c[2].top), c[0].left < c[1].left && c[1].left < c[2].left]; })""")
+        check("R6 Why these grades under 600 px: each stat is one line of running text, the name, the grade and the sentence starting on the same line", all(o[0] == "block" and o[1] == o[2] == o[3] and o[4] for o in one), f"{len(one)} stats; line tops {[o[1:4] for o in one][:2]}...")
         ctxp.close()
 
         # --- section 3 chrome

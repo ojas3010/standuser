@@ -68,6 +68,7 @@ function openLink() {
   last = { svgs: r.svgs, card: r.card, analysis: null };
   showCard(r.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${r.card.user}`);
   $('result').hidden = true;
+  $('adv-result').hidden = true;
   $('downloads').hidden = true;
   $('share').hidden = false;
   $('sharenote').textContent = '';
@@ -88,6 +89,7 @@ async function handle(file) {
   if (!table) return;
   endReveal();
   $('result').hidden = true;
+  $('adv-result').hidden = true;
   $('downloads').hidden = true;
   $('share').hidden = true;
   let arrow = null;
@@ -259,28 +261,49 @@ function showCard(svg, label, alt) {
   if (old.startsWith('blob:')) URL.revokeObjectURL(old);
 }
 
+// One plain sentence per stat. It names the film the card's evidence line names for that stat (`film`; Range's reads "Film (Country)") and says
+// what the film shows; with no film it says what the stat is based on. A stat that is not graded yet (its metric starts with ? or ∅) says so.
+const q = (f) => `\u201c${f}\u201d`;
+function statSentence(i, metric, film) {
+  const f = film ? q(film) : '';
+  const own = /^(.*) \((.+)\)$/.exec(film || '');
+  const dir = metric.startsWith('\u2212') ? 'below' : metric.startsWith('+') ? 'above' : '';
+  const s = [
+    dir ? `You rate ${dir} the crowd on average${f ? `, most of all on ${f}` : ''}.` : f ? `${f} is where you differ most from the crowd.` : 'Based on how your ratings compare with the crowd\u2019s.',
+    f ? `Your busiest month of watching included ${f}.` : 'Based on how many films you log in the months you watch.',
+    own ? `Your rarest country is ${own[2]}, through ${q(own[1])}.` : f ? `Your rarest country is shown by ${f}.` : 'Based on how many different countries your films come from.',
+    f ? `${f} is from the last month of your longest run of watching.` : 'Based on how many months you watched something.',
+    f ? `You rate close to the crowd on well-known films, such as ${f}.` : 'Based on how closely your ratings follow the crowd\u2019s.',
+    f ? `${f} is by a director you have seen only once.` : 'Based on how many directors you have seen only once.',
+  ][i];
+  return /^[?\u2205]/.test(metric) ? `${s} Not enough data to grade this yet.` : s;
+}
+
 function show(a, svg) {
   showCard(svg, 'Your card', 'Your Stand card');
-  // Why these grades: for each stat its value, your film and what it is based on
+  // Why these grades: for each stat its grade and one plain sentence that names your film. The raw value, the counts and the status words
+  // are in Advanced.
   const tb = $('stats').tBodies[0];
   tb.replaceChildren();
+  const dt = $('detail').tBodies[0];
+  dt.replaceChildren();
   const names = ['Power', 'Speed', 'Range', 'Stamina', 'Precision', 'Potential'];
   const g = a.stats;
   const card = a.card;
   [g.power, g.speed, g.range, g.stamina, g.precision, g.potential].forEach((s, i) => {
+    const [metric, film] = card.evidence[i];
     const tr = tb.insertRow();
+    [names[i], s.letter + (card.prov[i] ? '*' : ''), statSentence(i, metric, film)].forEach((t) => (tr.insertCell().textContent = t));
+    // Advanced: the value, how many films or watches it was graded on, then the status and what the note adds. A count the first line
+    // already gives is not said again: the note's leading count is dropped, and the minimum is left to the note when it says what is needed.
+    const dr = dt.insertRow();
     const val = s.value == null ? '' : Number(s.value).toFixed(3);
     const cov = a.coverage.per_stat[i];
-    const [metric, film] = card.evidence[i];
-    // Based on: how many films or watches it was graded on, then the status and what the note adds. A count the first line already
-    // gives is not said again: the note's leading count is dropped, and the minimum is left to the note when it says what is needed.
     const note = (s.note || '').replace(new RegExp(`^${cov.used} `), '');
     const needs = cov.meets_minimum || note.startsWith('needs') ? '' : ` (needs ${cov.minimum})`;
-    const cells = [names[i], s.letter + (card.prov[i] ? '*' : ''), val, film || '–', `${cov.used} of ${cov.of} ${cov.unit}${needs}`];
-    cells.forEach((t) => (tr.insertCell().textContent = t));
-    // the line the stat was shown with on the card before: what the value means
-    if (metric) tr.cells[2].append(Object.assign(document.createElement('small'), { textContent: metric }));
-    tr.cells[4].append(Object.assign(document.createElement('small'), { textContent: s.status + (note ? ` · ${note}` : '') }));
+    [names[i], val, `${cov.used} of ${cov.of} ${cov.unit}${needs}`, ''].forEach((t) => (dr.insertCell().textContent = t));
+    if (metric) dr.cells[1].append(Object.assign(document.createElement('small'), { textContent: metric }));
+    dr.cells[3].textContent = s.status + (note ? ` · ${note}` : '');
   });
   $('why-ability').textContent = card.ability;
   // the section is headed Weakness, so the line drops its label
@@ -309,6 +332,7 @@ function show(a, svg) {
   setLink($('dl-svg'), new Blob([last.svgs.auto], { type: 'image/svg+xml' }));
   setLink($('dl-json'), new Blob([JSON.stringify(a, null, 2)], { type: 'application/json' }));
   $('result').hidden = false;
+  $('adv-result').hidden = false;
   $('downloads').hidden = false;
 }
 

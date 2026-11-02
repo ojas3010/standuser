@@ -52,7 +52,7 @@
 
   <section id="result" hidden>
     <h2>Why these grades</h2>
-    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Your film</th><th>Based on</th></tr></thead><tbody></tbody></table>
+    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Why</th></tr></thead><tbody></tbody></table>
     <dl id="why">
       <dt>Ability</dt><dd id="why-ability"></dd>
       <dt>Weakness</dt><dd id="why-weakness"></dd>
@@ -73,6 +73,10 @@
     <summary>Advanced</summary>
     <p class="small" id="counts">Six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
     <p class="small" id="reads">Read in this tab, never uploaded; the page makes no requests after it loads. Only <code>watched.csv</code>, <code>ratings.csv</code> and <code>diary.csv</code> are read, plus two columns of <code>profile.csv</code> (Date Joined and Favorite Films). Nothing else in <code>profile.csv</code> is read.</p>
+    <div id="adv-result" hidden>
+      <h3>The numbers behind the grades</h3>
+      <table id="detail"><thead><tr><th>Stat</th><th>Value</th><th>Based on</th><th>Status</th></tr></thead><tbody></tbody></table>
+    </div>
     <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
     <label>Join date <input id="joined" type="date"></label>
     <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
