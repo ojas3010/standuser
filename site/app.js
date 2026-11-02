@@ -261,6 +261,39 @@ function showCard(svg, label, alt) {
   if (old.startsWith('blob:')) URL.revokeObjectURL(old);
 }
 
+// The lines under the table are one plain sentence each, with no [provisional] tag (the grade's asterisk says it).
+const noTag = (t) => t.replace(/\s*\[provisional\]/g, '').trim();
+const cap = (t) => (t ? t[0].toUpperCase() + t.slice(1) : t);
+const dot = (t) => (/[.!?]$/.test(t) ? t : `${t}.`);
+// "slow hands (Speed D). 1.5 films per active month, so ..." becomes "Slow hands: 1.5 films per active month, so ...": the parenthesis with the
+// stat's name goes and the two sentences are joined
+function weaknessLine(raw) {
+  let t = noTag(raw).replace(/^(Weakness|Soft spot):\s*/, '');
+  if (!t.startsWith('No weakness')) {
+    t = t.replace(/ \([^)]*\)(?=\.)/, '');
+    t = t.replace(/\. (\S)(\S?)/, (m, c, d) => `: ${/\p{Lu}/u.test(d) ? c : c.toLowerCase()}${d}`);
+  }
+  return dot(cap(t));
+}
+// "Track N of COMPOSER's FILM score, from a R★ film of yours." from the name's own why line (track N of ...'s FILM score (year) ... (R★));
+// a name that did not come from a track title (a composer, a Tarot card) keeps its why line, as one sentence
+function nameLine(raw) {
+  const why = noTag(raw);
+  const m = /track (\d+) of the (.+?) (score|soundtrack) \(\d{4}\)/.exec(why) || /track (\d+) of (.+?['\u2019]s?) (.+?) (score|soundtrack) \(\d{4}\)/.exec(why);
+  if (!m) return dot(cap(why.replace(/^Why \u300c[^\u300d]*\u300d:\s*/, '').replace(/\u300c/g, '\u201c').replace(/\u300d/g, '\u201d')) || 'No name line.');
+  const rating = /\((\d(?:\.\d)?)\u2605\)/.exec(why.slice(m.index + m[0].length));
+  const [, n] = m;
+  const place = m.length === 4 ? `the ${m[2]} ${m[3]}` : `${m[2]} ${m[3]} ${m[4]}`;
+  return `Track ${n} of ${place}, from a ${rating ? `${rating[1]}\u2605 ` : ''}film of yours.`;
+}
+// "Signature film: Cabaret (1972), 0.5★ against the crowd's 4.18★ (-3.68), 200,558 ratings." as one sentence
+function signatureLine(raw) {
+  const sig = noTag(raw).replace(/^Signature film:\s*/, '');
+  const m = /^(.+?) \((\d{4})\), ([\d.]+)\u2605 against the crowd's ([\d.]+)\u2605 \([^)]*\), [\d,]+ ratings\.?$/.exec(sig);
+  if (m) return `${q(m[1])} (${m[2]}) is where you and the crowd disagree most: you gave it ${m[3]}\u2605, its average is ${m[4]}\u2605.`;
+  return dot(cap(sig));
+}
+
 // One plain sentence per stat. It names the film the card's evidence line names for that stat (`film`; Range's reads "Film (Country)") and says
 // what the film shows; with no film it says what the stat is based on. A stat that is not graded yet (its metric starts with ? or ∅) says so.
 const q = (f) => `\u201c${f}\u201d`;
@@ -305,17 +338,10 @@ function show(a, svg) {
     if (metric) dr.cells[1].append(Object.assign(document.createElement('small'), { textContent: metric }));
     dr.cells[3].textContent = s.status + (note ? ` · ${note}` : '');
   });
-  $('why-ability').textContent = card.ability;
-  // the section is headed Weakness, so the line drops its label
-  const weak = card.weakness.replace(/^(Weakness|Soft spot):\s*/, '');
-  $('why-weakness').textContent = weak[0].toUpperCase() + weak.slice(1);
-  // the card's corner brackets are card lettering; the page quotes the name in plain quotes
-  // the section is headed The name, so the leading Why 「NAME」: goes
-  const why = (a.name.why || card.why || 'No name line.').replace(/^Why 「[^」]*」:\s*/, '').replace(/「/g, '“').replace(/」/g, '”');
-  $('why-name').textContent = why[0].toUpperCase() + why.slice(1);
-  // the section's own heading says it is the signature film, so the line drops its label
-  const sig = card.signature.replace(/^Signature film:\s*/, '');
-  $('why-film').textContent = sig.startsWith('not enough') ? sig[0].toUpperCase() + sig.slice(1) : sig;
+  // The ability is on the card, so the page does not repeat it. Weakness, the name and the signature film are one plain sentence each.
+  $('why-weakness').textContent = weaknessLine(card.weakness);
+  $('why-name').textContent = nameLine(a.name.why || card.why || '');
+  $('why-film').textContent = signatureLine(card.signature);
   // a sentence: the type, where it comes from, how often it matches canon (the figure is read from the note, not repeated here)
   const agree = (card.type_note.match(/about (\d+)%/) || [])[1];
   $('why-type').textContent = `${card.type_en}. The type comes from your stats; it matches the canon Stand type about ${agree || 60}% of the time.` +
