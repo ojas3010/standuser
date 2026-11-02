@@ -257,6 +257,9 @@ try {
     await new Promise((r) => f.addEventListener('load', r, { once: true }));
     const d = () => f.contentDocument;
     await until('the linked page to boot', () => d().getElementById('status') && d().getElementById('status').textContent === '' && !d().getElementById('drop').classList.contains('loading') && d().getElementById('card').src.startsWith('blob:'), 20000);
+    // a hidden iframe can start with the wrong colour scheme and be corrected a moment later (the page's change listener redraws the card);
+    // the card is compared only once the iframe's theme is the one its own system setting asks for
+    await until('the linked page to follow its colour scheme', () => d().getElementById('theme').dataset.value === (f.contentWindow.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), 5000);
     return f;
   };
   const fr = await open(copiedText.slice(copiedText.indexOf('#')));
@@ -267,7 +270,9 @@ try {
   out('opened link: card label', fd.getElementById('cardlabel').textContent, 'Shared card');
   out('opened link: How the card was built is displayed', fd.getElementById('method').hidden, false);
   out('opened link: card', `${fd.getElementById('card').naturalWidth}x${fd.getElementById('card').naturalHeight}`, '1080x1350');
-  out('opened link: same card as the file made', (await (await fetch(fd.getElementById('card').src)).text()) === (await (await fetch(img.src)).text()), true);
+  const svgA = await (await fetch(fd.getElementById('card').src)).text(), svgB = await (await fetch(img.src)).text();
+  let kk = 0; while (kk < svgA.length && svgA[kk] === svgB[kk]) kk++;
+  out('opened link: same card as the file made', svgA === svgB ? true : `differs at ${kk} of ${svgA.length}/${svgB.length}: ${JSON.stringify(svgA.slice(Math.max(0, kk - 40), kk + 60))} vs ${JSON.stringify(svgB.slice(Math.max(0, kk - 40), kk + 60))}`, true);
   out('opened link: share bar visible, why section hidden', `${!fd.getElementById('share').hidden} ${fd.getElementById('result').hidden}`, 'true true');
   await sleep(1500);
   out('opened link: requests after the page load', names().filter((n) => !atLoad.includes(n)).length, 0);
