@@ -332,6 +332,29 @@ def main():
         check("R2 the filled button (the card's ink on its ground) passes WCAG AA (4.5:1), light and dark", min(o[5] for o in out) >= 4.5, f"lowest ratio over {len(out)} renders: {min(o[5] for o in out):.2f}")
         check("R3 all text on the field keeps WCAG AA (4.5:1): the card's ink and muted ink on the ground, on the dots and on the big ゴ, light and dark", min(o[4] for o in out) >= 4.5 and all(o[6] for o in out), f"lowest ratio over {len(out)} renders: {min(o[4] for o in out):.2f}; the lede is the card's muted ink in every render")
 
+        # --- the trace: from the drop a line laps the drop zone's border once, before the To Be Continued arrow
+        c6, pg6, _, _ = load(browser, base, 1280, 900)
+        pg6.evaluate("""() => { window.__tr = []; const t0 = performance.now(), d = document.getElementById('drop'), r = document.querySelector('#trace .run');
+          const tick = () => { const cs = getComputedStyle(r); window.__tr.push([Math.round(performance.now() - t0), d.classList.contains('tracing'), d.classList.contains('reading'), parseFloat(cs.strokeDashoffset), getComputedStyle(document.getElementById('trace')).display]);
+            if (performance.now() - t0 < 4000) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }""")
+        pg6.set_input_files("#file", str(zips[0]))
+        pg6.wait_for_function("window.__tr.length && window.__tr[window.__tr.length - 1][0] > 3900", timeout=15000)
+        tr = pg6.evaluate("window.__tr")
+        geo = pg6.evaluate("""() => { const d = document.getElementById('drop'), t = document.getElementById('trace'), r = t.querySelector('rect'), cs = getComputedStyle(r);
+          return { vb: t.getAttribute('viewBox'), box: d.hidden ? null : [d.offsetWidth, d.offsetHeight], pl: r.getAttribute('pathLength'), da: cs.strokeDasharray, stroke: cs.stroke, fill: cs.fill, scripts: document.querySelectorAll('script[src]').length }; }""")
+        on = [r for r in tr if r[1]]
+        offs = [r[3] for r in on]
+        first_read = next((r[0] for r in tr if r[2]), None)
+        last_trace = on[-1][0] if on else None
+        check("R20 the trace: from the drop a line travels once along the drop zone's border (an SVG rect with pathLength 100 and a stroke-dasharray, its dash offset running from 0 to -100 in about 0.7 s), before the To Be Continued arrow starts", bool(on) and on[0][0] < 200 and 600 <= on[-1][0] - on[0][0] <= 900 and all(a >= b for a, b in zip(offs, offs[1:])) and offs[0] > -20 and offs[-1] < -85 and all(r[4] == "block" for r in on) and first_read is not None and first_read >= last_trace and geo["pl"] == "100" and geo["da"] not in ("none", "") and geo["fill"] == "none", f"line on at {on[0][0] if on else None} ms for {on[-1][0] - on[0][0] if on else None} ms, offset {offs[0] if offs else None} to {offs[-1] if offs else None}, the arrow starts at {first_read} ms; dasharray {geo['da']}, pathLength {geo['pl']}")
+        c6.close()
+        c6, pg6, _, _ = load(browser, base, 1280, 900, motion="reduce")
+        pg6.evaluate("window.__t = false; new MutationObserver(() => { if (document.getElementById('drop').classList.contains('tracing')) window.__t = true; }).observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] })")
+        pg6.set_input_files("#file", str(zips[0]))
+        pg6.wait_for_function("!document.getElementById('result').hidden")
+        check("R20 under prefers-reduced-motion there is no trace", pg6.evaluate("window.__t") is False, "the zone never gets the tracing state")
+        c6.close()
+
         # --- rule 8: the To Be Continued arrow, then the reveal
         c3, pg, _, _ = load(browser, base, 1280, 900)
         pg.evaluate(OBSERVE)

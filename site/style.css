@@ -202,7 +202,14 @@ a { display: inline-flex; align-items: center; justify-content: center; min-heig
   to { opacity: 1; transform: translateX(0); }
 }
 @keyframes tbcLetter { from { opacity: 0; } to { opacity: 1; } }
-#drop.reading { pointer-events: none; cursor: progress; }
+/* the trace: one dash of the border's length, in the page's ink, laps the zone's border once (app.js startTrace; the technique is BoardUI's,
+   MIT, see the README credits) */
+#trace { display: none; position: absolute; left: -2px; top: -2px; width: calc(100% + 4px); height: calc(100% + 4px); pointer-events: none; overflow: visible; }
+#trace .run { fill: none; stroke: var(--p-ink); stroke-width: 4; stroke-dasharray: 22 78; stroke-dashoffset: 0; }
+#drop.tracing #trace { display: block; }
+#drop.tracing #trace .run { animation: traceRun 700ms linear both; }
+@keyframes traceRun { from { stroke-dashoffset: 0; } to { stroke-dashoffset: -100; } }
+#drop.tracing, #drop.reading { pointer-events: none; cursor: progress; }
 #drop.reading > :not(#tbc) { visibility: hidden; }
 #freeze { display: none; }
 #drop.reading #tbc { display: flex; }

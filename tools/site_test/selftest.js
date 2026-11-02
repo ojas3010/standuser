@@ -74,6 +74,10 @@ try {
   dzone.classList.add('over');
   out('on drag-over the ゴゴゴ are displayed beside the zone', document.getElementById('dropgo').offsetParent !== null && document.querySelectorAll('#dropgo svg path').length >= 6, true);
   dzone.classList.remove('over');
+  dzone.classList.add('tracing');
+  out('while the file is taken in a line travels along the zone\'s border: the trace is displayed, an SVG rect with pathLength 100 and a dash', `${getComputedStyle(document.getElementById('trace')).display} ${document.querySelector('#trace rect').getAttribute('pathLength')} ${getComputedStyle(document.querySelector('#trace rect')).strokeDasharray !== 'none'}`, 'block 100 true');
+  dzone.classList.remove('tracing');
+  out('the trace is not displayed at rest', getComputedStyle(document.getElementById('trace')).display, 'none');
   dzone.classList.add('reading');
   out('while a file is read the To Be Continued arrow is displayed and the zone text is hidden', `${document.getElementById('tbc').offsetParent !== null} ${getComputedStyle(dzone.querySelector('.drop-title')).visibility} ${document.getElementById('tbc').textContent}`, 'true hidden To Be Continued');
   out('while a file is read the page behind is frozen: the overlay is displayed, and it is not at rest', `${getComputedStyle(document.getElementById('freeze')).display} ${document.getElementById('tbc').querySelectorAll('.words span span').length}`, 'block 13');

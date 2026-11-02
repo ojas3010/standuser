@@ -93,21 +93,30 @@ async function handle(file) {
   $('adv-result').hidden = true;
   $('downloads').hidden = true;
   $('share').hidden = true;
-  let arrow = null;
+  let hold = null;
+  let arrowFrom = 0;
   try {
     setStatus('Reading the export…');
-    // From the drop the zone shows the To Be Continued arrow, sliding in from the left with a short overshoot and spelling its words out
-    // letter by letter, with the page behind it held in grey halftone (style.css), for at least ARROW_MS, however fast the file is read; the
-    // reveal starts when it ends. A click or a key press ends the arrow and skips the reveal. Reduced motion: no arrow, no freeze.
+    // From the drop a line travels once along the zone's border (TRACE_MS), then the zone shows the To Be Continued arrow, sliding in from the
+    // left with a short overshoot and spelling its words out letter by letter, with the page behind it held in grey halftone (style.css), for at
+    // least ARROW_MS, however fast the file is read; the reveal starts when it ends. A click or a key press ends all of it and skips the
+    // reveal. Reduced motion: no line, no arrow, no freeze.
     if (!reducedMotion()) {
-      arrow = holdArrow(performance.now());
-      drop.classList.add('reading');
-      await new Promise((r) => setTimeout(r, 40)); // a few frames to paint it before the wasm runs
+      hold = skipWatch();
+      startTrace();
+      drop.classList.add('tracing');
+      const skippedTrace = await hold.wait(TRACE_MS);
+      drop.classList.remove('tracing');
+      if (!skippedTrace) {
+        arrowFrom = performance.now();
+        drop.classList.add('reading');
+        await new Promise((r) => setTimeout(r, 40)); // a few frames to paint it before the wasm runs
+      }
     }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const out = exec(bytes, file.name);
     last = { svgs: out.svgs, card: out.analysis.card, analysis: out.analysis };
-    const skipped = arrow ? await arrow.ended : false;
+    const skipped = hold ? hold.skipped() || (await hold.wait(arrowFrom + ARROW_MS - performance.now())) : false;
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
     show(out.analysis, out.svgs[resolvedTheme()]);
     // the drop zone gives way to one line: the films read, and a way to pick another (the file's name is not shown)
@@ -136,8 +145,8 @@ async function handle(file) {
     $('share').hidden = true;
     setStatus(e.message, true);
   } finally {
-    if (arrow) arrow.cancel();
-    drop.classList.remove('reading');
+    if (hold) hold.cancel();
+    drop.classList.remove('tracing', 'reading');
   }
 }
 
@@ -230,17 +239,31 @@ function countUp() {
 // simply there.
 const REVEAL_MS = 2150;
 const ARROW_MS = 1800;
+const TRACE_MS = 700;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
-// The wait for the arrow: `ended` resolves false ARROW_MS after `from`, or true as soon as a click or a key press skips it.
-function holdArrow(from) {
+// A click or a key press ends the trace and the arrow at once and skips the reveal. `wait(ms)` resolves after ms, or at once when skipped; true when skipped.
+function skipWatch() {
   const keys = ['pointerdown', 'keydown'];
-  let done;
-  const ended = new Promise((res) => { done = res; });
-  const finish = (skipped) => { clearTimeout(timer); keys.forEach((t) => removeEventListener(t, skip, true)); done(skipped); };
-  const skip = () => finish(true);
-  const timer = setTimeout(() => finish(false), Math.max(0, from + ARROW_MS - performance.now()));
+  let skipped = false, wake = null;
+  const skip = () => { skipped = true; if (wake) wake(); };
   keys.forEach((t) => addEventListener(t, skip, true));
-  return { ended, cancel: () => finish(false) };
+  return {
+    skipped: () => skipped,
+    wait: (ms) => (skipped ? Promise.resolve(true) : new Promise((res) => {
+      const t = setTimeout(() => { wake = null; res(false); }, Math.max(0, ms));
+      wake = () => { clearTimeout(t); wake = null; res(true); };
+    })),
+    cancel: () => keys.forEach((t) => removeEventListener(t, skip, true)),
+  };
+}
+// The line that travels along the drop zone's border while the file is taken in. The technique is that of the file-upload component of BoardUI
+// (MIT, github.com/BoardUI/boardui, components/base/file-upload/file-upload.tsx): an SVG whose viewBox is the measured box of the zone, a rect
+// on the border line with pathLength=100, and stroke-dasharray / stroke-dashoffset to draw and move a part of that path. Here a dash of 22 of
+// the 100 units laps the border once (style.css, @keyframes traceRun), in plain CSS and JavaScript.
+function startTrace() {
+  const w = drop.offsetWidth, h = drop.offsetHeight, svg = $('trace'), r = svg.querySelector('rect');
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  for (const [k, v] of Object.entries({ x: 1, y: 1, width: w - 2, height: h - 2 })) r.setAttribute(k, String(v));
 }
 let live = null; // { svg, timer, off } while a reveal plays
 function endReveal() {
