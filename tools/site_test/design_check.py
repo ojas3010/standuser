@@ -224,9 +224,9 @@ def main():
           const r = [...m.children].filter(e => e.offsetParent !== null).map(e => e.getBoundingClientRect());
           const f = document.getElementById('filebar').getBoundingClientRect(), sh = document.getElementById('share').getBoundingClientRect();
           return { inner, c: [c.left, c.right], fit: [f.top, c.top, c.bottom, sh.bottom, innerHeight], gaps: r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)), theme: document.getElementById('theme').offsetParent !== null,
-            adv: (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })() }; }""")
+            adv: (() => { const d = document.getElementById('advanced'); return !d.open && d.parentElement.tagName === 'MAIN' && !d.closest('#method'); })() }; }""")
         mid = (lay["inner"][0] + lay["inner"][1]) / 2
-        check("R6 after a drop (1280 x 720): the file line, the whole card and the share bar fit in the window without scrolling; the card is centred; the theme select is displayed; Advanced is collapsed in the method section", lay["fit"][0] >= 0 and lay["fit"][3] <= lay["fit"][4] and abs((lay["c"][0] + lay["c"][1]) / 2 - mid) < 1.5 and lay["theme"] and lay["adv"], f"file line top {lay['fit'][0]:.0f}, card {lay['fit'][1]:.0f} to {lay['fit'][2]:.0f}, share bar bottom {lay['fit'][3]:.0f} of {lay['fit'][4]}, card {lay['c']} in column {lay['inner']}, theme select shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
+        check("R6 after a drop (1280 x 720): the file line, the whole card and the share bar fit in the window without scrolling; the card is centred; the theme select is displayed; Advanced is collapsed, its own block", lay["fit"][0] >= 0 and lay["fit"][3] <= lay["fit"][4] and abs((lay["c"][0] + lay["c"][1]) / 2 - mid) < 1.5 and lay["theme"] and lay["adv"], f"file line top {lay['fit'][0]:.0f}, card {lay['fit'][1]:.0f} to {lay['fit'][2]:.0f}, share bar bottom {lay['fit'][3]:.0f} of {lay['fit'][4]}, card {lay['c']} in column {lay['inner']}, theme select shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
         al = page.evaluate("""() => { const c = document.getElementById('card').getBoundingClientRect(), s = document.getElementById('share').getBoundingClientRect(); return [c.left, c.width, s.left, s.width]; }""")
         check("R6 after a drop (1280 x 720): the share bar has the card's left edge and width", abs(al[0] - al[2]) < 1 and abs(al[1] - al[3]) < 1, f"card left {al[0]:.1f} width {al[1]:.1f}, share bar left {al[2]:.1f} width {al[3]:.1f}")
         check("R6 48 px between sections (after a drop)", all(g == 48 for g in lay["gaps"]) and len(lay["gaps"]) >= 4, f"gaps {lay['gaps']}")
@@ -379,7 +379,9 @@ def main():
         check("R9 ban: no centred hero with three feature cards", page.evaluate("getComputedStyle(document.querySelector('header')).textAlign") != "center" and page.evaluate("document.querySelectorAll('main > section').length") <= 2, "header left-aligned; no card grid")
         films = len(json.loads((SITE / "films.json").read_text())["films"])
         users = json.loads((ROOT / "tools/calibration.json").read_text())["users"]["power_precision"]
-        check("R9 copy uses real numbers", f"{users:,}" in html and f"{films:,}" in html, f"{films:,} films (films.json) and {users:,} users (calibration.json) both in the lede")
+        adv_text = page.evaluate("document.getElementById('advanced').textContent")
+        lede = page.evaluate("document.querySelector('.lede').textContent")
+        check("R9 copy uses real numbers, in Advanced and not in the tagline; the tagline is \"Drop your Letterboxd export. Get your JoJo Stand.\"", f"{users:,}" in adv_text and f"{films:,}" in adv_text and lede == "Drop your Letterboxd export. Get your JoJo Stand." and not re.search(r"\d", lede), f"{films:,} films (films.json) and {users:,} users (calibration.json) are in Advanced; tagline {lede!r}")
         # --- share link: the card from the URL alone, with no request beyond the page load
         ctx, page, reqs, phase = load(browser, base, 1280, 900)
         page.evaluate("Object.defineProperty(navigator.clipboard, 'writeText', {configurable: true, value: async (t) => { window.__link = t; }})")

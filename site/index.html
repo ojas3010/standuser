@@ -17,7 +17,7 @@
 <main>
   <header>
     <h1 class="mark">standuser</h1>
-    <p class="lede">Drop your Letterboxd export. Get a JoJo-style Stand card: six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
+    <p class="lede">Drop your Letterboxd export. Get your JoJo Stand.</p>
   </header>
 
   <div id="stage">
@@ -70,13 +70,15 @@
     <p class="small">Each stat is graded against 34,523 Letterboxd users. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
     <p id="downloads" class="downloads" hidden>Download the card as <a id="dl-svg" href="#" download="card.svg">SVG</a> or the stats as <a id="dl-json" href="#" download="stand.json">JSON</a>.</p>
     <ul id="notes"></ul>
-    <details class="opts">
-      <summary>Advanced</summary>
-      <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
-      <label>Join date <input id="joined" type="date"></label>
-      <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
-    </details>
   </section>
+
+  <details class="opts" id="advanced">
+    <summary>Advanced</summary>
+    <p class="small" id="counts">Six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
+    <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
+    <label>Join date <input id="joined" type="date"></label>
+    <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
+  </details>
 
   <footer>
     <p class="tmdb"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener"><img src="tmdb.svg" alt="TMDB" width="110" height="14"></a></p>

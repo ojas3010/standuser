@@ -126,7 +126,7 @@ try {
   out('share bar order', [...document.querySelectorAll('#share button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
   out('Download SVG and JSON are text links in the method section', ['dl-svg', 'dl-json'].map((id) => document.getElementById(id).tagName + document.getElementById(id).closest('#method').tagName).join(' '), 'ASECTION ASECTION');
   out('card theme select is displayed after a drop', document.getElementById('theme').offsetParent !== null, true);
-  out('Advanced is collapsed, in the method section', (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })(), true);
+  out('Advanced is collapsed, its own block after the method section, with the username and join date fields and the counts', (() => { const d = document.getElementById('advanced'); return !d.open && d.parentElement.tagName === 'MAIN' && !d.closest('#method') && !!d.querySelector('#username') && !!d.querySelector('#joined') && /34,523 Letterboxd users/.test(d.textContent) && /9,787 films/.test(d.textContent); })(), true);
   out('order after a drop: file line, card, share bar, Why these grades', ['filebar', 'figure', 'share', 'result'].map((id) => document.getElementById(id).getBoundingClientRect().top).every((t, i, a) => !i || a[i - 1] < t), true);
   out('Share is hidden exactly where the API cannot share files', document.getElementById('share-btn').hidden, !(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'a.png', { type: 'image/png' })] })));
   // Copy image puts a PNG on the clipboard
