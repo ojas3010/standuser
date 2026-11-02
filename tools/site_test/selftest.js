@@ -38,9 +38,12 @@ try {
   const seen = () => performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname).filter((n) => n !== '/synth.zip' && n !== '/favicon.ico');
   // the page is booted when it has loaded the table and the wasm and its status line is empty again
   await until('the page to boot', () => seen().includes('/films.json') && seen().includes('/names.json') && seen().includes('/pkg/standuser_bg.wasm') && statusEl().textContent === '');
-  // the privacy line sits in the drop zone: the three files read and the two columns of profile.csv
-  const dropText = document.getElementById('drop').textContent;
-  for (const w of ['watched.csv', 'ratings.csv', 'diary.csv', 'two columns of', 'profile.csv', 'Date Joined', 'Favorite Films']) out('drop zone says ' + w, dropText.includes(w), true);
+  // the drop zone keeps its title, the export line and one privacy line; the list of files read is in Advanced
+  const dropEl = document.getElementById('drop');
+  out('drop zone: title, choose-the-file line, export line, one privacy line', [...dropEl.querySelectorAll(':scope > p')].map((p) => p.textContent.replace(/\s+/g, ' ').trim()).join(' | '), 'Drop letterboxd-…-utc.zip here | or choose the file | On letterboxd.com (not the app): Settings, Account data, Export your data. | Read in your browser. Never uploaded.');
+  const advText = document.getElementById('advanced').textContent;
+  for (const w of ['watched.csv', 'ratings.csv', 'diary.csv', 'two columns of', 'profile.csv', 'Date Joined', 'Favorite Films', 'never uploaded']) out('Advanced says ' + w, advText.includes(w), true);
+  out('the drop zone no longer lists the CSV files', /\.csv/.test(dropEl.textContent), false);
   // before a drop: the sample card, labelled Sample, sits above the drop zone and the accent is still the ink colour
   const card0 = document.getElementById('card');
   await until('the sample card', () => card0.src.startsWith('blob:'));
