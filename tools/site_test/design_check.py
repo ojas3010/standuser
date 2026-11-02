@@ -166,6 +166,24 @@ def main():
         check("R3 ground is neutral with zero hue: #0e0e0e (dark)", bgd == [14, 14, 14], f"rgb{tuple(bgd)}")
         ctxd.close()
 
+        # the field's colours are in style.css, so the first paint has them: with app.js blocked (nothing sets a property inline) the computed
+        # values equal the ones app.js sets for the sample card, light and dark; an opened share link keeps the neutral ground until its card is drawn
+        FIELD = "['field','field-ink','field-mute','dot','ghost','flash'].map(k => getComputedStyle(document.documentElement).getPropertyValue('--' + k).trim().toLowerCase())"
+        first = {}
+        for scheme in ("light", "dark"):
+            cx, pj, _, _ = load(browser, base, 1280, 900, scheme=scheme)
+            want = pj.evaluate("['field','field-ink','field-mute','dot','ghost','flash'].map(k => document.documentElement.style.getPropertyValue('--' + k).trim().toLowerCase())")
+            cx.close()
+            for frag, key in (("", "sample"), ("#c=abc", "link")):
+                cx = browser.new_context(viewport={"width": 1280, "height": 900}, color_scheme=scheme)
+                pn = cx.new_page()
+                pn.route("**/app.js", lambda r: r.abort())
+                pn.goto(base + "/index.html" + frag)
+                first[(scheme, key)] = (pn.evaluate(FIELD), rgb(pn.evaluate("getComputedStyle(document.getElementById('field')).backgroundColor")), want)
+                cx.close()
+        neutral = {"light": [255, 255, 255], "dark": [14, 14, 14]}
+        check("R3 the field has the sample card's colours at the first paint (style.css, with app.js not yet run), light and dark, the same values app.js sets; an opened share link keeps the neutral ground", all(first[(s, "sample")][0] == first[(s, "sample")][2] and first[(s, "sample")][1] == [int(first[(s, "sample")][2][0][i:i + 2], 16) for i in (1, 3, 5)] and first[(s, "link")][1] == neutral[s] for s in ("light", "dark")), f"light {first[('light', 'sample')][0][0]}, dark {first[('dark', 'sample')][0][0]}, with a #c= link {first[('light', 'link')][1]} / {first[('dark', 'link')][1]}")
+
         # --- rule 5: type
         fam = page.evaluate("getComputedStyle(document.body).fontFamily")
         serif_chrome = [e for e in els if "Serif" in e["font"] or "Mincho" in e["font"]]

@@ -22,6 +22,14 @@
 @media (prefers-color-scheme: dark) {
   :root { --p-ground: #0e0e0e; --p-ground2: #1a1a1a; --p-ink: #f5f5f5; --p-mute: #b3b3b3; --p-line: #3a3a3a; }
 }
+/* The field's colours for the sample card, so that the first paint already has them (app.js sets the same properties inline once the
+   wasm has drawn the card; design_check.py checks that these values are the ones it sets, light and dark). The card follows the system's
+   theme until the user picks one, so the two sets follow prefers-color-scheme. An opened share link (early.js puts .link on <html>
+   before the first paint) is not the sample: it keeps the neutral ground until its own card is drawn. */
+:root:not(.link) { --field: #c22cb5; --field-ink: #ffffff; --field-mute: #ffffff; --dot: #af28a3; --ghost: #a7269c; --flash: #571451; }
+@media (prefers-color-scheme: dark) {
+  :root:not(.link) { --field: #6834c0; --field-ink: #ffffff; --field-mute: #dcd0f1; --dot: #5e2fad; --ghost: #592da5; --flash: #2f1756; }
+}
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }   /* a display rule below must not show what the page hides */
 body { position: relative; margin: 0; background: var(--ground); color: var(--ink); font: 400 1rem/1.5 Archivo, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }

@@ -97,7 +97,7 @@ try {
   const after = seen();
   const added = after.filter((n) => !before.includes(n));
   out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''), '0');
-  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /sample.json /selftest.js /style.css /tmdb.svg');
+  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /early.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /sample.json /selftest.js /style.css /tmdb.svg');
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
   out('rows', rows.length, 6);
@@ -231,7 +231,7 @@ try {
   out('opened link: share bar visible, why section hidden', `${!fd.getElementById('share').hidden} ${fd.getElementById('result').hidden}`, 'true true');
   await sleep(1500);
   out('opened link: requests after the page load', names().filter((n) => !atLoad.includes(n)).length, 0);
-  out('opened link: only the page\'s own files', [...new Set(names())].filter((n) => !/^\/(accent\.js|app\.js|films\.json|names\.json|sample\.json|style\.css|tmdb\.svg|pkg\/.*|fonts\/.*)$/.test(n)).join(' '), '');
+  out('opened link: only the page\'s own files', [...new Set(names())].filter((n) => !/^\/(accent\.js|app\.js|early\.js|films\.json|names\.json|sample\.json|style\.css|tmdb\.svg|pkg\/.*|fonts\/.*)$/.test(n)).join(' '), '');
   out('opened link: no file was read', fd.getElementById('filebar').hidden && !fd.getElementById('drop').hidden, true);
   fr.remove();
   // a malformed fragment shows the normal page
