@@ -135,6 +135,16 @@ a { display: inline-flex; align-items: center; justify-content: center; min-heig
 .toggle button[aria-pressed=true] { border-color: var(--ink); }
 .toggle button:hover { text-decoration: underline; text-underline-offset: 4px; }
 #card, #cardlive { display: block; width: 100%; height: auto; }
+#cardwrap { position: relative; }
+/* tap a grade (app.js): a transparent button over each grade letter and its axis label, and one small popover, flat, in the page's own ground and ink */
+#hots { position: absolute; inset: 0; pointer-events: none; }
+.hot { position: absolute; translate: -50% -50%; padding: 0; border: 0; background: transparent; pointer-events: auto; }
+.hot:hover, .hot[aria-expanded=true] { outline: 2px solid var(--ink); outline-offset: 0; }
+#statpop { position: absolute; z-index: 5; width: max-content; max-width: min(260px, 100%); padding: 8px 12px; background: var(--p-ground); color: var(--p-ink); border: 2px solid var(--p-ink); font-size: .875rem; line-height: 1.4; }
+#statpop p { margin: 0; }
+#statpop .pop-head { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1rem; }
+#statpop .pop-why { margin-top: 4px; color: var(--p-mute); }
+#statpop .pop-top { margin-top: 4px; font-weight: 700; }
 @keyframes land { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
 
 /* the reveal (app.js, docs/DESIGN.md rule 8): while it plays, an inline copy of the card (#cardlive) stands in the card's place and the

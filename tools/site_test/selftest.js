@@ -132,6 +132,19 @@ try {
   out('Why these grades: the weakness line has no leading label and no tag', /^(Weakness|Soft spot):|\[provisional\]|\(\w+ [A-E]\)/.test(lines['why-weakness']), false);
   out('Why these grades: the name line', lines['why-name'], /^Track \d+ of .+ (score|soundtrack), from a (\d\.\d★ )?film of yours\.$/);
   out('Why these grades: the signature film line', lines['why-film'], /^“.+” \(\d{4}\) is where you and the crowd disagree most: you gave it \d(\.\d)?★, its average is \d(\.\d+)?★\.$/);
+  // tap a grade: six targets over the card, one popover at a time, Escape closes
+  const hotb = [...document.querySelectorAll('#hots button')];
+  out('tap a grade: six targets, each named by stat and grade', hotb.length === 6 && hotb.every((b) => /, grade [A-E?∅∞]\*?: why$/.test(b.getAttribute('aria-label')) && b.getAttribute('aria-expanded') === 'false'), true);
+  hotb[1].click();
+  out('tap a grade: a tap opens the popover with the stat\'s sentence', `${!document.getElementById('statpop').hidden} ${document.getElementById('statpop').textContent.includes(rows[1].cells[2].textContent)} ${hotb[1].getAttribute('aria-expanded')}`, 'true true true');
+  hotb[3].click();
+  out('tap a grade: only one popover is open at a time', `${document.querySelectorAll('#statpop:not([hidden])').length} ${document.querySelectorAll('#hots [aria-expanded=true]').length} ${hotb[3].getAttribute('aria-expanded')}`, '1 1 true');
+  addEventListener('keydown', () => {}, { once: true });
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  out('tap a grade: Escape closes the popover', `${document.getElementById('statpop').hidden} ${document.querySelectorAll('#hots [aria-expanded=true]').length}`, 'true 0');
+  hotb[2].click();
+  document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+  out('tap a grade: a tap outside closes it', document.getElementById('statpop').hidden, true);
   out('footer: two small lines at most, the TMDB logo and its required notice kept', `${document.querySelectorAll('footer p').length <= 2} ${!!document.querySelector('footer a[href="https://www.themoviedb.org/"] img[alt=TMDB]')} ${document.querySelector('footer').textContent.includes('This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.')}`, 'true true true');
   out('Why these grades: no Data credits section; the footer keeps the credits and the TMDB block', `${!!document.getElementById('why-credit')} ${/Letterboxd.*TMDB.*MusicBrainz/.test(document.querySelector('footer').textContent)} ${!!document.querySelector('footer .tmdb img')}`, 'false true true');
   out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);

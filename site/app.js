@@ -69,6 +69,7 @@ function openLink() {
   showCard(r.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${r.card.user}`);
   $('result').hidden = true;
   $('adv-result').hidden = true;
+  buildHots(null);
   $('downloads').hidden = true;
   $('share').hidden = false;
   $('sharenote').textContent = '';
@@ -122,6 +123,7 @@ async function handle(file) {
   } catch (e) {
     // back to the first state: the sample card, the ink accent, the drop zone
     last = null;
+    buildHots(null);
     if (location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);
     endReveal();
     root.style.removeProperty('--accent');
@@ -226,6 +228,7 @@ function endReveal() {
   $('card').classList.remove('playing');
   $('field').classList.remove('flash');
   live = null;
+  $('hots').hidden = false;
 }
 function reveal(card, svgs, skipped = false) {
   endReveal();
@@ -241,6 +244,8 @@ function reveal(card, svgs, skipped = false) {
   svg.querySelectorAll('[data-part=go]').forEach((e, i) => e.style.setProperty('--i', i));
   svg.querySelectorAll('[data-part=grade]').forEach((e) => e.style.setProperty('--i', e.dataset.i));
   const img = $('card');
+  closePop();
+  $('hots').hidden = true;
   img.classList.add('playing');
   img.after(svg);
   const field = $('field');
@@ -324,10 +329,13 @@ function show(a, svg) {
   const names = ['Power', 'Speed', 'Range', 'Stamina', 'Precision', 'Potential'];
   const g = a.stats;
   const card = a.card;
+  const list = [];
   [g.power, g.speed, g.range, g.stamina, g.precision, g.potential].forEach((s, i) => {
     const [metric, film] = card.evidence[i];
     const tr = tb.insertRow();
-    [names[i], s.letter + (card.prov[i] ? '*' : ''), statSentence(i, metric, film)].forEach((t) => (tr.insertCell().textContent = t));
+    const sentence = statSentence(i, metric, film);
+    list.push({ name: names[i], letter: s.letter + (card.prov[i] ? '*' : ''), sentence, pct: topPct(s.p) });
+    [names[i], s.letter + (card.prov[i] ? '*' : ''), sentence].forEach((t) => (tr.insertCell().textContent = t));
     // Advanced: the value, how many films or watches it was graded on, then the status and what the note adds. A count the first line
     // already gives is not said again: the note's leading count is dropped, and the minimum is left to the note when it says what is needed.
     const dr = dt.insertRow();
@@ -339,6 +347,7 @@ function show(a, svg) {
     if (metric) dr.cells[1].append(Object.assign(document.createElement('small'), { textContent: metric }));
     dr.cells[3].textContent = s.status + (note ? ` · ${note}` : '');
   });
+  buildHots(list);
   // The ability is on the card, so the page does not repeat it. Weakness, the name and the signature film are one plain sentence each.
   $('why-weakness').textContent = weaknessLine(card.weakness);
   $('why-name').textContent = nameLine(a.name.why || card.why || '');
@@ -362,6 +371,81 @@ function show(a, svg) {
   $('adv-result').hidden = false;
   $('downloads').hidden = false;
 }
+
+// Tap a grade. Over the card on the page (never in the card's own SVG or PNG) each stat has one focusable target, a button laid over its grade
+// letter and its axis label (the union of the box of the card's own data-part=grade group and of the label path that follows it). A tap, a hover or Enter opens one small popover
+// with that stat's sentence from Why these grades and its percentile; Escape or a tap outside closes it. One popover at a time.
+let info = null; // [{ name, letter, sentence, pct }] of the card on show, or null (the sample, an opened link)
+let popFor = -1;
+let pinned = false; // opened by a tap or Enter (stays) and not by a hover (goes with the pointer)
+const topPct = (p) => (p == null ? null : Math.max(1, Math.round((1 - p) * 100)));
+function gradeBoxes(svg) {
+  const host = document.createElement('div');
+  host.style.cssText = 'position:absolute;left:-9999px;top:0;width:1080px;height:1350px;visibility:hidden;pointer-events:none';
+  host.innerHTML = svg; // measured in place, then dropped
+  document.body.appendChild(host);
+  // each grade group is followed in the SVG by its axis label (a path): the target is the box of both
+  const boxes = [...host.querySelectorAll('[data-part=grade]')].sort((a, b) => a.dataset.i - b.dataset.i).map((e) => {
+    const a = e.getBBox(), l = e.nextElementSibling && e.nextElementSibling.tagName === 'path' ? e.nextElementSibling.getBBox() : a;
+    const x = Math.min(a.x, l.x), y = Math.min(a.y, l.y);
+    return [x, y, Math.max(a.x + a.width, l.x + l.width) - x, Math.max(a.y + a.height, l.y + l.height) - y];
+  });
+  host.remove();
+  return boxes;
+}
+const hotButtons = () => [...$('hots').children];
+function closePop() {
+  if (popFor >= 0 && hotButtons()[popFor]) hotButtons()[popFor].setAttribute('aria-expanded', 'false');
+  $('statpop').hidden = true;
+  popFor = -1;
+  pinned = false;
+}
+function openPop(i, pin) {
+  closePop(); // only one at a time
+  const s = info && info[i];
+  const btn = hotButtons()[i];
+  if (!s || !btn) return;
+  const pop = $('statpop');
+  pop.querySelector('.pop-head').textContent = `${s.name} ${s.letter}`;
+  pop.querySelector('.pop-why').textContent = s.sentence;
+  pop.querySelector('.pop-top').textContent = s.pct == null ? '' : `Top ${s.pct}%`;
+  pop.querySelector('.pop-top').hidden = s.pct == null;
+  pop.hidden = false;
+  btn.setAttribute('aria-expanded', 'true');
+  popFor = i;
+  pinned = pin;
+  // under the target where there is room, else over it, and inside the card's width
+  const w = $('cardwrap').getBoundingClientRect(), b = btn.getBoundingClientRect(), pw = pop.offsetWidth, ph = pop.offsetHeight;
+  const below = b.bottom - w.top + 6;
+  pop.style.left = `${Math.max(0, Math.min(w.width - pw, b.left - w.left + b.width / 2 - pw / 2))}px`;
+  pop.style.top = `${below + ph <= w.height ? below : Math.max(0, b.top - w.top - ph - 6)}px`;
+}
+function buildHots(list) {
+  closePop();
+  info = list;
+  $('hots').replaceChildren();
+  if (!list || !last || !last.svgs) return;
+  last.boxes = last.boxes || gradeBoxes(last.svgs.light);
+  list.forEach((s, i) => {
+    const [x, y, w, h] = last.boxes[i];
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'hot';
+    b.setAttribute('aria-haspopup', 'dialog');
+    b.setAttribute('aria-expanded', 'false');
+    b.setAttribute('aria-controls', 'statpop');
+    b.setAttribute('aria-label', `${s.name}, grade ${s.letter}: why`);
+    // centred on the group's box, at least 44 px each way; the box is in card units (1080 x 1350)
+    b.style.cssText = `left:${((x + w / 2) / 10.8).toFixed(2)}%;top:${((y + h / 2) / 13.5).toFixed(2)}%;width:max(44px,${((w + 12) / 10.8).toFixed(2)}%);height:max(44px,${((h + 12) / 13.5).toFixed(2)}%)`;
+    b.addEventListener('click', () => (popFor === i && pinned ? closePop() : openPop(i, true)));
+    b.addEventListener('pointerenter', (e) => { if (e.pointerType === 'mouse' && !pinned) openPop(i, false); });
+    b.addEventListener('pointerleave', (e) => { if (e.pointerType === 'mouse' && !pinned && popFor === i) closePop(); });
+    $('hots').appendChild(b);
+  });
+  $('hots').hidden = !!live; // they come back when the reveal ends
+}
+addEventListener('keydown', (e) => { if (e.key === 'Escape' && popFor >= 0) closePop(); });
+addEventListener('pointerdown', (e) => { if (popFor >= 0 && !e.target.closest('#statpop, #hots')) closePop(); }, true);
 
 // a download link that points at a blob made in this tab
 function setLink(a, blob) {

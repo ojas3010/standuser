@@ -127,6 +127,7 @@ def main():
           return [c('--accent'), c('--p-ink'), document.documentElement.dataset.accent || '', c('--field'), getComputedStyle(document.getElementById('field')).backgroundColor, getComputedStyle(document.querySelector('.lede')).color, c('--field-mute')]; }""")
         check("R2 before a drop the accent is the page's ink colour and none is set; the field is the sample card's ground", fld[0] == fld[1] and fld[2] == "" and fld[3].startswith("#") and rgb(fld[4]) == [int(fld[3][i:i + 2], 16) for i in (1, 3, 5)], f"accent {fld[0]} (ink {fld[1]}), data-accent {fld[2]!r}, field {fld[3]} painted as {fld[4]}")
         ex = pg1.evaluate("""(() => { const e = document.querySelector('#drop .export'), lh = parseFloat(getComputedStyle(e).lineHeight); return [e.textContent, Math.round(e.getBoundingClientRect().height / lh), /Get it at|Settings, Data/.test(document.getElementById('drop').textContent)]; })()""")
+        check("R18 there are no grade targets over the sample card (it has no stats of the user's)", pg1.evaluate("document.querySelectorAll('#hots button').length") == 0, "0 targets before a drop")
         check("R6 \"How the card was built\" is not displayed before a drop", pg1.evaluate("document.getElementById('method').offsetParent === null"), "hidden until a card exists")
         dz = pg1.evaluate("[...document.querySelectorAll('#drop > p')].map(p => p.textContent.replace(/\\s+/g, ' ').trim())")
         check("Drop zone copy: the title, the choose-the-file line, the export line and one privacy line, \"Read in your browser. Never uploaded.\"; the CSV file list is in Advanced, not here", len(dz) == 4 and dz[3] == "Read in your browser. Never uploaded." and ".csv" not in " ".join(dz) and pg1.evaluate("/watched\\.csv/.test(document.getElementById('advanced').textContent)"), f"{dz}")
@@ -149,7 +150,7 @@ def main():
           let bg = null; for (let n = e.parentElement; n && !bg; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor; if (c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') bg = c; }
           const panel = e.parentElement && e.parentElement.closest('#drop');
           if (e.closest('header, #stage') && !panel) bg = getComputedStyle(document.getElementById('field')).backgroundColor;
-          return { id: e.id || e.tagName.toLowerCase(), style: s.outlineStyle, width: parseFloat(s.outlineWidth), color: s.outlineColor, bg: bg || getComputedStyle(document.body).backgroundColor }; }"""
+          return { id: e.id || e.getAttribute('aria-label') || (e.tagName.toLowerCase() + (e.dataset.v ? '.' + e.dataset.v : '')), style: s.outlineStyle, width: parseFloat(s.outlineWidth), color: s.outlineColor, bg: bg || getComputedStyle(document.body).backgroundColor }; }"""
         for (w, h) in [(1280, 720), (390, 844)]:
             for after in (False, True):
                 cx, pgc, _, phc = load(browser, base, w, h)
@@ -254,6 +255,21 @@ def main():
         check("R12 under the table: no Ability block, no [provisional] tag anywhere; the weakness, the name (\"Track N of COMPOSER's FILM score, from a R★ film of yours.\") and the signature film are one plain sentence each", ln["dts"] == ["Weakness", "The name", "Signature film", "The type"] and not ln["prov"] and re.fullmatch(r"Track \d+ of .+ (score|soundtrack), from a (\d\.\d★ )?film of yours\.", ln["n"]) is not None and re.fullmatch(r"“.+” \(\d{4}\) is where you and the crowd disagree most: you gave it [\d.]+★, its average is [\d.]+★\.", ln["f"]) is not None and ln["w"].endswith(".") and "[" not in ln["w"] and ". " not in ln["w"], f"{ln['n']!r}; {ln['f']!r}; {ln['w']!r}")
         mt = page.evaluate("""() => ({ links: ['dl-svg', 'dl-json'].every(id => !!document.querySelector('#method #' + id)), notesIn: !!document.querySelector('#advanced #notes'), notesInMethod: !!document.querySelector('#method #notes'), bullets: document.getElementById('notes').children.length, text: document.getElementById('method').textContent.replace(/\\s+/g, ' ').trim() })""")
         check("R6 How the card was built keeps the SVG and JSON links; the coverage bullets and the table date are in Advanced (collapsed), not in the method section", mt["links"] and mt["notesIn"] and not mt["notesInMethod"] and mt["bullets"] > 0 and "Film table built" not in mt["text"] and "rated films have" not in mt["text"], f"links {mt['links']}, {mt['bullets']} bullet(s) in Advanced; method text {mt['text'][:90]!r}")
+        # tap a grade: one focusable target per stat over the card; a hover, a tap or Enter opens one popover with the stat's sentence and its percentile
+        hs = page.evaluate("[...document.querySelectorAll('#hots button')].map(b => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), b.getAttribute('aria-expanded'), b.getAttribute('aria-label')]; })")
+        sents = page.evaluate("[...document.getElementById('stats').tBodies[0].rows].map(r => r.cells[2].textContent)")
+        pop = lambda: page.evaluate("[!document.getElementById('statpop').hidden, document.getElementById('statpop').textContent, document.querySelectorAll('#hots [aria-expanded=true]').length, document.querySelectorAll('#statpop:not([hidden])').length]")
+        page.hover("#hots button:nth-child(2)"); h1 = pop()
+        page.hover("#hots button:nth-child(3)"); h2 = pop()
+        page.mouse.move(5, 5); h3 = pop()
+        page.click("#hots button:nth-child(1)"); page.mouse.move(5, 5); c1 = pop()
+        page.keyboard.press("Escape"); e1 = pop()
+        page.focus("#hots button:nth-child(4)"); page.keyboard.press("Enter"); k1 = pop()
+        page.mouse.click(5, 150); o1 = pop()
+        page.click("#hots button:nth-child(5)"); page.click("#hots button:nth-child(6)", force=True); t1 = pop()
+        page.keyboard.press("Escape")
+        ok_open = lambda v, i: v[0] and sents[i] in v[1] and v[2] == 1 and v[3] == 1
+        check("R18 tap a grade: six focusable targets over the card (each 44 px or more, named by stat and grade); a hover, a tap or Enter opens one popover with that stat's sentence from Why these grades; one at a time; Escape or a tap outside closes it", len(hs) == 6 and all(w >= 43.5 and h >= 43.5 and ex == "false" and "grade" in lab for w, h, ex, lab in hs) and ok_open(h1, 1) and ok_open(h2, 2) and not h3[0] and ok_open(c1, 0) and not e1[0] and ok_open(k1, 3) and not o1[0] and ok_open(t1, 5), f"{len(hs)} targets {[x[:2] for x in hs][:2]}...; hover open {h1[0]}, second hover leaves {h2[2]} open, pointer away closes {not h3[0]}, tap pins {c1[0]}, Escape closes {not e1[0]}, Enter opens {k1[0]}, tap outside closes {not o1[0]}, a second tap leaves {t1[2]} open")
         check("R6 order after a drop: card, then share bar, then Why these grades", tops == sorted(tops) and page.evaluate("document.getElementById('drop').hidden && !document.getElementById('filebar').hidden"), f"tops {tops}; the drop zone is replaced by the file line")
         cols = page.evaluate("new Set([...document.querySelectorAll('main > *')].map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 right angles: boxes have no rounded corners", all(e["radius"] in ("0px", "") for e in vis if e["tag"] in ("BUTTON", "SECTION", "SELECT", "INPUT", "IMG", "TABLE")), "border-radius 0 on buttons, drop zone, inputs, card")
