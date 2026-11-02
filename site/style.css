@@ -113,7 +113,9 @@ button:active { transform: scale(.97); }
   #stage:not(.done) #card { width: min(100%, calc((100vh - 230px) * .8)); }
   /* after a drop the file line, the whole card and the share bar fit in the window: the card is as wide as the height left allows */
   /* the share bar has the card's width and left edge */
-  #stage.done #figure, #stage.done #share { width: min(100%, calc((100vh - 250px) * .8)); margin-inline: auto; }
+  #stage.done #figure { width: min(100%, calc((100vh - 250px) * .8)); margin-inline: auto; }
+  /* the share bar is wider than a card in a short window, so that Download PNG, Copy image, Share, Copy link and the Light / Dark toggle share one row */
+  #stage.done #share { width: min(100%, 600px); margin-inline: auto; }
   #stage.done #share { justify-content: flex-start; row-gap: 0; }
   #stage.done #share .quiet { padding: 0 8px; }   /* Download PNG, Copy image and Copy link share one row in the card's width */
 }
