@@ -140,16 +140,20 @@ async function handle(file) {
 // The page's field (the band behind the header and the stage) is the card's ground colour, with the card's own ink on it (accent.js); before
 // a drop it is the sample card's. The page's accent (the filled rules and the headings' rules) is the same ground colour after a drop.
 // The card starts in the theme of the system and follows it until the user picks one.
-const resolvedTheme = () => $('theme').value;
+// The theme is the Light / Dark toggle in the share bar (#theme, data-value and aria-pressed on its two buttons).
+const resolvedTheme = () => $('theme').dataset.value;
 const systemDark = matchMedia('(prefers-color-scheme: dark)');
 let picked = false;
-$('theme').value = systemDark.matches ? 'dark' : 'light';
-$('theme').addEventListener('change', () => { picked = true; });
+const setTheme = (v) => {
+  $('theme').dataset.value = v;
+  for (const b of $('theme').querySelectorAll('button')) b.setAttribute('aria-pressed', String(b.dataset.v === v));
+};
+setTheme(systemDark.matches ? 'dark' : 'light');
+for (const b of $('theme').querySelectorAll('button')) b.addEventListener('click', () => { picked = true; setTheme(b.dataset.v); themeChanged(); });
 systemDark.addEventListener('change', (e) => {
   if (picked) return;
-  $('theme').value = e.matches ? 'dark' : 'light';
-  $('theme').dispatchEvent(new Event('change'));
-  picked = false;
+  setTheme(e.matches ? 'dark' : 'light');
+  themeChanged();
 });
 const root = document.documentElement;
 function setField(svgs) {
@@ -337,13 +341,13 @@ async function pngBlob(svg) {
   }
 }
 
-$('theme').addEventListener('change', () => {
+function themeChanged() {
   endReveal();
   if (!last) return showSample();
   if (last.analysis) show(last.analysis, last.svgs[resolvedTheme()]);
   else showCard(last.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${last.card.user}`);
   if (document.documentElement.dataset.accent) setAccent(last.svgs, last.card.accent);
-});
+}
 const png = () => pngBlob(last.svgs[resolvedTheme()]);
 $('dl-png').addEventListener('click', async () => {
   if (!last) return;

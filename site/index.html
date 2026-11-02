@@ -36,9 +36,6 @@
     <figure id="figure">
       <figcaption>
         <span id="cardlabel">Sample</span>
-        <label class="theme">Card theme
-          <select id="theme"><option value="light">Light card</option><option value="dark">Dark card</option></select>
-        </label>
       </figcaption>
       <img id="card" alt="Sample Stand card, made from synthetic data" width="1080" height="1350">
     </figure>
@@ -48,7 +45,7 @@
       <button id="copy-img" type="button" class="quiet" hidden>Copy image</button>
       <button id="share-btn" type="button" class="quiet" hidden>Share</button>
       <button id="copy-link" type="button" class="quiet">Copy link</button>
-      <span id="linknote" class="small">The link contains your username and grades, and the card's text.</span>
+      <span id="theme" class="toggle" role="group" aria-label="Card theme" data-value="light"><button type="button" data-v="light" aria-pressed="true">Light</button><button type="button" data-v="dark" aria-pressed="false">Dark</button></span>
       <span id="sharenote" role="status" aria-live="polite"></span>
     </div>
   </div>

@@ -98,8 +98,6 @@ button:active { transform: scale(.97); }
 #stage.done #share { order: 3; }
 #stage.done #drop { order: 4; }
 #stage > * { margin: 0; }
-#figure .theme { display: none; }   /* the card theme is chosen after a drop, for the user's own card */
-#stage.done .theme { display: block; }
 #status:empty { display: none; }
 @media (min-width: 900px) {
   /* the wordmark and the lede share a row, so the sample card fits under them in a 720 px high window */
@@ -117,7 +115,6 @@ button:active { transform: scale(.97); }
   #stage.done #figure, #stage.done #share { width: min(100%, calc((100vh - 250px) * .8)); margin-inline: auto; }
   #stage.done #share { justify-content: flex-start; row-gap: 0; }
   #stage.done #share .quiet { padding: 0 8px; }   /* Download PNG, Copy image and Copy link share one row in the card's width */
-  #stage.done #linknote { flex-basis: 100%; }
   #stage.done #sharenote { min-height: 0; }
 }
 
@@ -126,12 +123,14 @@ button:active { transform: scale(.97); }
 #figure figcaption { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 8px; }
 #stage.done #cardlabel { font-size: 1rem; }
 #cardlabel { font-family: "Archivo Black", Archivo, system-ui, sans-serif; font-size: 1.25rem; }
-#figure .theme { font-size: .875rem; color: var(--mute); }
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-#linknote { flex: 1 1 14em; }
 #sharenote { flex-basis: 100%; min-height: 1.5em; color: var(--mute); font-size: .875rem; }
 .downloads a { color: var(--ink); text-underline-offset: 4px; }
-.actions select { height: 40px; }
+/* the card theme: a small Light / Dark toggle at the end of the share bar; the chosen one has the card's ink outline, flat (Download PNG stays the one filled button) */
+.toggle { display: inline-flex; margin-left: auto; }
+.toggle button { height: 32px; padding: 0 8px; font-size: .875rem; border: 2px solid transparent; color: var(--ink); background: transparent; }
+.toggle button[aria-pressed=true] { border-color: var(--ink); }
+.toggle button:hover { text-decoration: underline; text-underline-offset: 4px; }
 #card, #cardlive { display: block; width: 100%; height: auto; }
 @keyframes land { from { opacity: 0; transform: scale(.98); } to { opacity: 1; transform: scale(1); } }
 

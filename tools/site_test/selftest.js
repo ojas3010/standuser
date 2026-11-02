@@ -54,7 +54,7 @@ try {
   const dz = document.getElementById('drop').getBoundingClientRect(), cz = card0.getBoundingClientRect();
   out('sample card and drop zone are placed by the viewport width', innerWidth >= 900 ? dz.right <= cz.left && Math.abs(dz.top - cz.top) < 80 : dz.bottom <= cz.top, true);
   out('sample username is sample', (await (await fetch(card0.src)).text()).includes('>Stand card for sample: '), true);
-  out('card theme select is not displayed before a drop', document.getElementById('theme').offsetParent === null, true);
+  out('card theme toggle is not displayed before a drop', document.getElementById('theme').offsetParent === null, true);
   out('no accent before a drop', document.documentElement.dataset.accent || '', '');
   // the field behind the header and the stage: the sample card's ground colour, with the halftone dots and the big faint ゴ; the ink on it is the card's
   const sampleSvg = await (await fetch(card0.src)).text();
@@ -131,9 +131,10 @@ try {
   HTMLAnchorElement.prototype.click = function () { dls.push([this.download, fetch(this.href).then((r) => r.arrayBuffer())]); };
   const heads = { 'card.png': '89 50 4e 47 d a 1a a', 'card.svg': '3c 73 76 67 20 78 6d 6c', 'stand.json': '7b a 20 20 22 61 62 69' };
   out('share bar is under the card', document.getElementById('card').getBoundingClientRect().bottom <= document.getElementById('share').getBoundingClientRect().top, true);
-  out('share bar order', [...document.querySelectorAll('#share button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
+  out('share bar order', [...document.querySelectorAll('#share > button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
+  out('share bar: the theme toggle comes after the buttons', document.getElementById('share').lastElementChild.previousElementSibling === document.getElementById('theme') || document.getElementById('theme').previousElementSibling === document.getElementById('copy-link'), true);
   out('Download SVG and JSON are text links in the method section', ['dl-svg', 'dl-json'].map((id) => document.getElementById(id).tagName + document.getElementById(id).closest('#method').tagName).join(' '), 'ASECTION ASECTION');
-  out('card theme select is displayed after a drop', document.getElementById('theme').offsetParent !== null, true);
+  out('card theme toggle is displayed after a drop, in the share bar', document.getElementById('theme').offsetParent !== null && !!document.getElementById('theme').closest('#share'), true);
   out('Advanced is collapsed, its own block after the method section, with the username and join date fields and the counts', (() => { const d = document.getElementById('advanced'); return !d.open && d.parentElement.tagName === 'MAIN' && !d.closest('#method') && !!d.querySelector('#username') && !!d.querySelector('#joined') && /34,523 Letterboxd users/.test(d.textContent) && /9,787 films/.test(d.textContent); })(), true);
   out('order after a drop: file line, card, share bar, Why these grades', ['filebar', 'figure', 'share', 'result'].map((id) => document.getElementById(id).getBoundingClientRect().top).every((t, i, a) => !i || a[i - 1] < t), true);
   out('Share is hidden exactly where the API cannot share files', document.getElementById('share-btn').hidden, !(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'a.png', { type: 'image/png' })] })));
@@ -218,7 +219,7 @@ try {
   out('Share: the PNG file is a PNG', [...new Uint8Array(await shared[1].files[0].arrayBuffer()).slice(0, 4)].map((b) => b.toString(16)).join(' '), '89 50 4e 47');
   out('Share text has no #c= card link and no location.origin', `${shared[0].text.includes('#c=')} ${shared[1].text.includes('#c=')} ${shared[1].text.includes(location.origin)}`, 'false false false');
   out('Share makes no request', performance.getEntriesByType('resource').length, resBefore);
-  out('next to Copy link: what the link contains', document.getElementById('linknote').textContent.includes('The link contains your username and grades'), true);
+  out('no link note under the share bar', `${!!document.getElementById('linknote')} ${document.getElementById('share').textContent.includes('The link contains')}`, 'false false');
   // opening the link: the card with no file, and no request beyond the page's own load
   const open = async (hash) => {
     const f = document.createElement('iframe');
@@ -252,17 +253,19 @@ try {
     out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden} ${gd.getElementById('method').hidden}`, 'Sample false true true');
     g.remove();
   }
-  // theme switch: the card image changes to a new blob
-  const sel = document.getElementById('theme');
-  out('card theme options', [...sel.options].map((o) => o.textContent).join(' | '), 'Light card | Dark card');
-  out('card theme starts as the system', sel.value, matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  if (sel.value === 'dark') { sel.value = 'light'; sel.dispatchEvent(new Event('change')); await sleep(50); }
+  // theme switch: the Light / Dark toggle in the share bar; the card image changes to a new blob
+  const tg = document.getElementById('theme');
+  const sys = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const pressed = () => [...tg.querySelectorAll('button')].map((b) => `${b.textContent}:${b.getAttribute('aria-pressed')}`).join(' ');
+  out('card theme toggle: Light and Dark buttons', [...tg.querySelectorAll('button')].map((b) => b.textContent).join(' | '), 'Light | Dark');
+  out('card theme starts as the system', `${tg.dataset.value} ${pressed()}`, sys === 'dark' ? 'dark Light:false Dark:true' : 'light Light:true Dark:false');
+  if (tg.dataset.value === 'dark') { tg.querySelector('[data-v=light]').click(); await sleep(50); }
   const was = img.src;
-  sel.value = 'dark';
-  sel.dispatchEvent(new Event('change'));
+  tg.querySelector('[data-v=dark]').click();
   await until('the card to change theme', () => img.src !== was);
   await img.decode();
   out('after theme change img', img.src.slice(0, 5) + (img.naturalWidth === 1080 ? ' 1080 wide' : ' wrong size'), 'blob: 1080 wide');
+  out('card theme toggle shows the choice', `${tg.dataset.value} ${pressed()}`, 'dark Light:false Dark:true');
 } catch (e) {
   log.push(`ERROR: ${(e && e.stack) || e}`);
 }
