@@ -363,10 +363,11 @@ $('copy-img').addEventListener('click', async () => {
     note('Image copied.');
   } catch (e) { note(`Could not copy the image: ${e.message}`); }
 });
-// Copy link: the card's data in the fragment, which the browser never sends anywhere
+// The one link Copy link and Share both use: the card's data in the fragment, which the browser never sends anywhere
+const shareLink = () => `${location.origin}${location.pathname}#c=${share_encode(JSON.stringify(last.card))}`;
 $('copy-link').addEventListener('click', async () => {
   if (!last) return;
-  const url = `${location.origin}${location.pathname}#c=${share_encode(JSON.stringify(last.card))}`;
+  const url = shareLink();
   try {
     await navigator.clipboard.writeText(url);
     note('Link copied.');
@@ -376,7 +377,10 @@ $('share-btn').addEventListener('click', async () => {
   if (!last) return;
   try {
     const file = new File([await png()], 'stand-card.png', { type: 'image/png' });
-    await navigator.share({ files: [file], title: 'My Stand card' });
+    // the link goes in text, not url: many share targets drop url when files are present
+    const data = { title: 'My Stand card', text: `My JoJo Stand, from my Letterboxd: ${shareLink()}` };
+    // where the API refuses a file together with text, the text and the link go without the file
+    await navigator.share(navigator.canShare({ ...data, files: [file] }) ? { ...data, files: [file] } : data);
   } catch (e) { if (e.name !== 'AbortError') note(`Could not share: ${e.message}`); }
 });
 
