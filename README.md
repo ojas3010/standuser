@@ -55,7 +55,7 @@ Grades marked `*` on the card are provisional. See [Limits](#limits) for what is
 
 ### Use the website
 
-Open the deployed site, drop `letterboxd-<name>-<date>-utc.zip` on it (Letterboxd → Settings → Data → Export your data), and download the card as PNG or SVG, or the numbers behind it as JSON. The export is read in your browser and never leaves it; the page makes no network request while it works.
+Get your export at letterboxd.com (not the app): Settings, Account data, Export your data. Open the deployed site, drop `letterboxd-<name>-<date>-utc.zip` on it, and download the card as PNG or SVG, or the numbers behind it as JSON. The export is read in your browser and never leaves it; the page makes no network request while it works.
 
 ### Deploy to Cloudflare Pages
 
