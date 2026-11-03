@@ -379,6 +379,8 @@ try {
     const g = await open(bad);
     const gd = g.contentDocument;
     out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden} ${gd.getElementById('method').hidden}`, 'Sample false true true');
+    // early.js puts the link class on <html> for any #c=, before the page can tell whether the link is good; a bad one is the sample, so the class goes
+    out(`malformed ${bad.slice(0, 12)}: the root element has no link class`, gd.documentElement.classList.contains('link'), false);
     g.remove();
   }
   // theme switch: the Light / Dark toggle in the share bar; the card image changes to a new blob

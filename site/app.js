@@ -60,7 +60,10 @@ async function boot() {
     if (r.error) throw new Error(r.error);
     sample = { svgs: r.svgs, card: r.card };
     paintGlyphs(r.svgs.light);
-    if (!openLink()) showSample();
+    if (!openLink()) {
+      setMode('sample'); // a #c= that is not a card (early.js put the link class on <html> for it) is the sample
+      showSample();
+    }
     if (n instanceof Error) setStatus(`The name candidates did not load (${n.message}); names will come from your composers.`);
     else {
       names = n;
