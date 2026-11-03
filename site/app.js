@@ -103,6 +103,10 @@ async function handle(file) {
     // reveal. Reduced motion: no line, no arrow, no freeze (the calm reveal in reveal()).
     if (!reducedMotion()) {
       hold = skipWatch();
+      // a second file: the zone was hidden after the first, and the trace, the arrow and the freeze are inside it. It comes back under the card
+      // (one column), so it is scrolled to; the card is scrolled to again when it is shown.
+      drop.hidden = false;
+      drop.scrollIntoView({ block: 'center' });
       startTrace();
       drop.classList.add('tracing');
       const skippedTrace = await hold.wait(TRACE_MS);
