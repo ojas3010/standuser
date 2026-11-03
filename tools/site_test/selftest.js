@@ -100,6 +100,19 @@ try {
   // with reduced motion the To Be Continued arrow is not shown (and so nothing waits for it)
   let sawArrow = false;
   new MutationObserver(() => { if (document.getElementById('drop').classList.contains('reading')) sawArrow = true; }).observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] });
+  // the calm reveal under reduced motion: when the inline card appears, its animations are fades only (the card 400 ms, the six grades 300 ms after it),
+  // the field never flashes and the percentile numbers are final from the start
+  const calm = { seen: false, anims: [], flash: false, pcts: null, fading: false };
+  new MutationObserver(() => {
+    if (document.getElementById('field').classList.contains('flash')) calm.flash = true;
+    const live = document.getElementById('cardlive');
+    if (live && !calm.seen) {
+      calm.seen = true;
+      calm.fading = document.getElementById('field').classList.contains('fading');
+      calm.pcts = [...document.querySelectorAll('#stats .pct')].every((e) => e.textContent === e.dataset.n);
+      calm.anims = document.getAnimations().filter((a) => live.contains(a.effect.target)).map((a) => `${a.animationName} ${a.effect.getComputedTiming().duration} ${a.effect.getComputedTiming().delay} ${a.effect.target === live ? 'card' : a.effect.target.dataset.part}`);
+    }
+  }).observe(document.body, { attributes: true, childList: true, subtree: true });
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('result visible', !result.hidden, true);
   out('How the card was built is displayed once the card exists', document.getElementById('method').offsetParent !== null, true);
@@ -212,7 +225,10 @@ try {
   const colours = cardColours(await (await fetch(img.src)).text());
   out('accent is the card ground', root.getPropertyValue('--accent').trim(), colours.ground);
   out('the field is the card ground too, with the card ink and muted ink', [root.getPropertyValue('--field'), root.getPropertyValue('--field-ink')].map((x) => x.trim()).join(' '), `${colours.ground} ${colours.ink}`);
-  out('with reduced motion the reveal is not played: no inline card, no flash, the image shows', `${!document.getElementById('cardlive')} ${!img.classList.contains('playing')} ${!document.getElementById('field').classList.contains('flash')} ${matchMedia('(prefers-reduced-motion: reduce)').matches}`, 'true true true true');
+  await until('the calm reveal to end', () => !document.getElementById('cardlive'), 3000);
+  out('with reduced motion the reveal is calm: it played, and it is over (the image shows, the field is no longer fading)', `${calm.seen} ${!img.classList.contains('playing')} ${!document.getElementById('field').classList.contains('fading')} ${matchMedia('(prefers-reduced-motion: reduce)').matches}`, 'true true true true');
+  out('calm reveal: the card fades in over 400 ms and the six grades fade in together over 300 ms after it, nothing else animates', [...new Set(calm.anims)].sort().join(' | '), 'fadeIn 300 400 grade | fadeIn 400 0 card');
+  out('calm reveal: the field fades (no flash) and the percentile numbers are final, no count-up', `${calm.fading} ${calm.flash} ${calm.pcts}`, 'true false true');
   out('text on the accent is the card ink', root.getPropertyValue('--on-accent').trim(), colours.ink);
   out('accent label contrast', contrast(colours.ground, colours.ink).toFixed(2), (x) => Number(x) >= 4.5);
   out('Download PNG is the one primary button', document.querySelectorAll('button.primary').length, 1);

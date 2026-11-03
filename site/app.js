@@ -100,7 +100,7 @@ async function handle(file) {
     // From the drop a line travels once along the zone's border (TRACE_MS), then the zone shows the To Be Continued arrow, sliding in from the
     // left with a short overshoot and spelling its words out letter by letter, with the page behind it held in grey halftone (style.css), for at
     // least ARROW_MS, however fast the file is read; the reveal starts when it ends. A click or a key press ends all of it and skips the
-    // reveal. Reduced motion: no line, no arrow, no freeze.
+    // reveal. Reduced motion: no line, no arrow, no freeze (the calm reveal in reveal()).
     if (!reducedMotion()) {
       hold = skipWatch();
       startTrace();
@@ -235,9 +235,11 @@ function countUp() {
 // The card's own parts (data-part in its SVG) are played from an inline copy laid over the card (#cardlive; the PNG and the SVG that are
 // downloaded are the card, static): the ゴ one at a time down the cascade, the name dropping in with a short shake, the radar fill growing
 // from the centre, then the six grades popping in clockwise from the top, as in the anime's eyecatch. The delays and durations are in
-// style.css. A click or a key press ends it at the card's end state; with reduced motion there is no copy and no flash, the end state is
-// simply there.
+// style.css. A click or a key press ends it at the card's end state. With reduced motion (docs/DESIGN.md rule 4) the reveal is calm: the
+// field fades to the card's colour (300 ms), the card fades in (400 ms), then all six grades fade in together; no movement, no flash, no
+// trace, no arrow, no count-up.
 const REVEAL_MS = 2150;
+const CALM_MS = 700; // the calm reveal: the card 400 ms, then the grades 300 ms
 const ARROW_MS = 1800;
 const TRACE_MS = 700;
 const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -272,15 +274,18 @@ function endReveal() {
   live.off();
   live.svg.remove();
   $('card').classList.remove('playing');
-  $('field').classList.remove('flash');
+  $('field').classList.remove('flash', 'fading');
   live = null;
   $('hots').hidden = false;
   settleNumbers();
 }
 function reveal(card, svgs, skipped = false) {
   endReveal();
+  const calm = reducedMotion();
+  // calm reveal (prefers-reduced-motion): the field fades to the card's colour, then the card and its grades fade in; the CSS holds the times
+  if (calm && !skipped) { $('field').classList.add('fading'); void $('field').offsetWidth; }
   setAccent(svgs, card.accent);
-  if (skipped || reducedMotion()) return;
+  if (skipped) return;
   const tpl = document.createElement('template');
   tpl.innerHTML = svgs[resolvedTheme()];
   const svg = tpl.content.firstElementChild;
@@ -293,16 +298,18 @@ function reveal(card, svgs, skipped = false) {
   const img = $('card');
   closePop();
   $('hots').hidden = true;
-  for (const e of pcts()) e.textContent = '0'; // they count up when the reveal ends
   img.classList.add('playing');
   img.after(svg);
-  const field = $('field');
-  field.classList.remove('flash');
-  void field.offsetWidth; // restart the flash for a second file
-  field.classList.add('flash');
+  if (!calm) {
+    for (const e of pcts()) e.textContent = '0'; // they count up when the reveal ends
+    const field = $('field');
+    field.classList.remove('flash');
+    void field.offsetWidth; // restart the flash for a second file
+    field.classList.add('flash');
+  }
   const off = () => ['pointerdown', 'keydown'].forEach((t) => removeEventListener(t, endReveal, true));
   ['pointerdown', 'keydown'].forEach((t) => addEventListener(t, endReveal, true));
-  live = { svg, off, timer: setTimeout(() => { endReveal(); countUp(); }, REVEAL_MS) };
+  live = { svg, off, timer: setTimeout(() => { endReveal(); countUp(); }, calm ? CALM_MS : REVEAL_MS) };
 }
 
 function showCard(svg, label, alt) {

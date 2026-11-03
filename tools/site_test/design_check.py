@@ -412,7 +412,7 @@ def main():
             c3.close()
         c3, pg, _, _ = load(browser, base, 1280, 900, motion="reduce")
         ev = timeline(pg, zips[0])
-        check("R8 under prefers-reduced-motion the arrow is not shown and nothing waits", "arrow on" not in ev and "reveal start" not in ev and ev["card shown"] < 1000, f"events {ev}")
+        check("R8 under prefers-reduced-motion the arrow is not shown and nothing waits", "arrow on" not in ev and ev["card shown"] < 1000, f"events {ev}")
         c3.close()
 
         # --- the percentile numbers count up once, over at most 0.6 s, after the reveal has ended
@@ -477,11 +477,40 @@ def main():
         pg.wait_for_function("!document.getElementById('cardlive')", timeout=4000)
         check("R8 left alone the reveal ends by itself within 2.2 s", True, "the inline card is removed by the timer (2150 ms) or by the last animation")
         c3.close()
-        c4, pg, _, ph = load(browser, base, 1280, 900, motion="reduce")
+        # the calm reveal under prefers-reduced-motion: field 300 ms, card 400 ms, the six grades together; no movement, no flash, no trace, no arrow, no count-up
+        c4, pg, reqs4, ph = load(browser, base, 1280, 900, motion="reduce")
+        pg.evaluate("""() => { window.__c = null; window.__m = { flash: false, tracing: false, reading: false, pcts: [] };
+          new MutationObserver(() => { const d = document.getElementById('drop').classList, f = document.getElementById('field').classList;
+            if (f.contains('flash')) window.__m.flash = true; if (d.contains('tracing')) window.__m.tracing = true; if (d.contains('reading')) window.__m.reading = true;
+            const live = document.getElementById('cardlive');
+            if (live && !window.__c) { window.__c = true; const A = document.getAnimations();
+              window.__m.anims = A.filter((a) => live.contains(a.effect.target)).map((a) => [a.animationName, a.effect.getComputedTiming().duration, a.effect.getComputedTiming().delay, a.effect.target === live ? 'card' : a.effect.target.dataset.part, a.effect.getKeyframes().map((k) => Object.keys(k).filter((n) => !['offset', 'easing', 'composite', 'computedOffset'].includes(n)).join()).join()]);
+              window.__m.trans = A.filter((a) => a.transitionProperty).map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration, a.effect.target.id]);
+              window.__m.pcts = [...document.querySelectorAll('#stats .pct')].map((e) => [e.textContent, e.dataset.n]); window.__m.t = performance.now(); } }).observe(document.body, { attributes: true, childList: true, subtree: true }); }""")
         drop(pg, ph, zips[0], settle=False)
-        r = pg.evaluate("[document.documentElement.dataset.accent || '', !document.getElementById('cardlive'), document.getAnimations().length, document.getElementById('field').classList.contains('flash'), getComputedStyle(document.getElementById('field')).animationName]")
-        check("R8 under prefers-reduced-motion the end state is there at once: accent and field set, no inline card, no flash, no animation", r[0] != "" and r[1] and r[2] == 0 and not r[3] and r[4] == "none", f"accent {r[0]}, inline card {not r[1]}, {r[2]} animations")
+        pg.wait_for_function("window.__c", timeout=3000)
+        pg.wait_for_function("!document.getElementById('cardlive')", timeout=3000)
+        m = pg.evaluate("window.__m")
+        parts = {}
+        for n, d, dl, who, props in m["anims"]:
+            parts.setdefault(who, []).append((n, d, dl, props))
+        grades_ok = len(m["anims"]) == 7 and parts.get("card") == [("fadeIn", 400, 0, "opacity,opacity")] and len(parts.get("grade", [])) == 6 and all(v == ("fadeIn", 300, 400, "opacity,opacity") for v in parts.get("grade", []))
+        check("R4 under prefers-reduced-motion the reveal is calm: the card fades in over 400 ms and all six grades fade in together (300 ms, the same start), opacity only, no other part moves", grades_ok, f"{len(m['anims'])} animations: {parts}")
+        check("R4 calm reveal: the page field fades to the card's colour over 300 ms (a background-color transition), without the flash", [t for t in m.get("trans", []) if t[2] == "field"] == [["background-color", 300, "field"]] and not m["flash"], f"transitions {m.get('trans')}; flash seen {m['flash']}")
+        check("R4 calm reveal: no border trace, no To Be Continued arrow, no count-up (the percentile numbers are final from the start)", not m["tracing"] and not m["reading"] and bool(m["pcts"]) and all(a == b for a, b in m["pcts"]), f"tracing {m['tracing']}, arrow {m['reading']}, {len(m['pcts'])} numbers")
+        after = pg.evaluate("[document.getElementById('field').classList.contains('fading'), !document.getElementById('card').classList.contains('playing'), document.getAnimations().length, getComputedStyle(document.getElementById('field')).animationName, document.documentElement.dataset.accent || '']")
+        check("R4 calm reveal: when it ends the end state stands (card image shown, no animation, no fading state, accent set)", after[0] is False and after[1] and after[2] == 0 and after[3] == "none" and after[4] != "", f"{after}")
+        check("R4 calm reveal makes no request: 0 requests after the drop", not [u for u in reqs4["drop"] if net(u)], f"{len([u for u in reqs4['drop'] if net(u)])} network requests")
         c4.close()
+        for what, act4 in (("a click", lambda p: p.mouse.click(5, 300)), ("a key press", lambda p: p.keyboard.press("Shift"))):
+            c4, pg, _, ph = load(browser, base, 1280, 900, motion="reduce")
+            drop(pg, ph, zips[0], settle=False)
+            pg.wait_for_function("document.getElementById('cardlive')", timeout=3000)
+            act4(pg)
+            pg.wait_for_function("!document.getElementById('cardlive')", timeout=1000)
+            r = pg.evaluate("[!document.getElementById('card').classList.contains('playing'), document.getAnimations().length, document.getElementById('field').classList.contains('fading'), getComputedStyle(document.getElementById('field')).backgroundColor, getComputedStyle(document.documentElement).getPropertyValue('--field').trim()]")
+            check(f"R4 under prefers-reduced-motion {what} still skips the calm reveal: the end state at once, the field at the card's colour", r[0] and r[1] == 0 and not r[2], f"image shown {r[0]}, animations left {r[1]}, field fading {r[2]}, field {r[3]} vs --field {r[4]}")
+            c4.close()
         ctx, page, reqs, phase = load(browser, base, 1280, 900)
         drop(page, phase, zips[0], settle=False)
         page.wait_for_timeout(4600)   # the arrow (1.8 s) and the reveal (2.15 s)

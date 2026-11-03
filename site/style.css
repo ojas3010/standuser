@@ -255,6 +255,13 @@ footer .small { margin: 0 0 8px; max-width: 48em; }
   #detail td:nth-child(n+3) { grid-column: 1 / -1; color: var(--mute); font-size: .875rem; }
   tbody { border-top: 2px solid var(--accent); transition: border-color 250ms ease-out; }
 }
+/* prefers-reduced-motion: nothing moves, shakes, scales or traces. The one calm reveal (app.js reveal(), docs/DESIGN.md rule 4): the field
+   fades to the card's colour in 300 ms, the card fades in in 400 ms, then all six grades fade in together (300 ms). A click or a key press
+   ends it at once (app.js removes .fading, which cancels the transition). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation: none !important; transition: none !important; }
+  #field.fading { transition: background-color 300ms ease-out !important; }
+  #cardlive { animation: fadeIn 400ms ease-out both !important; }
+  #cardlive [data-part=grade] { animation: fadeIn 300ms ease-out 400ms both !important; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 }
