@@ -608,7 +608,11 @@ $('change').addEventListener('click', () => $('file').click());
 $('pick').addEventListener('click', (e) => { e.stopPropagation(); $('file').click(); });
 drop.addEventListener('click', () => $('file').click());
 drop.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $('file').click(); } });
-$('file').addEventListener('change', (e) => e.target.files[0] && handle(e.target.files[0]));
+$('file').addEventListener('change', (e) => {
+  const f = e.target.files[0];
+  e.target.value = ''; // Chrome fires no change event for the same file while the input holds it; the File itself stays readable
+  if (f) handle(f);
+});
 ['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
 ['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
 drop.addEventListener('drop', (e) => e.dataTransfer.files[0] && handle(e.dataTransfer.files[0]));

@@ -115,6 +115,8 @@ try {
   }).observe(document.body, { attributes: true, childList: true, subtree: true });
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('result visible', !result.hidden, true);
+  // Chrome fires no change event when the same file is picked again while the input still holds it, so the page empties the input after each change
+  out('the file input is empty after a file is taken, so the same file picked again fires a change event', `${JSON.stringify(input.value)} ${input.files.length}`, '"" 0');
   out('How the card was built is displayed once the card exists', document.getElementById('method').offsetParent !== null, true);
 
   out('the To Be Continued arrow is not shown under reduced motion', `${matchMedia('(prefers-reduced-motion: reduce)').matches} ${sawArrow}`, 'true false');
