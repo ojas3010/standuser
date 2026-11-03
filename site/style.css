@@ -65,6 +65,7 @@ a { color: inherit; }   /* links are ink, not the browser's blue */
 /* every control shows a 3 px ring in the ink of the ground it stands on when the keyboard has the focus */
 button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-visible, a:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
 #drop.loading { opacity: .55; pointer-events: none; cursor: progress; }
+#drop.failed { opacity: .55; pointer-events: none; }   /* the page's data did not load: as dim as while it loads, and it stays so */
 #filebar { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 16px; margin: 0; padding: 12px 0; border-top: 2px solid var(--line); border-bottom: 2px solid var(--line); }
 #filebar { gap: 4px 8px; }
 #filebar .sep { margin-right: -4px; }   /* the button's own padding sits between the dot and its text */

@@ -378,6 +378,29 @@ try {
   await img.decode();
   out('after theme change img', img.src.slice(0, 5) + (img.naturalWidth === 1080 ? ' 1080 wide' : ' wrong size'), 'blob: 1080 wide');
   out('card theme toggle shows the choice', `${tg.dataset.value} ${pressed()}`, 'dark Light:false Dark:true');
+  // a failed boot: the film table does not load (the iframe's fetch answers 404 for it). The drop zone stays inactive, and the message stays in #status
+  {
+    const page = (await (await fetch('index.html')).text()).replace('<script src="early.js"></script>', '<script>const f = window.fetch; window.fetch = (u, ...a) => /films\\.json/.test(String(u)) ? Promise.resolve(new Response("", { status: 404 })) : f(u, ...a);</script><script src="early.js"></script>');
+    const f = document.createElement('iframe');
+    f.style.cssText = 'position:fixed;left:-2000px;width:1280px;height:900px';
+    f.srcdoc = page;
+    document.body.appendChild(f);
+    await new Promise((r) => f.addEventListener('load', r, { once: true }));
+    const d = f.contentDocument, z = d.getElementById('drop'), st = d.getElementById('status');
+    await until('the failed boot\'s message', () => st.textContent.startsWith('Could not load'), 20000);
+    await sleep(300);
+    out('failed boot: the message stays in the status line, as an error', `${st.textContent} ${st.classList.contains('error')}`, 'Could not load the page\'s data: films.json: 404 true');
+    out('failed boot: the drop zone is inactive (no pointer events, inert, dimmed) and is not busy', `${f.contentWindow.getComputedStyle(z).pointerEvents} ${z.inert} ${f.contentWindow.getComputedStyle(z).opacity < 1} ${z.hasAttribute('aria-busy')}`, 'none true true false');
+    // a file sent anyway is ignored, with the message unchanged
+    const dt = new DataTransfer();
+    dt.items.add(new File([bytes], 'letterboxd-synthuser-2026-06-30-12-00-utc.zip', { type: 'application/zip' }));
+    const inp = d.getElementById('file');
+    inp.files = dt.files;
+    inp.dispatchEvent(new f.contentWindow.Event('change'));
+    await sleep(500);
+    out('failed boot: a file sent anyway changes nothing', `${st.textContent} ${d.getElementById('result').hidden} ${d.getElementById('cardlabel').textContent}`, 'Could not load the page\'s data: films.json: 404 true Sample');
+    f.remove();
+  }
   // one function sets the page's mode, so no path leaves a flag of another mode behind. The references are a fresh page with a link, and one without.
   tg.querySelector(`[data-v=${sys}]`).click();
   await sleep(50);

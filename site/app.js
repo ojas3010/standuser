@@ -68,6 +68,9 @@ async function boot() {
     }
   } catch (e) {
     setStatus(`Could not load the page's data: ${e.message}`, true);
+    // there is no table: the zone stays inactive (the finally below ends loading, not this) and nothing in it can be reached, by pointer or key
+    drop.classList.add('failed');
+    drop.inert = true;
   } finally {
     drop.classList.remove('loading');
     drop.removeAttribute('aria-busy');
