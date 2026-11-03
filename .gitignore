@@ -7,3 +7,6 @@ __pycache__/
 
 # real-export fixtures and local tables stay out of the repository
 local/
+
+# local virtualenv (Playwright for tools/site_test)
+.venv/
