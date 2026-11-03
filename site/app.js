@@ -85,9 +85,12 @@ function exec(bytes, name) {
   return out;
 }
 
+let busy = false; // a handle() call is running: a new file is ignored, and Change file is inactive
 async function handle(file) {
   await ready;
-  if (!table) return;
+  if (!table || busy) return;
+  busy = true;
+  $('change').disabled = true;
   endReveal();
   $('result').hidden = true;
   $('adv-result').hidden = true;
@@ -149,6 +152,8 @@ async function handle(file) {
     $('share').hidden = true;
     setStatus(e.message, true);
   } finally {
+    busy = false;
+    $('change').disabled = false;
     if (hold) hold.cancel();
     drop.classList.remove('tracing', 'reading');
   }

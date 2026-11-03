@@ -69,6 +69,7 @@ button:focus-visible, select:focus-visible, input:focus-visible, summary:focus-v
 #filebar { gap: 4px 8px; }
 #filebar .sep { margin-right: -4px; }   /* the button's own padding sits between the dot and its text */
 #filebar button { padding: 0 8px; margin-left: -8px; text-decoration: underline; text-underline-offset: 4px; }
+#filebar button:disabled { opacity: .55; cursor: progress; }   /* while a file is read: as dim as the drop zone while the page loads */
 .opts { margin: 0; }   /* Advanced: collapsed, its own block after the method section */
 #notes:empty, #downloads[hidden] { display: none; }
 .opts summary { cursor: pointer; padding: 10px 0; }   /* 24 px of text and 10 px above and below: a 44 px target */

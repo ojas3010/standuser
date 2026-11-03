@@ -241,6 +241,44 @@ try {
   out('bad date + NaN rating: result visible', !result.hidden, true);
   out('bad date + NaN rating: status', JSON.stringify(statusEl().textContent), '""');
   out('bad date + NaN rating: rows', rows.length, 6);
+  // one file at a time: while a file is read, Change file is inactive and a second file (or a click on the button) is ignored
+  {
+    const chg = document.getElementById('change'), info = () => document.getElementById('fileinfo').textContent;
+    const infoWeird = info();
+    const file = async (url, name) => { const dt = new DataTransfer(); dt.items.add(new File([new Uint8Array(await (await fetch(url)).arrayBuffer())], name, { type: 'application/zip' })); return dt.files; };
+    // the small file is read first and the large one is sent while it is read: without the guard the large one is the card that stays
+    const [first, second] = [await file('weird.zip', 'letterboxd-weird-2026-10-19-13-22-utc.zip'), await file('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip')];
+    let dialogs = 0;
+    input.addEventListener('click', (e) => { dialogs++; e.preventDefault(); });
+    const during = {};
+    let started = 0;   // how many files were taken in: each one sets the status to "Reading the export…"
+    const count = new MutationObserver(() => { if (statusEl().textContent === 'Reading the export…') started++; });
+    count.observe(statusEl(), { childList: true, characterData: true, subtree: true });
+    const done = settled('the first of two files');
+    await new Promise((res) => {
+      const obs = new MutationObserver(() => {
+        if (statusEl().textContent !== 'Reading the export…') return;
+        obs.disconnect();   // the first file is being read: this runs before the page's next step
+        during.inactive = `${chg.disabled} ${getComputedStyle(chg).opacity < 1}`;
+        input.files = second;
+        input.dispatchEvent(new Event('change'));
+        chg.click();
+        res();
+      });
+      obs.observe(statusEl(), { childList: true, characterData: true, subtree: true });
+      input.files = first;
+      input.dispatchEvent(new Event('change'));
+    });
+    await done;
+    await sleep(100);   // an ignored file would have started by now
+    count.disconnect();
+    out('while a file is read the Change file button is inactive (disabled and dimmed)', during.inactive, 'true true');
+    out('while a file is read a click on Change file opens no file dialog', dialogs, 0);
+    out('a second file sent while the first is read is ignored: the first one\'s card stays', `${started} ${!result.hidden} ${JSON.stringify(statusEl().textContent)} ${info() === infoWeird}`, '1 true "" true');
+    out('after the file the Change file button is active again', `${chg.disabled} ${getComputedStyle(chg).opacity}`, 'false 1');
+    chg.click();
+    out('and it opens the file dialog', dialogs, 1);
+  }
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('good file afterwards: result visible', !result.hidden, true);
   out('good file afterwards: status', JSON.stringify(statusEl().textContent), '""');
