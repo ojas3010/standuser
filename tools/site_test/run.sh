@@ -2,6 +2,8 @@
 # Browser test for the static page, in headless Chrome or Edge (no Node needed).
 #   tools/site_test/run.sh            # needs site/pkg built (tools/build_site.sh)
 # CHROME can point at any Chromium-based browser; the default is the Windows Chrome seen from WSL.
+# After the page test it runs second_file_check.py (two files in a row with motion on, which this run's reduced motion cannot see). That one
+# needs Playwright and its Chromium; PYTHON can point at the interpreter that has it (default python3). Without Playwright it is skipped, with a message.
 set -euo pipefail
 cd "$(dirname "$0")/../.."
 CHROME=${CHROME:-"/mnt/c/Program Files/Google/Chrome/Application/chrome.exe"}
@@ -45,4 +47,11 @@ for page in test; do
   grep -q '\[ok\]' "$W/$page.out" || { echo "no test report"; exit 1; }
   if grep -q 'FAIL\|^ERROR' "$W/$page.out"; then echo "site test FAILED"; exit 1; fi
 done
+PY=${PYTHON:-python3}
+if "$PY" -c 'import playwright' 2>/dev/null; then
+  echo "== second_file_check"
+  "$PY" tools/site_test/second_file_check.py || { echo "second file check FAILED"; exit 1; }
+else
+  echo "second_file_check.py SKIPPED: Playwright is not importable by $PY (pip install playwright; playwright install chromium; or set PYTHON)"
+fi
 echo "site test passed"
