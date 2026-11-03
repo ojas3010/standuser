@@ -153,7 +153,7 @@ pub fn analyze_at(ex: &Export, lk: &Lookup, today: Option<crate::dates::Day>) ->
         .collect();
     let card = CardData {
         name: nm.name.clone(),
-        why: if nm.route == "titles" { nm.why.clone() } else { String::new() },
+        why: if nm.route == crate::name::Route::Titles { nm.why.clone() } else { String::new() },
         user: username.clone(),
         type_jp: kind.jp().into(),
         type_en: kind.en().into(),

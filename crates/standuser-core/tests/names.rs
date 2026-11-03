@@ -3,7 +3,7 @@
 
 mod common;
 use common::synth_users;
-use standuser_core::{analysis, lookup::Lookup, parse, pool};
+use standuser_core::{analysis, lookup::Lookup, name::Route, parse, pool};
 use std::path::Path;
 
 fn real() -> Lookup {
@@ -20,10 +20,10 @@ fn synthetic_export_gets_a_title_name_with_a_why_line_on_the_card() {
     let mut ex = parse::parse_zip(&zip, Some("letterboxd-synthuser-2026-06-30-12-00-utc.zip")).unwrap();
     ex.joined = standuser_core::dates::parse_date("2023-01-05");
     let without = analysis::analyze(&ex, &lk);
-    assert_eq!(without.name.route, "composer", "no names loaded: the composer route");
+    assert_eq!(without.name.route, Route::Composer, "no names loaded: the composer route");
     lk.load_names(&std::fs::read_to_string(d.join("names.json")).unwrap()).unwrap();
     let a = analysis::analyze(&ex, &lk);
-    assert_eq!(a.name.route, "titles", "{:?}", a.name);
+    assert_eq!(a.name.route, Route::Titles, "{:?}", a.name);
     assert_eq!(a.card.why, a.name.why);
     assert_eq!(a.card.name, a.name.name);
     assert!(a.name.top.iter().any(|t| t.picked && t.name == a.name.name));
@@ -160,7 +160,7 @@ fn synthetic_user_7_no_longer_wins_racial_profiling_and_no_seeded_user_gets_a_bl
         ex.joined = standuser_core::dates::parse_date("2022-01-01");
         ex.as_of = standuser_core::dates::parse_date("2026-10-19");
         let a = analysis::analyze(&ex, &lk);
-        assert_eq!(a.name.route, "titles", "user {i}");
+        assert_eq!(a.name.route, Route::Titles, "user {i}");
         assert_eq!(blocked(&a.name.name), None, "user {i} won {}", a.name.name);
         assert!(a.name.top.iter().all(|t| blocked(&t.name).is_none()), "user {i}: {:?}", a.name.top.iter().map(|t| &t.name).collect::<Vec<_>>());
         if i == 7 {

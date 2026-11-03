@@ -14,12 +14,32 @@ use unicode_normalization::UnicodeNormalization;
 
 const CANON_NAMES: &str = include_str!("../data/canon_names.txt");
 
+/// Where the name came from. In JSON (and on the CLI) it is the lower-case word: "titles" | "composer" | "tarot" | "none".
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum Route {
+    Titles,
+    Composer,
+    Tarot,
+    None,
+}
+
+impl std::fmt::Display for Route {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Route::Titles => "titles",
+            Route::Composer => "composer",
+            Route::Tarot => "tarot",
+            Route::None => "none",
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize)]
 pub struct NameResult {
     /// Upper-case English name without the 「」 brackets; "???" when no stat could be graded.
     pub name: String,
-    /// "titles" | "composer" | "tarot" | "none"
-    pub route: String,
+    pub route: Route,
     pub why: String,
     /// The five best candidates of the track-title route (empty on the other routes), the pick marked.
     #[serde(default)]
@@ -30,8 +50,8 @@ pub struct NameResult {
 }
 
 impl NameResult {
-    fn plain(name: String, route: &str, why: String) -> NameResult {
-        NameResult { name, route: route.into(), why, top: vec![], first_track: None }
+    fn plain(name: String, route: Route, why: String) -> NameResult {
+        NameResult { name, route, why, top: vec![], first_track: None }
     }
 }
 
@@ -146,10 +166,10 @@ fn usable(lk: &Lookup, id: u32) -> Option<(String, String)> {
 
 pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id: Option<u8>) -> NameResult {
     let Some(sig) = sig else {
-        return NameResult::plain("???".into(), "none", "No stat could be graded.".into());
+        return NameResult::plain("???".into(), Route::None, "No stat could be graded.".into());
     };
     if let Some(p) = crate::pool::pick(ex, lk, template_id.unwrap_or(17), ex.username.as_deref().unwrap_or("unknown")) {
-        return NameResult { name: p.name, route: "titles".into(), why: p.why, top: p.top, first_track: p.first_track };
+        return NameResult { name: p.name, route: Route::Titles, why: p.why, top: p.top, first_track: p.first_track };
     }
     // ---- composer pool: the user's rated films, and their watched films (for users without ratings)
     let mut by: BTreeMap<u32, Cand> = BTreeMap::new();
@@ -199,7 +219,7 @@ pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id
         if let Some((who, name)) = usable(lk, c.id) {
             return NameResult::plain(
                 name.clone(),
-                "composer",
+                Route::Composer,
                 format!("Why 「{name}」: {} of your rated films credit {who}; their shrunk mean of {:.2}★ makes {who} your top film composer.", c.rated_n, shrunk(c)),
             );
         }
@@ -212,7 +232,7 @@ pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id
         if let Some((who, name)) = usable(lk, c.id) {
             return NameResult::plain(
                 name.clone(),
-                "composer",
+                Route::Composer,
                 format!("Why 「{name}」: {} of your watched films credit {who}, your most frequent film composer (their films average {:.2}★ on Letterboxd).", c.watched_n, crowd(c)),
             );
         }
@@ -227,12 +247,20 @@ pub fn name_stand(ex: &Export, lk: &Lookup, sig: Option<&Signature>, template_id
     let ix = STATS.iter().position(|s| *s == stat).unwrap_or(0);
     let colour = if z >= 0.0 { COLOURS[ix].0 } else { COLOURS[ix].1 };
     let name = format!("{colour} {card}").to_uppercase();
-    NameResult::plain(name.clone(), "tarot", format!("Why 「{name}」: none of your films carries a usable composer credit, so the name is the colour of your {} extreme plus the Tarot card of your ability.", crate::grading::LABEL[ix]))
+    NameResult::plain(name.clone(), Route::Tarot, format!("Why 「{name}」: none of your films carries a usable composer credit, so the name is the colour of your {} extreme plus the Tarot card of your ability.", crate::grading::LABEL[ix]))
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn route_is_the_lower_case_word_in_json_and_on_the_cli() {
+        for (r, w) in [(Route::Titles, "titles"), (Route::Composer, "composer"), (Route::Tarot, "tarot"), (Route::None, "none")] {
+            assert_eq!(serde_json::to_string(&r).unwrap(), format!("\"{w}\""));
+            assert_eq!(r.to_string(), w);
+        }
+    }
 
     #[test]
     fn collisions() {
@@ -250,7 +278,7 @@ mod tests {
         let sig = Signature { stat: "PRC".into(), z: 2.0, top: None, runner: Some("RNG".into()), zs: vec![("PRC".into(), 2.0), ("RNG".into(), -1.05)] };
         let n = name_stand(&ex, &lk, Some(&sig), Some(12));
         assert_eq!(n.name, "YELLOW JUSTICE");
-        assert_eq!(n.route, "tarot");
+        assert_eq!(n.route, Route::Tarot);
         assert_eq!(name_stand(&ex, &lk, None, None).name, "???");
     }
 
@@ -264,7 +292,7 @@ mod tests {
         let sig = Signature { stat: "PRC".into(), z: 2.0, top: None, runner: None, zs: vec![] };
         let n = name_stand(&ex, &lk, Some(&sig), Some(12));
         assert_eq!(n.name, "HOWARD SHORE");
-        assert_eq!(n.route, "composer");
+        assert_eq!(n.route, Route::Composer);
     }
 
     fn lk3() -> Lookup {
@@ -290,7 +318,7 @@ mod tests {
         let ex = watched(&[("A", 2000), ("B", 2001), ("C", 2002), ("D", 2003)]);
         let n = name_stand(&ex, &lk3(), Some(&sig()), Some(12));
         // 久石 譲 (3 credits) has no ASCII form and is skipped; Antonín Dvořák (2) is next, folded for the font
-        assert_eq!((n.route.as_str(), n.name.as_str()), ("composer", "ANTONIN DVORAK"), "{n:?}");
+        assert_eq!((n.route, n.name.as_str()), (Route::Composer, "ANTONIN DVORAK"), "{n:?}");
         assert!(n.why.contains("watched films"));
     }
 
@@ -309,7 +337,7 @@ mod tests {
         let mut ex = watched(&[("D", 2003)]);
         ex.ratings.push(crate::parse::Rating { name: "D".into(), year: 2003, rating: 4.0, uri: String::new() });
         let n = name_stand(&ex, &lk3(), Some(&sig()), Some(12));
-        assert_eq!((n.route.as_str(), n.name.as_str()), ("composer", "HANS ZIMMER"), "{n:?}");
+        assert_eq!((n.route, n.name.as_str()), (Route::Composer, "HANS ZIMMER"), "{n:?}");
     }
 
     #[test]
@@ -317,9 +345,9 @@ mod tests {
         // the only composer on these films has no ASCII form
         let lk = Lookup::from_json(r#"{"people":{"8":"久石 譲"},"films":[["c|2002","",3,2002,100,"en","US","","8",4.5,null,100000]]}"#).unwrap();
         let n = name_stand(&watched(&[("C", 2002)]), &lk, Some(&sig()), Some(12));
-        assert_eq!(n.route, "tarot");
+        assert_eq!(n.route, Route::Tarot);
         let n = name_stand(&watched(&[("zzz", 1999)]), &lk, Some(&sig()), Some(12));
-        assert_eq!(n.route, "tarot");
+        assert_eq!(n.route, Route::Tarot);
     }
 
     #[test]
@@ -337,7 +365,7 @@ mod tests {
         let mut lk = lk3();
         lk.load_names(r#"{"v":2,"names":{"1":[[["Some Band","o"]],[["WOUNDED HUNTER",70,3,"v","",[],0],["STRANDED",60,5,"v","",[],0]]]}}"#).unwrap();
         let n = name_stand(&ex, &lk, Some(&sig()), Some(12));
-        assert_eq!(n.route, "titles", "{n:?}");
+        assert_eq!(n.route, Route::Titles, "{n:?}");
         assert!(n.name == "WOUNDED HUNTER" || n.name == "STRANDED");
         assert!(n.why.starts_with("Why 「"), "{}", n.why);
         assert!(!n.top.is_empty() && n.top.iter().filter(|t| t.picked).count() == 1);
@@ -345,12 +373,12 @@ mod tests {
         let mut lk = lk3();
         lk.load_names(r#"{"v":2,"names":{"99":[[["x","o"]],[["NOT YOURS",70,3,"v","",[],0]]]}}"#).unwrap();
         let n = name_stand(&ex, &lk, Some(&sig()), Some(12));
-        assert_eq!((n.route.as_str(), n.name.as_str()), ("composer", "ANTONIN DVORAK"), "{n:?}");
+        assert_eq!((n.route, n.name.as_str()), (Route::Composer, "ANTONIN DVORAK"), "{n:?}");
         assert!(n.top.is_empty());
         // 3. no names and no usable composer: Tarot plus colour
         let lk = Lookup::from_json(r#"{"people":{"8":"久石 譲"},"films":[["c|2002","",3,2002,100,"en","US","","8",4.5,null,100000]]}"#).unwrap();
-        assert_eq!(name_stand(&watched(&[("C", 2002)]), &lk, Some(&sig()), Some(12)).route, "tarot");
+        assert_eq!(name_stand(&watched(&[("C", 2002)]), &lk, Some(&sig()), Some(12)).route, Route::Tarot);
         // 4. nothing graded: ???
-        assert_eq!(name_stand(&ex, &lk3(), None, None).route, "none");
+        assert_eq!(name_stand(&ex, &lk3(), None, None).route, Route::None);
     }
 }
