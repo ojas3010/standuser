@@ -321,6 +321,11 @@ try {
   out('Share text has no #c= card link and no location.origin', `${shared[0].text.includes('#c=')} ${shared[1].text.includes('#c=')} ${shared[1].text.includes(location.origin)}`, 'false false false');
   out('Share makes no request', performance.getEntriesByType('resource').length, resBefore);
   out('no link note under the share bar', `${!!document.getElementById('linknote')} ${document.getElementById('share').textContent.includes('The link contains')}`, 'false false');
+  // every flag of the page's mode (setMode in app.js), read from a document, as one string
+  const flags = (d) => {
+    const h = d.documentElement, hid = (id) => d.getElementById(id).hidden, cs = d.defaultView.getComputedStyle(h);
+    return JSON.stringify({ done: d.getElementById('stage').classList.contains('done'), method: hid('method'), drop: hid('drop'), filebar: hid('filebar'), share: hid('share'), result: hid('result'), adv: hid('adv-result'), downloads: hid('downloads'), accent: h.dataset.accent || '', link: h.classList.contains('link'), label: d.getElementById('cardlabel').textContent, '--accent': cs.getPropertyValue('--accent').trim(), '--field': cs.getPropertyValue('--field').trim() });
+  };
   // opening the link: the card with no file, and no request beyond the page's own load
   const open = async (hash) => {
     const f = document.createElement('iframe');
@@ -351,6 +356,7 @@ try {
   out('opened link: requests after the page load', names().filter((n) => !atLoad.includes(n)).length, 0);
   out('opened link: only the page\'s own files', [...new Set(names())].filter((n) => !/^\/(accent\.js|app\.js|early\.js|films\.json|names\.json|sample\.json|style\.css|tmdb\.svg|pkg\/.*|fonts\/.*)$/.test(n)).join(' '), '');
   out('opened link: no file was read', fd.getElementById('filebar').hidden && !fd.getElementById('drop').hidden, true);
+  const linkRef = flags(fd);
   fr.remove();
   // a malformed fragment shows the normal page
   for (const bad of ['#c=%21%21%21', '#c=e30', '#c=', '#c=' + 'A'.repeat(5000), '#x=1']) {
@@ -372,6 +378,33 @@ try {
   await img.decode();
   out('after theme change img', img.src.slice(0, 5) + (img.naturalWidth === 1080 ? ' 1080 wide' : ' wrong size'), 'blob: 1080 wide');
   out('card theme toggle shows the choice', `${tg.dataset.value} ${pressed()}`, 'dark Light:false Dark:true');
+  // one function sets the page's mode, so no path leaves a flag of another mode behind. The references are a fresh page with a link, and one without.
+  tg.querySelector(`[data-v=${sys}]`).click();
+  await sleep(50);
+  const linkHash = copiedText.slice(copiedText.indexOf('#'));
+  const g0 = await open('#x=1');
+  const sampleRef = flags(g0.contentDocument);
+  g0.remove();
+  await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
+  const ownFlags = flags(document);
+  out('a file\'s card: the file line, the share bar and the tables are shown; the drop zone is hidden; no link class', ownFlags, (v) => { const o = JSON.parse(v); return o.done && !o.method && o.drop && !o.filebar && !o.share && !o.result && !o.adv && !o.downloads && !o.link && o.label === 'Your card' && /^[A-Z]{3}$/.test(o.accent); });
+  // (a) a link opened while a file's card shows is the page a first opened link is: the file line is gone
+  location.hash = linkHash;
+  await until('the link\'s card', () => document.getElementById('cardlabel').textContent === 'Shared card');
+  out('a #c= link opened while a file\'s card shows: the same flags as a first opened link (no file line, the drop zone back, the link class)', flags(document), linkRef);
+  // (b) Back to the bare URL is the sample card
+  history.back();
+  await until('the sample card after Back', () => document.getElementById('cardlabel').textContent === 'Sample');
+  out('back from a #c= URL to the bare URL: the sample card, with the flags of a fresh page', flags(document), sampleRef);
+  out('back to the bare URL: the card on show is the sample\'s', (await (await fetch(img.src)).text()).includes('>Stand card for sample: '), true);
+  // a file after a link: the link class is gone with the link
+  location.hash = linkHash;
+  await until('the link\'s card, again', () => document.getElementById('cardlabel').textContent === 'Shared card');
+  await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
+  out('a file after a link: the flags of a file\'s card', flags(document), ownFlags);
+  // a file that fails after a file's card: the first state
+  await feed('bad.zip', 'bad.zip');
+  out('a corrupt file after a file\'s card: the flags of a fresh page', flags(document), sampleRef);
 } catch (e) {
   log.push(`ERROR: ${(e && e.stack) || e}`);
 }

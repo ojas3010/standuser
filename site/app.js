@@ -15,6 +15,29 @@ let sample = null; // { svgs, card } of the sample card
 // "How the card was built" is there only once a card exists (a file's or an opened link's).
 const setDone = (on) => { $('stage').classList.toggle('done', on); $('method').hidden = !on; };
 
+// The page is in one of three modes, and this is the one place that sets what a mode is made of, so that no path leaves a flag of another mode
+// behind (a link opened over a file's card, the bare URL after a link, a failed file):
+//   sample: the sample card and the drop zone; nothing of the user's
+//   link:   an opened #c= card: the card and the share bar; no file was read, so no file line, no tables, and the drop zone is there
+//   own:    a file's card: the file line, the share bar, the tables; the drop zone is gone
+// `shown` is { svgs, card, analysis } of the card on show (analysis is null for a link); it is `last`, and null on the sample. The accent's
+// colours and the field's are set by reveal() (setAccent) and showSample() (setField), which the calm fade needs to time itself.
+function setMode(mode, shown = null) {
+  const sample = mode === 'sample', own = mode === 'own';
+  last = sample ? null : shown;
+  setDone(!sample); // #stage.done and #method
+  drop.hidden = own;
+  $('filebar').hidden = !own;
+  $('share').hidden = sample;
+  for (const id of ['result', 'adv-result', 'downloads']) $(id).hidden = !own;
+  root.classList.toggle('link', mode === 'link');
+  if (sample) {
+    root.style.removeProperty('--accent');
+    root.style.removeProperty('--on-accent');
+    delete root.dataset.accent;
+  } else root.dataset.accent = last.card.accent || 'none';
+}
+
 const setStatus = (msg, error = false) => {
   statusEl.textContent = msg;
   statusEl.classList.toggle('error', error);
@@ -65,19 +88,21 @@ function openLink() {
   let r;
   try { r = JSON.parse(share_decode(location.hash)); } catch { return false; }
   if (r.error) return false;
-  last = { svgs: r.svgs, card: r.card, analysis: null };
+  setMode('link', { svgs: r.svgs, card: r.card, analysis: null });
   showCard(r.svgs[resolvedTheme()], 'Shared card', `Shared Stand card for ${r.card.user}`);
-  $('result').hidden = true;
-  $('adv-result').hidden = true;
   buildHots(null);
-  $('downloads').hidden = true;
-  $('share').hidden = false;
   toast('');
-  setDone(true);
   reveal(r.card, r.svgs);
   return true;
 }
-addEventListener('hashchange', () => ready.then(() => { if (!openLink() && !last) showSample(); }));
+// The bare URL again (Back from a link): the link's card goes, and the sample is back. A file's card stays: its data is not in the URL.
+addEventListener('hashchange', () => ready.then(() => {
+  if (openLink() || (last && last.analysis)) return;
+  endReveal();
+  buildHots(null);
+  setMode('sample');
+  showSample();
+}));
 
 function exec(bytes, name) {
   const out = JSON.parse(run(bytes, name, table, names, $('joined').value || '', $('username').value.trim(), new Date().toISOString().slice(0, 10)));
@@ -122,34 +147,23 @@ async function handle(file) {
     }
     const bytes = new Uint8Array(await file.arrayBuffer());
     const out = exec(bytes, file.name);
-    last = { svgs: out.svgs, card: out.analysis.card, analysis: out.analysis };
     const skipped = hold ? hold.skipped() || (await hold.wait(arrowFrom + ARROW_MS - performance.now())) : false;
     if (location.hash) history.replaceState(null, '', location.pathname + location.search);
-    show(out.analysis, out.svgs[resolvedTheme()]);
     // the drop zone gives way to one line: the films read, and a way to pick another (the file's name is not shown)
+    setMode('own', { svgs: out.svgs, card: out.analysis.card, analysis: out.analysis });
+    show(out.analysis, out.svgs[resolvedTheme()]);
     $('fileinfo').textContent = `${out.analysis.coverage.watched.toLocaleString('en-US')} films read`;
-    drop.hidden = true;
-    $('filebar').hidden = false;
-    $('share').hidden = false;
     toast('');
-    setDone(true);
     reveal(out.analysis.card, out.svgs, skipped);
     $('stage').scrollIntoView({ block: 'start' });
     setStatus('');
   } catch (e) {
     // back to the first state: the sample card, the ink accent, the drop zone
-    last = null;
     buildHots(null);
     if (location.hash.startsWith('#c=')) history.replaceState(null, '', location.pathname + location.search);
     endReveal();
-    root.style.removeProperty('--accent');
-    root.style.removeProperty('--on-accent');
-    delete root.dataset.accent;
+    setMode('sample');
     showSample();
-    drop.hidden = false;
-    setDone(false);
-    $('filebar').hidden = true;
-    $('share').hidden = true;
     setStatus(e.message, true);
   } finally {
     busy = false;
