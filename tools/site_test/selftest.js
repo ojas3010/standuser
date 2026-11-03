@@ -74,6 +74,22 @@ try {
   dzone.classList.add('over');
   out('on drag-over the ゴゴゴ are displayed beside the zone', document.getElementById('dropgo').offsetParent !== null && document.querySelectorAll('#dropgo svg path').length >= 6, true);
   dzone.classList.remove('over');
+  // the hover state does not flicker: crossing from the zone onto a child fires dragenter on the child, then dragleave on the zone
+  {
+    const fire = (type, el) => el.dispatchEvent(new DragEvent(type, { bubbles: true, cancelable: true, dataTransfer: new DataTransfer() }));
+    const over = () => dzone.classList.contains('over'), child = dzone.querySelector('.drop-title'), seq = [];
+    fire('dragenter', dzone); seq.push(over());   // into the zone
+    fire('dragenter', child); seq.push(over());   // onto a child
+    fire('dragleave', dzone); seq.push(over());   // the zone's own dragleave, which comes after the child's dragenter
+    fire('dragover', child); seq.push(over());
+    fire('dragleave', child); seq.push(over());   // out of the child, and out of the zone
+    out('drag hover: .over stays on while the pointer crosses a child of the zone, and goes off when it leaves', seq.join(), 'true,true,true,true,false');
+    fire('dragenter', dzone); fire('dragenter', child);
+    fire('drop', child); seq.length = 0; seq.push(over());   // a drop ends it whatever the depth
+    fire('dragenter', dzone); seq.push(over());
+    fire('dragleave', dzone); seq.push(over());            // so the next hover starts from zero
+    out('drag hover: a drop ends it, and the next hover starts from zero', seq.join(), 'false,true,false');
+  }
   dzone.classList.add('tracing');
   out('while the file is taken in a line travels along the zone\'s border: the trace is displayed, an SVG rect with pathLength 100 and a dash', `${getComputedStyle(document.getElementById('trace')).display} ${document.querySelector('#trace rect').getAttribute('pathLength')} ${getComputedStyle(document.querySelector('#trace rect')).strokeDasharray !== 'none'}`, 'block 100 true');
   dzone.classList.remove('tracing');

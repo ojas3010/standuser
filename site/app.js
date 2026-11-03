@@ -630,6 +630,10 @@ $('file').addEventListener('change', (e) => {
   e.target.value = ''; // Chrome fires no change event for the same file while the input holds it; the File itself stays readable
   if (f) handle(f);
 });
-['dragenter', 'dragover'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.add('over'); }));
-['dragleave', 'drop'].forEach((t) => drop.addEventListener(t, (e) => { e.preventDefault(); drop.classList.remove('over'); }));
+// dragenter and dragleave fire again at every child the pointer crosses, so .over follows a depth: it is on from the first dragenter to the matching last dragleave
+let dragDepth = 0;
+drop.addEventListener('dragenter', (e) => { e.preventDefault(); dragDepth++; drop.classList.add('over'); });
+drop.addEventListener('dragover', (e) => { e.preventDefault(); drop.classList.add('over'); });
+drop.addEventListener('dragleave', (e) => { e.preventDefault(); dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) drop.classList.remove('over'); });
+drop.addEventListener('drop', (e) => { e.preventDefault(); dragDepth = 0; drop.classList.remove('over'); });
 drop.addEventListener('drop', (e) => e.dataTransfer.files[0] && handle(e.dataTransfer.files[0]));
