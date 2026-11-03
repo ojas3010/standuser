@@ -28,7 +28,7 @@ Measured with `python tools/site_test/design_check.py` (Playwright, headless Chr
 | R2 one accent per user, from the card's signature stat | pass | 10 users give accents ['DEV', 'PRC', 'PWR'] |
 | R2 accent passes WCAG AA (4.5:1) on the ground, and its button label on it, light and dark | pass | lowest ratio over 20 renders: 4.75 |
 | R4 colour event: the card lands, holds, then one palette shift | pass | accent unset while the card lands (land 0.2s ease-out); one shift 1150 ms after the drop |
-| R4 the colour event is off under prefers-reduced-motion | pass | accent at once (PWR), animation none |
+| R4 the colour event is calm under prefers-reduced-motion | pass | the field fades 300 ms, the card 400 ms, the six grades together; no flash, no movement |
 | R8 all motion under 300 ms | pass | longest transition or animation 250 ms |
 | R8 card reveal: opacity 0 and scale 0.98 to 1, 200 ms, ease-out | pass | keyframes land and #card.land in style.css |
 | R8 buttons: scale(0.97) on :active in about 120 ms | pass | style.css |

@@ -10,36 +10,39 @@
 <link rel="preload" href="fonts/archivo-black.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/archivo.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="stylesheet" href="style.css">
+<script src="early.js"></script>
 </head>
 <body>
 <div id="field" aria-hidden="true"></div>
 <main>
   <header>
     <h1 class="mark">standuser</h1>
-    <p class="lede">Drop your Letterboxd export. Get a JoJo-style Stand card: six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
+    <p class="lede">Drop your Letterboxd export. Get your JoJo Stand.</p>
   </header>
 
   <div id="stage">
     <section id="drop" tabindex="0" aria-label="Choose your Letterboxd export ZIP">
       <div id="dropgo" aria-hidden="true"><svg class="col" viewBox="0 0 130 250" focusable="false"></svg><svg class="row" viewBox="0 0 170 48" focusable="false"></svg></div>
-      <div id="tbc" aria-hidden="true"><span class="arrow"></span><span>To Be Continued</span></div>
+      <div id="tbc" aria-hidden="true"><svg id="freeze" focusable="false"><defs><pattern id="halftone" width="6" height="6" patternUnits="userSpaceOnUse"><circle cx="3" cy="3" r="1.4"/></pattern></defs><rect width="100%" height="100%" fill="url(#halftone)"/></svg><span class="arrow"></span><span class="words"><span class="w"><span style="--i:0">T</span><span style="--i:1">o</span></span> <span class="w"><span style="--i:2">B</span><span style="--i:3">e</span></span> <span class="w"><span style="--i:4">C</span><span style="--i:5">o</span><span style="--i:6">n</span><span style="--i:7">t</span><span style="--i:8">i</span><span style="--i:9">n</span><span style="--i:10">u</span><span style="--i:11">e</span><span style="--i:12">d</span></span></span></div>
+      <svg id="trace" aria-hidden="true" focusable="false" preserveAspectRatio="none"><rect class="run" pathLength="100"/></svg>
       <input id="file" type="file" accept=".zip,application/zip" hidden>
       <p class="drop-title">Drop letterboxd-…-utc.zip here</p>
       <p>or <button id="pick" type="button" class="quiet">choose the file</button></p>
-      <p class="small">Get it at Letterboxd, Settings, Data, Export your data. The ZIP is read in this tab and never uploaded; the page makes no requests after it loads.</p>
-      <p class="small privacy">Only <code>watched.csv</code>, <code>ratings.csv</code> and <code>diary.csv</code> are read, plus two columns of <code>profile.csv</code> (Date Joined and Favorite Films). Nothing else in <code>profile.csv</code> is read.</p>
+      <p class="small export">On letterboxd.com (not the app): Settings, Account data, Export your data.</p>
+      <p class="small privacy">Read in your browser. Never uploaded.</p>
     </section>
-    <p id="filebar" hidden><span id="fileinfo"></span> <button id="change" type="button" class="quiet">Change file</button></p>
+    <p id="filebar" hidden><span id="fileinfo"></span> <span class="sep" aria-hidden="true">·</span> <button id="change" type="button" class="quiet">Change file</button></p>
     <p id="status" role="status" aria-live="polite"></p>
 
     <figure id="figure">
       <figcaption>
         <span id="cardlabel">Sample</span>
-        <label class="theme">Card theme
-          <select id="theme"><option value="light">Light card</option><option value="dark">Dark card</option></select>
-        </label>
       </figcaption>
-      <img id="card" alt="Sample Stand card, made from synthetic data" width="1080" height="1350">
+      <div id="cardwrap">
+        <img id="card" alt="Sample Stand card, made from synthetic data" width="1080" height="1350">
+        <div id="hots"></div>
+        <div id="statpop" role="dialog" aria-live="off" hidden><p class="pop-head"></p><p class="pop-why"></p><p class="pop-top"></p></div>
+      </div>
     </figure>
 
     <div id="share" class="actions" hidden>
@@ -47,16 +50,14 @@
       <button id="copy-img" type="button" class="quiet" hidden>Copy image</button>
       <button id="share-btn" type="button" class="quiet" hidden>Share</button>
       <button id="copy-link" type="button" class="quiet">Copy link</button>
-      <span id="linknote" class="small">The link contains your username and grades, and the card's text.</span>
-      <span id="sharenote" role="status" aria-live="polite"></span>
+      <span id="theme" class="toggle" role="group" aria-label="Card theme" data-value="light"><button type="button" data-v="light" aria-pressed="true">Light</button><button type="button" data-v="dark" aria-pressed="false">Dark</button></span>
     </div>
   </div>
 
   <section id="result" hidden>
     <h2>Why these grades</h2>
-    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Value</th><th>Your film</th><th>Based on</th></tr></thead><tbody></tbody></table>
+    <table id="stats"><thead><tr><th>Stat</th><th>Grade</th><th>Why</th></tr></thead><tbody></tbody></table>
     <dl id="why">
-      <dt>Ability</dt><dd id="why-ability"></dd>
       <dt>Weakness</dt><dd id="why-weakness"></dd>
       <dt>The name</dt><dd id="why-name"></dd>
       <dt>Signature film</dt><dd id="why-film"></dd>
@@ -64,25 +65,33 @@
     </dl>
   </section>
 
-  <section id="method">
+  <section id="method" hidden>
     <h2>How the card was built</h2>
     <p class="small">Each stat is graded against 34,523 Letterboxd users. Films that are not in the built-in film table are skipped by every stat that needs film data.</p>
     <p id="downloads" class="downloads" hidden>Download the card as <a id="dl-svg" href="#" download="card.svg">SVG</a> or the stats as <a id="dl-json" href="#" download="stand.json">JSON</a>.</p>
-    <ul id="notes"></ul>
-    <details class="opts">
-      <summary>Advanced</summary>
-      <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
-      <label>Join date <input id="joined" type="date"></label>
-      <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
-    </details>
   </section>
 
+  <details class="opts" id="advanced">
+    <summary>Advanced</summary>
+    <p class="small" id="counts">Six stats graded against 34,523 Letterboxd users, on a table of 9,787 films.</p>
+    <p class="small" id="reads">Read in this tab, never uploaded; the page makes no requests after it loads. Only <code>watched.csv</code>, <code>ratings.csv</code> and <code>diary.csv</code> are read, plus two columns of <code>profile.csv</code> (Date Joined and Favorite Films). Nothing else in <code>profile.csv</code> is read.</p>
+    <div id="adv-result" hidden>
+      <h3>The numbers behind the grades</h3>
+      <table id="detail"><thead><tr><th>Stat</th><th>Value</th><th>Based on</th><th>Status</th></tr></thead><tbody></tbody></table>
+      <h3>Coverage</h3>
+      <ul id="notes"></ul>
+    </div>
+    <label>Username <input id="username" type="text" placeholder="from the file name" autocomplete="off"></label>
+    <label>Join date <input id="joined" type="date"></label>
+    <p class="small">Only needed to override the file name. The join date is read from the <code>Date Joined</code> column of <code>profile.csv</code>; without that file or column it is the earliest date in <code>watched.csv</code>.</p>
+  </details>
+
   <footer>
-    <p class="tmdb"><a href="https://www.themoviedb.org/" target="_blank" rel="noopener"><img src="tmdb.svg" alt="TMDB" width="110" height="14"></a></p>
-    <p class="small">This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p>
-    <p class="small">Fan project, not affiliated with Letterboxd or the JoJo's Bizarre Adventure rights holders. Ratings data: Letterboxd. Film data: TMDB. Soundtrack data from MusicBrainz. Grades marked * are provisional.</p>
+    <p class="small"><a class="tmdb" href="https://www.themoviedb.org/" target="_blank" rel="noopener"><img src="tmdb.svg" alt="TMDB" width="110" height="14"></a> This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.</p>
+    <p class="small">Fan project, not affiliated with Letterboxd or the JoJo's Bizarre Adventure rights holders. Data: Letterboxd (ratings), TMDB (films), MusicBrainz (soundtracks). A * on a grade means it is provisional.</p>
   </footer>
 </main>
+<div id="toast" role="status" aria-live="polite" aria-atomic="true"></div>
 <script type="module" src="app.js"></script>
 </body>
 </html>

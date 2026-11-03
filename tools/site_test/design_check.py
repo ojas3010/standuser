@@ -112,7 +112,7 @@ def main():
         check("0 requests after the drop", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests (blob: card images are in-memory)")
         fonts = page.evaluate("[...document.fonts].map(f => f.family + ' ' + f.status)")
         check("Fonts self-hosted: Archivo Black and Archivo load from fonts/, Overpass is gone", any("Archivo Black loaded" in f for f in fonts) and any("Archivo loaded" in f for f in fonts) and "/fonts/archivo-black.woff2" in "".join(reqs["load"]) and "/fonts/archivo.woff2" in "".join(reqs["load"]) and "overpass" not in (css + html + js).lower() and not (SITE / "fonts/overpass.woff2").exists(), str(fonts))
-        check("CSP allows only the site (no font or script host)", "default-src 'self'" in (SITE / "_headers").read_text() and "http" not in re.sub(r"https?://www\.themoviedb\.org", "", css + js), "default-src 'self'; no absolute URL in style.css or app.js")
+        check("CSP allows only the site (no font or script host)", "default-src 'self'" in (SITE / "_headers").read_text() and "http" not in re.sub(r"https?://www\.themoviedb\.org|https://standuser\.pages\.dev(?=')", "", css + js), "default-src 'self'; no absolute URL in style.css or app.js (the Share text names https://standuser.pages.dev, as text, never fetched)")
         els = page.evaluate(ALL)
         vis = [e for e in els if not e["hidden"]]
 
@@ -120,17 +120,59 @@ def main():
         ctx1, pg1, _, _ = load(browser, base, 1280, 720)
         pre = pg1.evaluate("""() => [document.getElementById('cardlabel').textContent, (() => { const d = document.getElementById('drop').getBoundingClientRect(), c = document.getElementById('card').getBoundingClientRect(); return d.right <= c.left && d.bottom <= innerHeight && c.bottom <= innerHeight && c.top >= 0 && d.top >= 0; })(),
           getComputedStyle(document.documentElement).getPropertyValue('--accent').trim(), getComputedStyle(document.body).color, document.getElementById('share').offsetParent === null && document.getElementById('filebar').offsetParent === null, getComputedStyle(document.querySelector('.mark')).borderBottomColor]""")
-        check("R6 before a drop (1280 x 720): two columns, the drop zone on the left and the sample card labelled Sample on the right, both whole in the window; the share bar, the file line and the theme select are not displayed", pre[0] == "Sample" and pre[1] and pre[4] and pg1.evaluate("document.getElementById('theme').offsetParent === null"), f"label {pre[0]!r}, side by side and in the window without scrolling: {pre[1]}, share bar and file line not displayed: {pre[4]}")
+        check("R6 before a drop (1280 x 720): two columns, the drop zone on the left and the sample card labelled Sample on the right, both whole in the window; the share bar (with the theme toggle) and the file line are not displayed", pre[0] == "Sample" and pre[1] and pre[4] and pg1.evaluate("document.getElementById('theme').offsetParent === null"), f"label {pre[0]!r}, side by side and in the window without scrolling: {pre[1]}, share bar and file line not displayed: {pre[4]}")
         gaps0 = pg1.evaluate("(() => { const r = [...document.querySelectorAll('main > *')].filter(e => e.offsetParent !== null).map(e => e.getBoundingClientRect()); return r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)); })()")
         check("R6 48 px between sections (before a drop)", gaps0 and all(g == 48 for g in gaps0), f"gaps {gaps0}")
         fld = pg1.evaluate("""() => { const r = getComputedStyle(document.documentElement), c = (k) => r.getPropertyValue(k).trim();
           return [c('--accent'), c('--p-ink'), document.documentElement.dataset.accent || '', c('--field'), getComputedStyle(document.getElementById('field')).backgroundColor, getComputedStyle(document.querySelector('.lede')).color, c('--field-mute')]; }""")
         check("R2 before a drop the accent is the page's ink colour and none is set; the field is the sample card's ground", fld[0] == fld[1] and fld[2] == "" and fld[3].startswith("#") and rgb(fld[4]) == [int(fld[3][i:i + 2], 16) for i in (1, 3, 5)], f"accent {fld[0]} (ink {fld[1]}), data-accent {fld[2]!r}, field {fld[3]} painted as {fld[4]}")
+        ex = pg1.evaluate("""(() => { const e = document.querySelector('#drop .export'), lh = parseFloat(getComputedStyle(e).lineHeight); return [e.textContent, Math.round(e.getBoundingClientRect().height / lh), /Get it at|Settings, Data/.test(document.getElementById('drop').textContent)]; })()""")
+        check("R18 there are no grade targets over the sample card (it has no stats of the user's)", pg1.evaluate("document.querySelectorAll('#hots button').length") == 0, "0 targets before a drop")
+        check("R6 \"How the card was built\" is not displayed before a drop", pg1.evaluate("document.getElementById('method').offsetParent === null"), "hidden until a card exists")
+        dz = pg1.evaluate("[...document.querySelectorAll('#drop > p')].map(p => p.textContent.replace(/\\s+/g, ' ').trim())")
+        check("Drop zone copy: the title, the choose-the-file line, the export line and one privacy line, \"Read in your browser. Never uploaded.\"; the CSV file list is in Advanced, not here", len(dz) == 4 and dz[3] == "Read in your browser. Never uploaded." and ".csv" not in " ".join(dz) and pg1.evaluate("/watched\\.csv/.test(document.getElementById('advanced').textContent)"), f"{dz}")
+        check("Drop zone export line (1280 x 720): \"On letterboxd.com (not the app): Settings, Account data, Export your data.\" in one or two lines, the old wording gone", ex[0] == "On letterboxd.com (not the app): Settings, Account data, Export your data." and ex[1] <= 2 and not ex[2], f"{ex[1]} line(s): {ex[0]!r}")
         ctx1.close()
         ctx1, pg1, _, _ = load(browser, base, 390, 844)
         ph = pg1.evaluate("(() => { const d = document.getElementById('drop').getBoundingClientRect(), c = document.getElementById('card').getBoundingClientRect(); return [d.bottom <= c.top, Math.round(d.left) === Math.round(c.left)]; })()")
         check("R6 phone, before a drop: the drop zone comes first and the sample card is under it", ph[0] and ph[1], f"drop zone above the card: {ph[0]}, one column: {ph[1]}")
+        ex = pg1.evaluate("""(() => { const e = document.querySelector('#drop .export'), lh = parseFloat(getComputedStyle(e).lineHeight); return [e.textContent, Math.round(e.getBoundingClientRect().height / lh), /Get it at|Settings, Data/.test(document.getElementById('drop').textContent)]; })()""")
+        check("Drop zone export line (phone, 390 px): the same words in one or two lines", ex[0] == "On letterboxd.com (not the app): Settings, Account data, Export your data." and ex[1] <= 2, f"{ex[1]} line(s)")
         ctx1.close()
+
+        # --- C4: every control has a tap target of at least 44 px and a visible keyboard focus (a 3 px ring that is 3:1 or better against what
+        # it stands on). The controls are found in the page, and the Tab key is pressed through all of them.
+        TARGETS = """() => [...document.querySelectorAll('button, a[href], select, input:not([type=hidden]), summary, [tabindex="0"]')]
+          .filter(e => e.offsetParent !== null && !e.closest('[hidden]') && getComputedStyle(e).visibility !== 'hidden')
+          .map(e => { const r = e.getBoundingClientRect(); return { id: e.id || e.tagName.toLowerCase() + (e.className ? '.' + e.className : ''), w: r.width, h: r.height }; })"""
+        RING = """() => { const e = document.activeElement, s = getComputedStyle(e);
+          // the ring is drawn outside the control (2 px off), so it stands on what is behind the control: the nearest opaque ancestor, or the field
+          let bg = null; for (let n = e.parentElement; n && !bg; n = n.parentElement) { const c = getComputedStyle(n).backgroundColor; if (c !== 'rgba(0, 0, 0, 0)' && c !== 'transparent') bg = c; }
+          const panel = e.parentElement && e.parentElement.closest('#drop');
+          if (e.closest('header, #stage') && !panel) bg = getComputedStyle(document.getElementById('field')).backgroundColor;
+          return { id: e.id || e.getAttribute('aria-label') || (e.tagName.toLowerCase() + (e.dataset.v ? '.' + e.dataset.v : '')), style: s.outlineStyle, width: parseFloat(s.outlineWidth), color: s.outlineColor, bg: bg || getComputedStyle(document.body).backgroundColor }; }"""
+        for (w, h) in [(1280, 720), (390, 844)]:
+            for after in (False, True):
+                cx, pgc, _, phc = load(browser, base, w, h)
+                if after:
+                    drop(pgc, phc, zips[0])
+                    pgc.evaluate("document.querySelector('#advanced summary').scrollIntoView()")
+                small = [t for t in pgc.evaluate(TARGETS) if t["h"] < 43.5 or t["w"] < 43.5]
+                seen, bad = [], []
+                pgc.evaluate("document.activeElement && document.activeElement.blur()")
+                for _ in range(40):
+                    pgc.keyboard.press("Tab")
+                    r = pgc.evaluate(RING)
+                    if r["id"] in seen or r["id"] == "body":
+                        break
+                    seen.append(r["id"])
+                    ratio = cr(rgb(r["color"]), rgb(r["bg"]))
+                    if r["style"] == "none" or r["width"] < 2 or ratio < 3:
+                        bad.append((r["id"], r["style"], r["width"], round(ratio, 2)))
+                state = f"{w} x {h}, {'after' if after else 'before'} a drop"
+                check(f"C4 {state}: every control is at least 44 px high and wide", not small and len(seen) >= 3, f"{len(pgc.evaluate(TARGETS))} controls; under 44 px: {small}")
+                check(f"C4 {state}: every control shows a focus ring of 2 px or more at 3:1 or better when the Tab key reaches it", not bad and len(seen) >= 3, f"{len(seen)} controls reached by Tab ({', '.join(seen)}); without a visible ring: {bad}")
+                cx.close()
 
         # --- rule 1 and 7: chrome text
         text = page.evaluate("document.body.innerText")
@@ -166,6 +208,24 @@ def main():
         check("R3 ground is neutral with zero hue: #0e0e0e (dark)", bgd == [14, 14, 14], f"rgb{tuple(bgd)}")
         ctxd.close()
 
+        # the field's colours are in style.css, so the first paint has them: with app.js blocked (nothing sets a property inline) the computed
+        # values equal the ones app.js sets for the sample card, light and dark; an opened share link keeps the neutral ground until its card is drawn
+        FIELD = "['field','field-ink','field-mute','dot','ghost','flash'].map(k => getComputedStyle(document.documentElement).getPropertyValue('--' + k).trim().toLowerCase())"
+        first = {}
+        for scheme in ("light", "dark"):
+            cx, pj, _, _ = load(browser, base, 1280, 900, scheme=scheme)
+            want = pj.evaluate("['field','field-ink','field-mute','dot','ghost','flash'].map(k => document.documentElement.style.getPropertyValue('--' + k).trim().toLowerCase())")
+            cx.close()
+            for frag, key in (("", "sample"), ("#c=abc", "link")):
+                cx = browser.new_context(viewport={"width": 1280, "height": 900}, color_scheme=scheme)
+                pn = cx.new_page()
+                pn.route("**/app.js", lambda r: r.abort())
+                pn.goto(base + "/index.html" + frag)
+                first[(scheme, key)] = (pn.evaluate(FIELD), rgb(pn.evaluate("getComputedStyle(document.getElementById('field')).backgroundColor")), want)
+                cx.close()
+        neutral = {"light": [255, 255, 255], "dark": [14, 14, 14]}
+        check("R3 the field has the sample card's colours at the first paint (style.css, with app.js not yet run), light and dark, the same values app.js sets; an opened share link keeps the neutral ground", all(first[(s, "sample")][0] == first[(s, "sample")][2] and first[(s, "sample")][1] == [int(first[(s, "sample")][2][0][i:i + 2], 16) for i in (1, 3, 5)] and first[(s, "link")][1] == neutral[s] for s in ("light", "dark")), f"light {first[('light', 'sample')][0][0]}, dark {first[('dark', 'sample')][0][0]}, with a #c= link {first[('light', 'link')][1]} / {first[('dark', 'link')][1]}")
+
         # --- rule 5: type
         fam = page.evaluate("getComputedStyle(document.body).fontFamily")
         serif_chrome = [e for e in els if "Serif" in e["font"] or "Mincho" in e["font"]]
@@ -177,6 +237,50 @@ def main():
 
         # --- rule 6: order and single column
         tops = page.evaluate("""() => ['card', 'share', 'stats'].map(id => document.getElementById(id).getBoundingClientRect().top + scrollY)""")
+        check("R6 \"How the card was built\" is displayed once a card exists, after Why these grades, with the SVG and JSON links", page.evaluate("(() => { const m = document.getElementById('method'); return m.offsetParent !== null && m.getBoundingClientRect().top > document.getElementById('result').getBoundingClientRect().bottom && !!m.querySelector('#dl-svg') && !!m.querySelector('#dl-json'); })()"), "shown after the drop")
+        fl = page.evaluate("document.getElementById('filebar').textContent.replace(/\\s+/g, ' ').trim()")
+        check("R6 after a drop the file line reads \"N films read · Change file\" and shows no ZIP file name", re.fullmatch(r"\d[\d,]* films read · Change file", fl) is not None, repr(fl))
+        tg = page.evaluate("""() => { const t = document.getElementById('theme'); return [t.closest('#share') !== null, [...t.querySelectorAll('button')].map(b => b.textContent).join('/'), [...t.querySelectorAll('button')].map(b => b.getAttribute('aria-pressed')).join('/'), t.getBoundingClientRect().height, !!document.getElementById('linknote') || document.getElementById('share').textContent.includes('The link contains')]; }""")
+        src0 = page.evaluate("document.getElementById('card').src")
+        page.click("#theme [data-v=dark]"); page.wait_for_timeout(300)
+        d1 = page.evaluate("[document.getElementById('card').src, document.getElementById('theme').dataset.value, document.getElementById('theme').querySelector('[data-v=dark]').getAttribute('aria-pressed')]")
+        page.click("#theme [data-v=light]"); page.wait_for_timeout(300)
+        d2 = page.evaluate("[document.getElementById('card').src, document.getElementById('theme').dataset.value]")
+        check("R10 the card theme is a small Light/Dark toggle in the share bar (the card changes with it); the link note under the share bar is gone", tg[0] and tg[1] == "Light/Dark" and tg[3] <= 44 and not tg[4] and d1[0] != src0 and d1[1:] == ["dark", "true"] and d2[1] == "light" and d2[0] != d1[0], f"toggle in share bar {tg[0]}, buttons {tg[1]}, pressed at first {tg[2]}, height {tg[3]:.0f} px, link note present {tg[4]}; card changed on Dark {d1[0] != src0} and on Light {d2[0] != d1[0]}")
+        wy = page.evaluate("""() => ({ heads: [...document.querySelectorAll('#stats th')].map(h => h.textContent).join('/'), rows: [...document.getElementById('stats').tBodies[0].rows].map(r => [...r.cells].map(c => c.textContent)),
+          detail: [...document.querySelectorAll('#detail th')].map(h => h.textContent).join('/'), adv: document.getElementById('advanced').open, display: getComputedStyle(document.getElementById('stats')).display }); """)
+        sent = [r[2] for r in wy["rows"]]
+        check("R12 Why these grades: three columns, Stat, Grade and one plain-English sentence that names the user's film; the raw value, counts and status words are in Advanced (Stat/Value/Based on/Status), collapsed", wy["heads"] == "Stat/Grade/Why" and len(wy["rows"]) == 6 and sum(1 for t in sent if "\u201c" in t) >= 4 and not any(re.search(r"DPA|★|\d+ of \d+|provisional|measured|\[", t) for t in sent) and wy["detail"] == "Stat/Value/Based on/Status" and not wy["adv"] and wy["display"] == "table", f"columns {wy['heads']}; e.g. {sent[0]!r}; {sum(1 for t in sent if chr(0x201c) in t)} of 6 sentences name a film")
+        ln = page.evaluate("""() => ({ dts: [...document.querySelectorAll('#why dt')].map(d => d.textContent), w: document.getElementById('why-weakness').textContent, n: document.getElementById('why-name').textContent, f: document.getElementById('why-film').textContent, prov: /provisional\\]/.test(document.body.textContent) })""")
+        check("R12 under the table: no Ability block, no [provisional] tag anywhere; the weakness, the name (\"Track N of COMPOSER's FILM score, from a R★ film of yours.\") and the signature film are one plain sentence each", ln["dts"] == ["Weakness", "The name", "Signature film", "The type"] and not ln["prov"] and re.fullmatch(r"Track \d+ of .+ (score|soundtrack), from a (\d\.\d★ )?film of yours\.", ln["n"]) is not None and re.fullmatch(r"“.+” \(\d{4}\) is where you and the crowd disagree most: you gave it [\d.]+★, its average is [\d.]+★\.", ln["f"]) is not None and ln["w"].endswith(".") and "[" not in ln["w"] and ". " not in ln["w"], f"{ln['n']!r}; {ln['f']!r}; {ln['w']!r}")
+        mt = page.evaluate("""() => ({ links: ['dl-svg', 'dl-json'].every(id => !!document.querySelector('#method #' + id)), notesIn: !!document.querySelector('#advanced #notes'), notesInMethod: !!document.querySelector('#method #notes'), bullets: document.getElementById('notes').children.length, text: document.getElementById('method').textContent.replace(/\\s+/g, ' ').trim() })""")
+        check("R6 How the card was built keeps the SVG and JSON links; the coverage bullets and the table date are in Advanced (collapsed), not in the method section", mt["links"] and mt["notesIn"] and not mt["notesInMethod"] and mt["bullets"] > 0 and "Film table built" not in mt["text"] and "rated films have" not in mt["text"], f"links {mt['links']}, {mt['bullets']} bullet(s) in Advanced; method text {mt['text'][:90]!r}")
+        # the toast: what Copy link did, in an aria-live region, for 2 s (the share note under the buttons is gone)
+        page.context.grant_permissions(["clipboard-read", "clipboard-write"], origin=base)
+        page.evaluate("""() => { window.__ts = []; const t0 = performance.now(), el = document.getElementById('toast');
+          const tick = () => { window.__ts.push([Math.round(performance.now() - t0), el.classList.contains('show'), el.textContent]); if (performance.now() - t0 < 3200) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }""")
+        page.click("#copy-link")
+        page.wait_for_function("window.__ts[window.__ts.length - 1][0] > 3100", timeout=10000)
+        ts = page.evaluate("window.__ts")
+        shown = [r for r in ts if r[1]]
+        tattr = page.evaluate("[document.getElementById('toast').getAttribute('role'), document.getElementById('toast').getAttribute('aria-live'), !!document.getElementById('sharenote'), getComputedStyle(document.getElementById('toast')).position]")
+        span = shown[-1][0] - shown[0][0] if shown else None
+        check("R21 the toast: Copy link shows \"Link copied\" in an aria-live status region for 2 s (1.8 to 2.4 s measured), then it is gone; there is no share note under the buttons", bool(shown) and shown[0][2] == "Link copied" and 1800 <= span <= 2400 and tattr == ["status", "polite", False, "fixed"] and not ts[-1][1] and ts[-1][2] == "", f"shown {span} ms from {shown[0][0] if shown else None} ms, text {shown[0][2] if shown else None!r}, region {tattr[:2]}, share note present {tattr[2]}")
+        # tap a grade: one focusable target per stat over the card; a hover, a tap or Enter opens one popover with the stat's sentence and its percentile
+        hs = page.evaluate("[...document.querySelectorAll('#hots button')].map(b => { const r = b.getBoundingClientRect(); return [Math.round(r.width), Math.round(r.height), b.getAttribute('aria-expanded'), b.getAttribute('aria-label')]; })")
+        sents = page.evaluate("[...document.getElementById('stats').tBodies[0].rows].map(r => r.cells[2].textContent)")
+        pop = lambda: page.evaluate("[!document.getElementById('statpop').hidden, document.getElementById('statpop').textContent, document.querySelectorAll('#hots [aria-expanded=true]').length, document.querySelectorAll('#statpop:not([hidden])').length]")
+        page.hover("#hots button:nth-child(2)"); h1 = pop()
+        page.hover("#hots button:nth-child(3)"); h2 = pop()
+        page.mouse.move(5, 5); h3 = pop()
+        page.click("#hots button:nth-child(1)"); page.mouse.move(5, 5); c1 = pop()
+        page.keyboard.press("Escape"); e1 = pop()
+        page.focus("#hots button:nth-child(4)"); page.keyboard.press("Enter"); k1 = pop()
+        page.mouse.click(5, 150); o1 = pop()
+        page.click("#hots button:nth-child(5)"); page.click("#hots button:nth-child(6)", force=True); t1 = pop()
+        page.keyboard.press("Escape")
+        ok_open = lambda v, i: v[0] and sents[i] in v[1] and v[2] == 1 and v[3] == 1
+        check("R18 tap a grade: six focusable targets over the card (each 44 px or more, named by stat and grade); a hover, a tap or Enter opens one popover with that stat's sentence from Why these grades; one at a time; Escape or a tap outside closes it", len(hs) == 6 and all(w >= 43.5 and h >= 43.5 and ex == "false" and "grade" in lab for w, h, ex, lab in hs) and ok_open(h1, 1) and ok_open(h2, 2) and not h3[0] and ok_open(c1, 0) and not e1[0] and ok_open(k1, 3) and not o1[0] and ok_open(t1, 5), f"{len(hs)} targets {[x[:2] for x in hs][:2]}...; hover open {h1[0]}, second hover leaves {h2[2]} open, pointer away closes {not h3[0]}, tap pins {c1[0]}, Escape closes {not e1[0]}, Enter opens {k1[0]}, tap outside closes {not o1[0]}, a second tap leaves {t1[2]} open")
         check("R6 order after a drop: card, then share bar, then Why these grades", tops == sorted(tops) and page.evaluate("document.getElementById('drop').hidden && !document.getElementById('filebar').hidden"), f"tops {tops}; the drop zone is replaced by the file line")
         cols = page.evaluate("new Set([...document.querySelectorAll('main > *')].map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 right angles: boxes have no rounded corners", all(e["radius"] in ("0px", "") for e in vis if e["tag"] in ("BUTTON", "SECTION", "SELECT", "INPUT", "IMG", "TABLE")), "border-radius 0 on buttons, drop zone, inputs, card")
@@ -187,6 +291,8 @@ def main():
         sw = pagep.evaluate("[document.documentElement.scrollWidth, innerWidth]")
         cols = pagep.evaluate("new Set([...document.querySelectorAll('main > *, #result > *')].filter(e => !e.hidden).map(e => Math.round(e.getBoundingClientRect().left))).size")
         check("R6 single column on mobile; no sideways scroll at 390 px", sw[0] <= sw[1] and cols == 1, f"scrollWidth {sw[0]} for viewport {sw[1]}; {cols} distinct left edge(s)")
+        one = pagep.evaluate("""() => [...document.getElementById('stats').tBodies[0].rows].map(r => { const c = [...r.cells].map(x => x.getClientRects()[0]); return [getComputedStyle(r).display, Math.round(c[0].top), Math.round(c[1].top), Math.round(c[2].top), c[0].left < c[1].left && c[1].left < c[2].left]; })""")
+        check("R6 Why these grades under 600 px: each stat is one line of running text, the name, the grade and the sentence starting on the same line", all(o[0] == "block" and o[1] == o[2] == o[3] and o[4] for o in one), f"{len(one)} stats; line tops {[o[1:4] for o in one][:2]}...")
         ctxp.close()
 
         # --- section 3 chrome
@@ -202,16 +308,23 @@ def main():
           const r = [...m.children].filter(e => e.offsetParent !== null).map(e => e.getBoundingClientRect());
           const f = document.getElementById('filebar').getBoundingClientRect(), sh = document.getElementById('share').getBoundingClientRect();
           return { inner, c: [c.left, c.right], fit: [f.top, c.top, c.bottom, sh.bottom, innerHeight], gaps: r.slice(1).map((b, i) => Math.round(b.top - r[i].bottom)), theme: document.getElementById('theme').offsetParent !== null,
-            adv: (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })() }; }""")
+            adv: (() => { const d = document.getElementById('advanced'); return !d.open && d.parentElement.tagName === 'MAIN' && !d.closest('#method'); })() }; }""")
         mid = (lay["inner"][0] + lay["inner"][1]) / 2
-        check("R6 after a drop (1280 x 720): the file line, the whole card and the share bar fit in the window without scrolling; the card is centred; the theme select is displayed; Advanced is collapsed in the method section", lay["fit"][0] >= 0 and lay["fit"][3] <= lay["fit"][4] and abs((lay["c"][0] + lay["c"][1]) / 2 - mid) < 1.5 and lay["theme"] and lay["adv"], f"file line top {lay['fit'][0]:.0f}, card {lay['fit'][1]:.0f} to {lay['fit'][2]:.0f}, share bar bottom {lay['fit'][3]:.0f} of {lay['fit'][4]}, card {lay['c']} in column {lay['inner']}, theme select shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
+        check("R6 after a drop (1280 x 720): the file line, the whole card and the share bar fit in the window without scrolling; the card is centred; the theme toggle is displayed; Advanced is collapsed, its own block", lay["fit"][0] >= 0 and lay["fit"][3] <= lay["fit"][4] and abs((lay["c"][0] + lay["c"][1]) / 2 - mid) < 1.5 and lay["theme"] and lay["adv"], f"file line top {lay['fit'][0]:.0f}, card {lay['fit'][1]:.0f} to {lay['fit'][2]:.0f}, share bar bottom {lay['fit'][3]:.0f} of {lay['fit'][4]}, card {lay['c']} in column {lay['inner']}, theme toggle shown {lay['theme']}, Advanced collapsed in method {lay['adv']}")
         al = page.evaluate("""() => { const c = document.getElementById('card').getBoundingClientRect(), s = document.getElementById('share').getBoundingClientRect(); return [c.left, c.width, s.left, s.width]; }""")
-        check("R6 after a drop (1280 x 720): the share bar has the card's left edge and width", abs(al[0] - al[2]) < 1 and abs(al[1] - al[3]) < 1, f"card left {al[0]:.1f} width {al[1]:.1f}, share bar left {al[2]:.1f} width {al[3]:.1f}")
+        check("R6 after a drop (1280 x 720): the share bar is centred under the card (and at least as wide as it)", abs((al[0] + al[1] / 2) - (al[2] + al[3] / 2)) < 1.5 and al[3] >= al[1] - 1, f"card left {al[0]:.1f} width {al[1]:.1f}, share bar left {al[2]:.1f} width {al[3]:.1f}")
+        # the Light / Dark toggle is on the same row as the share buttons at 1280 px (also with Share shown, as on a phone or a Mac)
+        page.evaluate("document.getElementById('share-btn').hidden = false")
+        row = page.evaluate("""() => { const t = (id) => document.getElementById(id).getBoundingClientRect(), vis = ['dl-png', 'copy-img', 'share-btn', 'copy-link'].filter(id => !document.getElementById(id).hidden), th = t('theme'), sh = t('share');
+          return { vis, tops: vis.map(id => Math.round(t(id).top)), toggle: Math.round(th.top), bottomOk: th.bottom <= sh.bottom + 1, right: th.right <= sh.right + 1, fit: sh.bottom <= innerHeight, h: Math.round(sh.height) }; }""")
+        page.evaluate("document.getElementById('share-btn').hidden = true")
+        check("R6 after a drop (1280 x 720): the Light / Dark toggle is on the same row as the share buttons (Download PNG, Copy image, Share, Copy link), and the bar still fits in the window", len(set(row["tops"] + [row["toggle"]])) <= 2 and max(row["tops"] + [row["toggle"]]) - min(row["tops"] + [row["toggle"]]) <= 4 and row["bottomOk"] and row["right"] and row["fit"] and row["h"] <= 48, f"buttons {row['vis']} at tops {row['tops']}, toggle top {row['toggle']}, bar {row['h']} px high, fits {row['fit']}")
         check("R6 48 px between sections (after a drop)", all(g == 48 for g in lay["gaps"]) and len(lay["gaps"]) >= 4, f"gaps {lay['gaps']}")
         card = page.evaluate("""() => { const c = document.getElementById('card'), s = getComputedStyle(c), p = getComputedStyle(c.parentElement);
           return [s.borderTopWidth, p.borderTopWidth, p.backgroundColor, p.paddingTop]; }""")
         check("S3 no bordered container around the card (no double frame)", card[0] == "0px" and card[1] == "0px", f"img border {card[0]}, parent border {card[1]}")
-        check("S3 TMDB disclaimer is on the site", "not endorsed, certified, or otherwise approved by TMDB" in html, "site footer")
+        ft = page.evaluate("[document.querySelectorAll('footer p').length, !!document.querySelector('footer .tmdb img'), document.querySelector('footer').textContent.includes('This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.'), getComputedStyle(document.querySelector('footer p')).fontSize]")
+        check("S3 footer: two small lines at most; the TMDB logo and its required notice are kept", ft[0] <= 2 and ft[1] and ft[2] and "not endorsed, certified, or otherwise approved by TMDB" in html, f"{ft[0]} paragraphs at {ft[3]}, logo {ft[1]}, notice {ft[2]}")
 
         # --- rule 2: colour per user; rule 3: the field's contrast
         ctx.close()
@@ -236,30 +349,97 @@ def main():
         check("R2 the filled button (the card's ink on its ground) passes WCAG AA (4.5:1), light and dark", min(o[5] for o in out) >= 4.5, f"lowest ratio over {len(out)} renders: {min(o[5] for o in out):.2f}")
         check("R3 all text on the field keeps WCAG AA (4.5:1): the card's ink and muted ink on the ground, on the dots and on the big ゴ, light and dark", min(o[4] for o in out) >= 4.5 and all(o[6] for o in out), f"lowest ratio over {len(out)} renders: {min(o[4] for o in out):.2f}; the lede is the card's muted ink in every render")
 
+        # --- the trace: from the drop a line laps the drop zone's border once, before the To Be Continued arrow
+        c6, pg6, _, _ = load(browser, base, 1280, 900)
+        pg6.evaluate("""() => { window.__tr = []; const t0 = performance.now(), d = document.getElementById('drop'), r = document.querySelector('#trace .run');
+          const tick = () => { const cs = getComputedStyle(r); window.__tr.push([Math.round(performance.now() - t0), d.classList.contains('tracing'), d.classList.contains('reading'), parseFloat(cs.strokeDashoffset), getComputedStyle(document.getElementById('trace')).display]);
+            if (performance.now() - t0 < 4000) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }""")
+        pg6.set_input_files("#file", str(zips[0]))
+        pg6.wait_for_function("window.__tr.length && window.__tr[window.__tr.length - 1][0] > 3900", timeout=15000)
+        tr = pg6.evaluate("window.__tr")
+        geo = pg6.evaluate("""() => { const d = document.getElementById('drop'), t = document.getElementById('trace'), r = t.querySelector('rect'), cs = getComputedStyle(r);
+          return { vb: t.getAttribute('viewBox'), box: d.hidden ? null : [d.offsetWidth, d.offsetHeight], pl: r.getAttribute('pathLength'), da: cs.strokeDasharray, stroke: cs.stroke, fill: cs.fill, scripts: document.querySelectorAll('script[src]').length }; }""")
+        on = [r for r in tr if r[1]]
+        offs = [r[3] for r in on]
+        first_read = next((r[0] for r in tr if r[2]), None)
+        last_trace = on[-1][0] if on else None
+        check("R20 the trace: from the drop a line travels once along the drop zone's border (an SVG rect with pathLength 100 and a stroke-dasharray, its dash offset running from 0 to -100 in about 0.7 s), before the To Be Continued arrow starts", bool(on) and on[0][0] < 200 and 600 <= on[-1][0] - on[0][0] <= 900 and all(a >= b for a, b in zip(offs, offs[1:])) and offs[0] > -20 and offs[-1] < -85 and all(r[4] == "block" for r in on) and first_read is not None and first_read >= last_trace and geo["pl"] == "100" and geo["da"] not in ("none", "") and geo["fill"] == "none", f"line on at {on[0][0] if on else None} ms for {on[-1][0] - on[0][0] if on else None} ms, offset {offs[0] if offs else None} to {offs[-1] if offs else None}, the arrow starts at {first_read} ms; dasharray {geo['da']}, pathLength {geo['pl']}")
+        c6.close()
+        c6, pg6, _, _ = load(browser, base, 1280, 900, motion="reduce")
+        pg6.evaluate("window.__t = false; new MutationObserver(() => { if (document.getElementById('drop').classList.contains('tracing')) window.__t = true; }).observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] })")
+        pg6.set_input_files("#file", str(zips[0]))
+        pg6.wait_for_function("!document.getElementById('result').hidden")
+        check("R20 under prefers-reduced-motion there is no trace", pg6.evaluate("window.__t") is False, "the zone never gets the tracing state")
+        c6.close()
+
         # --- rule 8: the To Be Continued arrow, then the reveal
         c3, pg, _, _ = load(browser, base, 1280, 900)
         pg.evaluate(OBSERVE)
         pg.evaluate("window.__t0 = performance.now()")
+        # from the moment the zone is reading, every frame for 1.5 s: the arrow's left edge, the letters that are there, the freeze overlay
+        pg.evaluate("""() => { const arrow = document.querySelector('#tbc .arrow'), L = [...document.querySelectorAll('#tbc .words span span')], fr = document.getElementById('freeze'), out = [];
+          window.__smp = null;
+          const go = () => { const t0 = performance.now(); const tick = () => { const t = performance.now() - t0; out.push([Math.round(t), arrow.getBoundingClientRect().left, L.filter(e => getComputedStyle(e).opacity === '1').length, getComputedStyle(fr).display]);
+              if (t < 1500) requestAnimationFrame(tick); else { const r = fr.getBoundingClientRect(), cs = getComputedStyle(fr);
+                window.__smp = { s: out, n: L.length, rect: [r.width, r.height, innerWidth, innerHeight], pos: cs.position, bf: cs.backdropFilter || cs.webkitBackdropFilter, dot: getComputedStyle(fr.querySelector('circle')).fill }; } };
+            tick(); };
+          const mo = new MutationObserver(() => { if (document.getElementById('drop').classList.contains('reading')) { mo.disconnect(); go(); } });
+          mo.observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] }); }""")
         pg.set_input_files("#file", str(zips[0]))
         pg.wait_for_function("document.getElementById('drop').classList.contains('reading')")
         tbc = pg.evaluate("[getComputedStyle(document.getElementById('tbc')).display, document.getElementById('tbc').textContent, getComputedStyle(document.querySelector('#drop .drop-title')).visibility, document.getAnimations().filter(a => a.effect.target.closest && a.effect.target.closest('#tbc')).map(a => a.animationName + ' ' + a.effect.getComputedTiming().duration)]")
         pg.wait_for_function("document.getElementById('cardlive')")
         pg.wait_for_timeout(200)
         ev = dict(pg.evaluate("window.__ev"))
-        slide = re.search(r"@keyframes tbcIn \{ from \{[^}]*translateX\(-\d+px\)[^}]*\} to \{[^}]*translateX\(0\)", css)
-        check("R8 the To Be Continued arrow is shown from the drop for at least 1.0 s, however fast the file is read, and slides in from the left; its words come in behind it", tbc[0] == "flex" and "To Be Continued" in tbc[1] and tbc[2] == "hidden" and any(a.startswith("tbcIn") for a in tbc[3]) and bool(slide) and ev["arrow off"] - ev["arrow on"] >= 1000, f"arrow on at {ev['arrow on']} ms, off at {ev['arrow off']} ms ({ev['arrow off'] - ev['arrow on']} ms); animations {tbc[3]}")
+        pg.wait_for_function("window.__smp !== null")
+        smp = pg.evaluate("window.__smp")
+        lefts = [x[1] for x in smp["s"]]
+        final = lefts[-1]
+        letters = [x[2] for x in smp["s"]]
+        steps = [b_ - a_ for a_, b_ in zip(letters, letters[1:])]
+        check("R4 the arrow slides in from the left of the zone with a short overshoot: it starts left of its place, passes it by 1 to 40 px, and settles", min(lefts) < final - 100 and 1 <= max(lefts) - final <= 40 and abs(lefts[-1] - lefts[-5]) < 0.5 and re.search(r"@keyframes tbcIn \{[^@]*translateX\(-\d+px\)[^@]*translateX\(\d+px\)[^@]*translateX\(0\)", css) is not None, f"starts {min(lefts) - final:.0f} px from its place, overshoots by {max(lefts) - final:.1f} px, settles")
+        check("R4 the words are spelled out letter by letter: all 13 appear one after another (many distinct counts, a frame never adds more than 3), the first after the arrow has landed and the last before 1.8 s", smp["n"] == 13 and letters[0] == 0 and letters[-1] == 13 and max(steps) <= 3 and sum(1 for x in steps if x) >= 9 and next(x[0] for x in smp["s"] if x[2] >= 1) >= 550, f"{smp['n']} letters, first visible at {next(x[0] for x in smp['s'] if x[2] >= 1)} ms, all {letters[-1]} by {next(x[0] for x in smp['s'] if x[2] == 13)} ms, largest step {max(steps)}")
+        check("R4 the page behind the arrow is frozen in grey halftone: a fixed overlay over the whole viewport, a grayscale backdrop, dots in a neutral ink; no sepia, no brown, no hue", smp["rect"][0] == smp["rect"][2] and smp["rect"][1] == smp["rect"][3] and smp["pos"] == "fixed" and "grayscale(1)" in smp["bf"] and len(set(rgb(smp["dot"]))) == 1 and all(x[3] == "block" for x in smp["s"]) and "sepia" not in css.lower() and "hue-rotate" not in css and "brown" not in css.lower(), f"overlay {smp['rect'][0]:.0f} x {smp['rect'][1]:.0f} of {smp['rect'][2]} x {smp['rect'][3]}, backdrop {smp['bf']}, dots {smp['dot']}, no sepia or hue-rotate in style.css")
+        slide = re.search(r"@keyframes tbcIn \{\s*from \{[^}]*translateX\(-\d+px\)[^}]*\}\s*60% \{[^}]*translateX\(\d+px\)[^}]*\}\s*to \{[^}]*translateX\(0\)", css)
+        check("R8 the To Be Continued arrow is shown from the drop for at least 1.8 s, however fast the file is read, and slides in from the left; its words come in behind it", tbc[0] == "flex" and "To Be Continued" in tbc[1] and tbc[2] == "hidden" and any(a.startswith("tbcIn") for a in tbc[3]) and bool(slide) and ev["arrow off"] - ev["arrow on"] >= 1800, f"arrow on at {ev['arrow on']} ms, off at {ev['arrow off']} ms ({ev['arrow off'] - ev['arrow on']} ms); animations {tbc[3]}")
         check("R8 the reveal starts after the arrow ends, and the card is shown with it", ev["reveal start"] >= ev["arrow off"] and ev["card shown"] >= ev["arrow off"] - 5, f"arrow off {ev['arrow off']} ms, card shown {ev['card shown']} ms, reveal start {ev['reveal start']} ms")
         c3.close()
         for what, act in (("a click", lambda p_: p_.mouse.click(5, 300)), ("a key press", lambda p_: p_.keyboard.press("Shift"))):
             c3, pg, _, _ = load(browser, base, 1280, 900)
             ev = timeline(pg, zips[0], act)
-            done = pg.evaluate("[!document.getElementById('cardlive'), !document.getElementById('card').classList.contains('playing'), document.documentElement.dataset.accent || '']")
-            check(f"R8 {what} during the arrow skips the arrow and the reveal: the end state at once, no inline card", "reveal start" not in ev and ev["card shown"] < 1000 and done[0] and done[1] and done[2] != "", f"arrow off {ev.get('arrow off')} ms, card shown {ev.get('card shown')} ms, reveal never started: {'reveal start' not in ev}")
+            done = pg.evaluate("[!document.getElementById('cardlive'), !document.getElementById('card').classList.contains('playing'), document.documentElement.dataset.accent || '', getComputedStyle(document.getElementById('freeze')).display]")
+            check(f"R8 {what} during the arrow skips the arrow, the freeze and the reveal: the end state at once, no inline card", "reveal start" not in ev and ev["card shown"] < 1000 and done[0] and done[1] and done[2] != "" and done[3] == "none", f"the freeze is gone: {done[3] == 'none'}; arrow off {ev.get('arrow off')} ms, card shown {ev.get('card shown')} ms, reveal never started: {'reveal start' not in ev}")
             c3.close()
         c3, pg, _, _ = load(browser, base, 1280, 900, motion="reduce")
         ev = timeline(pg, zips[0])
-        check("R8 under prefers-reduced-motion the arrow is not shown and nothing waits", "arrow on" not in ev and "reveal start" not in ev and ev["card shown"] < 1000, f"events {ev}")
+        check("R8 under prefers-reduced-motion the arrow is not shown and nothing waits", "arrow on" not in ev and ev["card shown"] < 1000, f"events {ev}")
         c3.close()
+
+        # --- the percentile numbers count up once, over at most 0.6 s, after the reveal has ended
+        c5, pg5, _, _ = load(browser, base, 1280, 900)
+        pg5.evaluate("""() => { window.__pc = []; const t0 = performance.now(); const tick = () => { const els = [...document.querySelectorAll('#stats .pct')];
+            window.__pc.push([Math.round(performance.now() - t0), !!document.getElementById('cardlive'), els.map(e => e.textContent).join(','), els.map(e => e.dataset.n).join(',')]);
+            if (performance.now() - t0 < 7500) requestAnimationFrame(tick); }; requestAnimationFrame(tick); }""")
+        pg5.set_input_files("#file", str(zips[0]))
+        pg5.wait_for_function("window.__pc.length && window.__pc[window.__pc.length - 1][0] > 7400", timeout=15000)
+        pc = pg5.evaluate("window.__pc")
+        live_rows = [r for r in pc if r[1]]
+        after = [r for r in pc if not r[1] and r[3]]
+        end_t = live_rows[-1][0] if live_rows else None
+        fin = after[-1][3].split(",") if after else []
+        vals = [[int(x) for x in r[2].split(",")] for r in after if r[0] > end_t]
+        started = next((r[0] for r in after if r[0] > end_t and any(int(x) for x in r[2].split(","))), None)
+        done = next((r[0] for r in after if r[0] > end_t and r[2] == r[3]), None)
+        mono = all(all(b >= a for a, b in zip(u, v)) for u, v in zip(vals, vals[1:]))
+        zeros = all(all(x == "0" for x in r[2].split(",")) for r in live_rows if r[3])
+        check("R19 the percentile numbers wait at 0 during the reveal, then count up once (never down) to their final values, over at most 0.6 s after the reveal ends", bool(live_rows) and zeros and mono and started is not None and done is not None and done - end_t <= 650 and all(p == f for p, f in zip(after[-1][2].split(","), fin)), f"reveal ends at {end_t} ms, numbers start rising at {started} ms and are final at {done} ms ({(done - end_t) if done else None} ms after the end); final {fin}")
+        c5.close()
+        c5, pg5, _, _ = load(browser, base, 1280, 900, motion="reduce")
+        pg5.set_input_files("#file", str(zips[0]))
+        pg5.wait_for_function("!document.getElementById('result').hidden")
+        rd = pg5.evaluate("[...document.querySelectorAll('#stats .pct')].map(e => [e.textContent, e.dataset.n])")
+        check("R19 under prefers-reduced-motion the final percentile numbers are there at once", bool(rd) and all(a == b for a, b in rd), f"{len(rd)} numbers, all final: {[a for a, _ in rd]}")
+        c5.close()
 
         # --- rule 8: the reveal
         c3, pg, reqs3, ph3 = load(browser, base, 1280, 900)
@@ -297,15 +477,44 @@ def main():
         pg.wait_for_function("!document.getElementById('cardlive')", timeout=4000)
         check("R8 left alone the reveal ends by itself within 2.2 s", True, "the inline card is removed by the timer (2150 ms) or by the last animation")
         c3.close()
-        c4, pg, _, ph = load(browser, base, 1280, 900, motion="reduce")
+        # the calm reveal under prefers-reduced-motion: field 300 ms, card 400 ms, the six grades together; no movement, no flash, no trace, no arrow, no count-up
+        c4, pg, reqs4, ph = load(browser, base, 1280, 900, motion="reduce")
+        pg.evaluate("""() => { window.__c = null; window.__m = { flash: false, tracing: false, reading: false, pcts: [] };
+          new MutationObserver(() => { const d = document.getElementById('drop').classList, f = document.getElementById('field').classList;
+            if (f.contains('flash')) window.__m.flash = true; if (d.contains('tracing')) window.__m.tracing = true; if (d.contains('reading')) window.__m.reading = true;
+            const live = document.getElementById('cardlive');
+            if (live && !window.__c) { window.__c = true; const A = document.getAnimations();
+              window.__m.anims = A.filter((a) => live.contains(a.effect.target)).map((a) => [a.animationName, a.effect.getComputedTiming().duration, a.effect.getComputedTiming().delay, a.effect.target === live ? 'card' : a.effect.target.dataset.part, a.effect.getKeyframes().map((k) => Object.keys(k).filter((n) => !['offset', 'easing', 'composite', 'computedOffset'].includes(n)).join()).join()]);
+              window.__m.trans = A.filter((a) => a.transitionProperty).map((a) => [a.transitionProperty, a.effect.getComputedTiming().duration, a.effect.target.id]);
+              window.__m.pcts = [...document.querySelectorAll('#stats .pct')].map((e) => [e.textContent, e.dataset.n]); window.__m.t = performance.now(); } }).observe(document.body, { attributes: true, childList: true, subtree: true }); }""")
         drop(pg, ph, zips[0], settle=False)
-        r = pg.evaluate("[document.documentElement.dataset.accent || '', !document.getElementById('cardlive'), document.getAnimations().length, document.getElementById('field').classList.contains('flash'), getComputedStyle(document.getElementById('field')).animationName]")
-        check("R8 under prefers-reduced-motion the end state is there at once: accent and field set, no inline card, no flash, no animation", r[0] != "" and r[1] and r[2] == 0 and not r[3] and r[4] == "none", f"accent {r[0]}, inline card {not r[1]}, {r[2]} animations")
+        pg.wait_for_function("window.__c", timeout=3000)
+        pg.wait_for_function("!document.getElementById('cardlive')", timeout=3000)
+        m = pg.evaluate("window.__m")
+        parts = {}
+        for n, d, dl, who, props in m["anims"]:
+            parts.setdefault(who, []).append((n, d, dl, props))
+        grades_ok = len(m["anims"]) == 7 and parts.get("card") == [("fadeIn", 400, 0, "opacity,opacity")] and len(parts.get("grade", [])) == 6 and all(v == ("fadeIn", 300, 400, "opacity,opacity") for v in parts.get("grade", []))
+        check("R4 under prefers-reduced-motion the reveal is calm: the card fades in over 400 ms and all six grades fade in together (300 ms, the same start), opacity only, no other part moves", grades_ok, f"{len(m['anims'])} animations: {parts}")
+        check("R4 calm reveal: the page field fades to the card's colour over 300 ms (a background-color transition), without the flash", [t for t in m.get("trans", []) if t[2] == "field"] == [["background-color", 300, "field"]] and not m["flash"], f"transitions {m.get('trans')}; flash seen {m['flash']}")
+        check("R4 calm reveal: no border trace, no To Be Continued arrow, no count-up (the percentile numbers are final from the start)", not m["tracing"] and not m["reading"] and bool(m["pcts"]) and all(a == b for a, b in m["pcts"]), f"tracing {m['tracing']}, arrow {m['reading']}, {len(m['pcts'])} numbers")
+        after = pg.evaluate("[document.getElementById('field').classList.contains('fading'), !document.getElementById('card').classList.contains('playing'), document.getAnimations().length, getComputedStyle(document.getElementById('field')).animationName, document.documentElement.dataset.accent || '']")
+        check("R4 calm reveal: when it ends the end state stands (card image shown, no animation, no fading state, accent set)", after[0] is False and after[1] and after[2] == 0 and after[3] == "none" and after[4] != "", f"{after}")
+        check("R4 calm reveal makes no request: 0 requests after the drop", not [u for u in reqs4["drop"] if net(u)], f"{len([u for u in reqs4['drop'] if net(u)])} network requests")
         c4.close()
+        for what, act4 in (("a click", lambda p: p.mouse.click(5, 300)), ("a key press", lambda p: p.keyboard.press("Shift"))):
+            c4, pg, _, ph = load(browser, base, 1280, 900, motion="reduce")
+            drop(pg, ph, zips[0], settle=False)
+            pg.wait_for_function("document.getElementById('cardlive')", timeout=3000)
+            act4(pg)
+            pg.wait_for_function("!document.getElementById('cardlive')", timeout=1000)
+            r = pg.evaluate("[!document.getElementById('card').classList.contains('playing'), document.getAnimations().length, document.getElementById('field').classList.contains('fading'), getComputedStyle(document.getElementById('field')).backgroundColor, getComputedStyle(document.documentElement).getPropertyValue('--field').trim()]")
+            check(f"R4 under prefers-reduced-motion {what} still skips the calm reveal: the end state at once, the field at the card's colour", r[0] and r[1] == 0 and not r[2], f"image shown {r[0]}, animations left {r[1]}, field fading {r[2]}, field {r[3]} vs --field {r[4]}")
+            c4.close()
         ctx, page, reqs, phase = load(browser, base, 1280, 900)
         drop(page, phase, zips[0], settle=False)
-        page.wait_for_timeout(2600)
-        check("R8 the reveal makes no request: 0 requests after the drop, over the whole reveal", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests in 2.6 s")
+        page.wait_for_timeout(4600)   # the arrow (1.8 s) and the reveal (2.15 s)
+        check("R8 the reveal makes no request: 0 requests after the drop, over the whole reveal", not [u for u in reqs["drop"] if net(u)], f"{len([u for u in reqs['drop'] if net(u)])} network requests in 4.6 s")
         svg_static = page.evaluate("fetch(document.getElementById('card').src).then(r => r.text())")
         png_static = page.evaluate("document.getElementById('dl-svg').href && fetch(document.getElementById('dl-svg').href).then(r => r.text())")
         check("R8 the card that is downloaded is static: no animation, no style attribute of the reveal in the SVG (the PNG is drawn from it)", not re.search(r"<animate|<set |@keyframes|animation|--i:|class=\"playing", svg_static + png_static), "the SVG shown and the SVG downloaded are the card as the renderer wrote it; the PNG is drawn from that SVG string, never from the inline copy")
@@ -339,7 +548,9 @@ def main():
         check("R9 ban: no centred hero with three feature cards", page.evaluate("getComputedStyle(document.querySelector('header')).textAlign") != "center" and page.evaluate("document.querySelectorAll('main > section').length") <= 2, "header left-aligned; no card grid")
         films = len(json.loads((SITE / "films.json").read_text())["films"])
         users = json.loads((ROOT / "tools/calibration.json").read_text())["users"]["power_precision"]
-        check("R9 copy uses real numbers", f"{users:,}" in html and f"{films:,}" in html, f"{films:,} films (films.json) and {users:,} users (calibration.json) both in the lede")
+        adv_text = page.evaluate("document.getElementById('advanced').textContent")
+        lede = page.evaluate("document.querySelector('.lede').textContent")
+        check("R9 copy uses real numbers, in Advanced and not in the tagline; the tagline is \"Drop your Letterboxd export. Get your JoJo Stand.\"", f"{users:,}" in adv_text and f"{films:,}" in adv_text and lede == "Drop your Letterboxd export. Get your JoJo Stand." and not re.search(r"\d", lede), f"{films:,} films (films.json) and {users:,} users (calibration.json) are in Advanced; tagline {lede!r}")
         # --- share link: the card from the URL alone, with no request beyond the page load
         ctx, page, reqs, phase = load(browser, base, 1280, 900)
         page.evaluate("Object.defineProperty(navigator.clipboard, 'writeText', {configurable: true, value: async (t) => { window.__link = t; }})")

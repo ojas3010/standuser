@@ -38,9 +38,12 @@ try {
   const seen = () => performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname).filter((n) => n !== '/synth.zip' && n !== '/favicon.ico');
   // the page is booted when it has loaded the table and the wasm and its status line is empty again
   await until('the page to boot', () => seen().includes('/films.json') && seen().includes('/names.json') && seen().includes('/pkg/standuser_bg.wasm') && statusEl().textContent === '');
-  // the privacy line sits in the drop zone: the three files read and the two columns of profile.csv
-  const dropText = document.getElementById('drop').textContent;
-  for (const w of ['watched.csv', 'ratings.csv', 'diary.csv', 'two columns of', 'profile.csv', 'Date Joined', 'Favorite Films']) out('drop zone says ' + w, dropText.includes(w), true);
+  // the drop zone keeps its title, the export line and one privacy line; the list of files read is in Advanced
+  const dropEl = document.getElementById('drop');
+  out('drop zone: title, choose-the-file line, export line, one privacy line', [...dropEl.querySelectorAll(':scope > p')].map((p) => p.textContent.replace(/\s+/g, ' ').trim()).join(' | '), 'Drop letterboxd-…-utc.zip here | or choose the file | On letterboxd.com (not the app): Settings, Account data, Export your data. | Read in your browser. Never uploaded.');
+  const advText = document.getElementById('advanced').textContent;
+  for (const w of ['watched.csv', 'ratings.csv', 'diary.csv', 'two columns of', 'profile.csv', 'Date Joined', 'Favorite Films', 'never uploaded']) out('Advanced says ' + w, advText.includes(w), true);
+  out('the drop zone no longer lists the CSV files', /\.csv/.test(dropEl.textContent), false);
   // before a drop: the sample card, labelled Sample, sits above the drop zone and the accent is still the ink colour
   const card0 = document.getElementById('card');
   await until('the sample card', () => card0.src.startsWith('blob:'));
@@ -51,7 +54,7 @@ try {
   const dz = document.getElementById('drop').getBoundingClientRect(), cz = card0.getBoundingClientRect();
   out('sample card and drop zone are placed by the viewport width', innerWidth >= 900 ? dz.right <= cz.left && Math.abs(dz.top - cz.top) < 80 : dz.bottom <= cz.top, true);
   out('sample username is sample', (await (await fetch(card0.src)).text()).includes('>Stand card for sample: '), true);
-  out('card theme select is not displayed before a drop', document.getElementById('theme').offsetParent === null, true);
+  out('card theme toggle is not displayed before a drop', document.getElementById('theme').offsetParent === null, true);
   out('no accent before a drop', document.documentElement.dataset.accent || '', '');
   // the field behind the header and the stage: the sample card's ground colour, with the halftone dots and the big faint ゴ; the ink on it is the card's
   const sampleSvg = await (await fetch(card0.src)).text();
@@ -59,7 +62,10 @@ try {
   out('before a drop the field is the sample card\'s ground', rs0.getPropertyValue('--field').trim(), cardColours(sampleSvg).ground);
   out('the field paints that colour, with dots 7 px apart', `${getComputedStyle(fieldEl).backgroundColor === 'rgb(' + [1, 3, 5].map((i) => parseInt(cardColours(sampleSvg).ground.slice(i, i + 2), 16)).join(', ') + ')'} ${/radial-gradient/.test(getComputedStyle(fieldEl).backgroundImage)} ${getComputedStyle(fieldEl).backgroundSize}`, 'true true 7px 7px');
   out('the field holds six big faint ゴ, made from the card\'s own path', `${fieldEl.querySelectorAll('svg.ghost path').length} ${fieldEl.getAttribute('aria-hidden')}`, '6 true');
-  out('the field behind the header and the stage ends under the stage', Math.abs(fieldEl.getBoundingClientRect().bottom - (document.getElementById('stage').getBoundingClientRect().bottom + 24)) < 2, true);
+  // the band follows the layout through a ResizeObserver, one frame after the layout changes (fonts swapping in, the card image decoding)
+  const fieldEnds = () => Math.abs(fieldEl.getBoundingClientRect().bottom - (document.getElementById('stage').getBoundingClientRect().bottom + 24)) < 2;
+  await until('the field to follow the stage', fieldEnds, 3000).catch(() => {});
+  out('the field behind the header and the stage ends under the stage', fieldEnds(), true);
   const v0 = (k) => rs0.getPropertyValue(k).trim();
   out('text on the field keeps 4.5:1: the ink and the muted ink on the ground, on the dots and on the ghost ゴ', [[v0('--field'), v0('--field-ink')], [v0('--field'), v0('--field-mute')], [v0('--dot'), v0('--field-ink')], [v0('--ghost'), v0('--field-ink')], [v0('--ghost'), v0('--field-mute')]].every(([a, b]) => contrast(a, b) >= 4.5), true);
   // the drop zone: ゴゴゴ beside it only while a file is dragged over it, the To Be Continued arrow in it only while a file is read
@@ -68,9 +74,16 @@ try {
   dzone.classList.add('over');
   out('on drag-over the ゴゴゴ are displayed beside the zone', document.getElementById('dropgo').offsetParent !== null && document.querySelectorAll('#dropgo svg path').length >= 6, true);
   dzone.classList.remove('over');
+  dzone.classList.add('tracing');
+  out('while the file is taken in a line travels along the zone\'s border: the trace is displayed, an SVG rect with pathLength 100 and a dash', `${getComputedStyle(document.getElementById('trace')).display} ${document.querySelector('#trace rect').getAttribute('pathLength')} ${getComputedStyle(document.querySelector('#trace rect')).strokeDasharray !== 'none'}`, 'block 100 true');
+  dzone.classList.remove('tracing');
+  out('the trace is not displayed at rest', getComputedStyle(document.getElementById('trace')).display, 'none');
   dzone.classList.add('reading');
   out('while a file is read the To Be Continued arrow is displayed and the zone text is hidden', `${document.getElementById('tbc').offsetParent !== null} ${getComputedStyle(dzone.querySelector('.drop-title')).visibility} ${document.getElementById('tbc').textContent}`, 'true hidden To Be Continued');
+  out('while a file is read the page behind is frozen: the overlay is displayed, and it is not at rest', `${getComputedStyle(document.getElementById('freeze')).display} ${document.getElementById('tbc').querySelectorAll('.words span span').length}`, 'block 13');
   dzone.classList.remove('reading');
+  out('the freeze is gone when the zone is not reading', getComputedStyle(document.getElementById('freeze')).display, 'none');
+  out('How the card was built is not displayed before a drop', document.getElementById('method').offsetParent === null, true);
   out('share bar and file line are not displayed before a drop', ['share', 'filebar', 'result'].map((id) => document.getElementById(id).offsetParent === null).join(), 'true,true,true');
   const before = seen();
   const result = document.getElementById('result');
@@ -87,32 +100,78 @@ try {
   // with reduced motion the To Be Continued arrow is not shown (and so nothing waits for it)
   let sawArrow = false;
   new MutationObserver(() => { if (document.getElementById('drop').classList.contains('reading')) sawArrow = true; }).observe(document.getElementById('drop'), { attributes: true, attributeFilter: ['class'] });
+  // the calm reveal under reduced motion: when the inline card appears, its animations are fades only (the card 400 ms, the six grades 300 ms after it),
+  // the field never flashes and the percentile numbers are final from the start
+  const calm = { seen: false, anims: [], flash: false, pcts: null, fading: false };
+  new MutationObserver(() => {
+    if (document.getElementById('field').classList.contains('flash')) calm.flash = true;
+    const live = document.getElementById('cardlive');
+    if (live && !calm.seen) {
+      calm.seen = true;
+      calm.fading = document.getElementById('field').classList.contains('fading');
+      calm.pcts = [...document.querySelectorAll('#stats .pct')].every((e) => e.textContent === e.dataset.n);
+      calm.anims = document.getAnimations().filter((a) => live.contains(a.effect.target)).map((a) => `${a.animationName} ${a.effect.getComputedTiming().duration} ${a.effect.getComputedTiming().delay} ${a.effect.target === live ? 'card' : a.effect.target.dataset.part}`);
+    }
+  }).observe(document.body, { attributes: true, childList: true, subtree: true });
   await feed('synth.zip', 'letterboxd-synthuser-2026-06-30-12-00-utc.zip');
   out('result visible', !result.hidden, true);
+  out('How the card was built is displayed once the card exists', document.getElementById('method').offsetParent !== null, true);
+
   out('the To Be Continued arrow is not shown under reduced motion', `${matchMedia('(prefers-reduced-motion: reduce)').matches} ${sawArrow}`, 'true false');
   out('drop zone is replaced', document.getElementById('drop').hidden, true);
-  out('file line', document.getElementById('fileinfo').textContent, /^letterboxd-synthuser-2026-06-30-12-00-utc\.zip · \d[\d,]* films read$/);
+  out('file line', document.getElementById('filebar').textContent.replace(/\s+/g, ' ').trim(), /^\d[\d,]* films read · Change file$/);
+  out('file line does not show the ZIP file name', /zip|letterboxd-/i.test(document.getElementById('filebar').textContent), false);
   out('Change file button', document.getElementById('change').textContent, 'Change file');
   out('card scrolled into view', (() => { const r = document.getElementById('figure').getBoundingClientRect(); return r.top >= -2 && r.top < innerHeight; })(), true);
   const after = seen();
   const added = after.filter((n) => !before.includes(n));
   out('requests while processing', added.length + (added.length ? ' ' + added.join(' ') : ''), '0');
-  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /sample.json /selftest.js /style.css /tmdb.svg');
+  out('page resources', [...new Set(after)].sort().join(' '), '/accent.js /app.js /early.js /films.json /fonts/archivo-black.woff2 /fonts/archivo.woff2 /names.json /pkg/standuser.js /pkg/standuser_bg.wasm /sample.json /selftest.js /style.css /tmdb.svg');
   out('status', statusEl().textContent, '');
   const rows = document.getElementById('stats').tBodies[0].rows;
-  out('rows', rows.length, 6);
-  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*? \| -0\.049.+ \| .+ \| 210 of 250 filmsmeasured · rated films with crowd data$/);
-  out('Why these grades: six stats, each with value, your film and what it is based on', [...rows].every((r) => r.cells.length === 5 && r.cells[0].textContent && r.cells[2].textContent && r.cells[3].textContent && r.cells[4].textContent), true);
-  out('Why these grades: columns', [...document.querySelectorAll('#stats th')].map((h) => h.textContent).join(' | '), 'Stat | Grade | Value | Your film | Based on');
-  out('Why these grades: Based on does not repeat a count', [...rows].some((r) => { const n = r.cells[4].firstChild.textContent.match(/^(\d+) of/); return n && new RegExp(`(^|[^\\d])${n[1]}( |$)`).test(r.cells[4].querySelector('small').textContent); }), false);
-  for (const id of ['why-ability', 'why-weakness', 'why-name', 'why-film', 'why-type']) out('Why these grades: ' + id, document.getElementById(id).textContent.length > 10, true);
+  const drows = document.getElementById('detail').tBodies[0].rows;
+  out('rows', `${rows.length} ${drows.length}`, '6 6');
+  out('row0', [...rows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| C\*?( · top \d+%)? \| .+\.$/);
+  out('Why these grades: three columns, Stat, Grade and one sentence', [...document.querySelectorAll('#stats th')].map((h) => h.textContent).join(' | '), 'Stat | Grade | Why');
+  out('Why these grades: six stats, each with a grade and one sentence', [...rows].every((r) => r.cells.length === 3 && r.cells[0].textContent && /^[A-E?∅∞]\*?( · top \d+%)?$/.test(r.cells[1].textContent) && /\.$/.test(r.cells[2].textContent)), true);
+  out('Why these grades: the sentences name the user\'s films (at least four of six, in quotes)', [...rows].filter((r) => /\u201c.+\u201d/.test(r.cells[2].textContent)).length >= 4, true);
+  out('Why these grades: no raw value, count, status word or provisional tag in the sentences', [...rows].some((r) => /DPA|★|\d+ of \d+|provisional|measured|\[|\d\.\d{2}/.test(r.cells[2].textContent)), false);
+  out('Why these grades: each sentence is one sentence', [...rows].every((r) => (r.cells[2].textContent.match(/\. /g) || []).length <= 1), true);
+  // the raw value, the coverage counts and the status words are in Advanced
+  out('Advanced: the numbers behind the grades, columns', [...document.querySelectorAll('#detail th')].map((h) => h.textContent).join(' | '), 'Stat | Value | Based on | Status');
+  out('Advanced: row0', [...drows[0].cells].map((c) => c.textContent).join(' | '), /^Power \| -0\.049.+ \| 210 of 250 films \| measured · rated films with crowd data$/);
+  out('Advanced: six stats, each with value, counts and status', [...drows].every((r) => r.cells.length === 4 && r.cells[0].textContent && r.cells[1].textContent && r.cells[2].textContent && r.cells[3].textContent), true);
+  out('Advanced: the status does not repeat a count', [...drows].some((r) => { const n = r.cells[2].textContent.match(/^(\d+) of/); return n && new RegExp(`(^|[^\\d])${n[1]}( |$)`).test(r.cells[3].textContent); }), false);
+  out('Advanced is collapsed after a drop, and its numbers are not displayed until it is opened', `${!document.getElementById('advanced').open} ${!document.getElementById('detail').checkVisibility()}`, 'true true');
+  const lines = Object.fromEntries(['why-weakness', 'why-name', 'why-film', 'why-type'].map((id) => [id, document.getElementById(id).textContent]));
+  for (const id of Object.keys(lines)) out('Why these grades: ' + id + ' is one plain sentence', lines[id].length > 10 && /\.$/.test(lines[id]) && (lines[id].match(/\. [A-Z]/g) || []).length === (id === 'why-type' ? 1 : 0), true);
+  out('Why these grades: no Ability block (the card shows it), and no [provisional] tag anywhere on the page', `${!!document.getElementById('why-ability')} ${[...document.querySelectorAll('#why dt')].map((d) => d.textContent).join(',')} ${/provisional\]/.test(document.body.textContent)}`, 'false Weakness,The name,Signature film,The type false');
+  out('Why these grades: the weakness line has no leading label and no tag', /^(Weakness|Soft spot):|\[provisional\]|\(\w+ [A-E]\)/.test(lines['why-weakness']), false);
+  out('Why these grades: the name line', lines['why-name'], /^Track \d+ of .+ (score|soundtrack), from a (\d\.\d★ )?film of yours\.$/);
+  out('Why these grades: the signature film line', lines['why-film'], /^“.+” \(\d{4}\) is where you and the crowd disagree most: you gave it \d(\.\d)?★, its average is \d(\.\d+)?★\.$/);
+  // the percentile beside each grade; the numbers are final at once under reduced motion; the popover says the same
+  out('Why these grades: the percentile beside each grade ("B · top 36%"), none for a stat that is not graded', [...rows].map((r) => r.cells[1].textContent).every((t) => /^[A-E]\*? · top \d+%$/.test(t) || /^[?∅∞]\*?$/.test(t)) && [...rows].some((r) => / · top \d+%$/.test(r.cells[1].textContent)), true);
+  out('Why these grades: under reduced motion the final numbers are there at once', [...document.querySelectorAll('#stats .pct')].every((e) => e.textContent === e.dataset.n && Number(e.dataset.n) >= 1 && Number(e.dataset.n) <= 100), true);
+  // tap a grade: six targets over the card, one popover at a time, Escape closes
+  const hotb = [...document.querySelectorAll('#hots button')];
+  out('tap a grade: six targets, each named by stat and grade', hotb.length === 6 && hotb.every((b) => /, grade [A-E?∅∞]\*?: why$/.test(b.getAttribute('aria-label')) && b.getAttribute('aria-expanded') === 'false'), true);
+  hotb[1].click();
+  out('tap a grade: a tap opens the popover with the stat\'s sentence', `${!document.getElementById('statpop').hidden} ${document.getElementById('statpop').textContent.includes(rows[1].cells[2].textContent)} ${hotb[1].getAttribute('aria-expanded')}`, 'true true true');
+  out('tap a grade: the popover\'s percentile is the table\'s', (() => { hotb[0].click(); const t = document.getElementById('statpop').querySelector('.pop-top'); const m = rows[0].cells[1].textContent.match(/top (\d+)%/); return m ? t.textContent === `Top ${m[1]}%` : t.hidden; })(), true);
+  hotb[3].click();
+  out('tap a grade: only one popover is open at a time', `${document.querySelectorAll('#statpop:not([hidden])').length} ${document.querySelectorAll('#hots [aria-expanded=true]').length} ${hotb[3].getAttribute('aria-expanded')}`, '1 1 true');
+  addEventListener('keydown', () => {}, { once: true });
+  document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+  out('tap a grade: Escape closes the popover', `${document.getElementById('statpop').hidden} ${document.querySelectorAll('#hots [aria-expanded=true]').length}`, 'true 0');
+  hotb[2].click();
+  document.body.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true }));
+  out('tap a grade: a tap outside closes it', document.getElementById('statpop').hidden, true);
+  out('footer: two small lines at most, the TMDB logo and its required notice kept', `${document.querySelectorAll('footer p').length <= 2} ${!!document.querySelector('footer a[href="https://www.themoviedb.org/"] img[alt=TMDB]')} ${document.querySelector('footer').textContent.includes('This website uses TMDB and the TMDB APIs but is not endorsed, certified, or otherwise approved by TMDB.')}`, 'true true true');
   out('Why these grades: no Data credits section; the footer keeps the credits and the TMDB block', `${!!document.getElementById('why-credit')} ${/Letterboxd.*TMDB.*MusicBrainz/.test(document.querySelector('footer').textContent)} ${!!document.querySelector('footer .tmdb img')}`, 'false true true');
-  out('Why these grades: the weakness line has no leading label', /^(Weakness|Soft spot):/.test(document.getElementById('why-weakness').textContent), false);
-  out('Why these grades: the name line has no leading Why', /^Why\b/.test(document.getElementById('why-name').textContent), false);
   out('Why these grades: the type sentence', document.getElementById('why-type').textContent, /\. The type comes from your stats; it matches the canon Stand type about 60% of the time\./);
   out('Why these grades is under the share bar', document.getElementById('share').getBoundingClientRect().bottom <= document.querySelector('#result h2').getBoundingClientRect().top, true);
-  out('notes: the film-table sentence is in the method text only', `${document.getElementById('notes').children.length} ${/film table/.test(document.getElementById('notes').textContent.replace(/Film table built/, ''))}`, '1 false');
-  out('coverage cell', rows[0].cells[4].firstChild.textContent, '210 of 250 films');
+  out('How the card was built keeps the SVG and JSON links; the coverage bullets and the table date are in Advanced', `${!!document.querySelector('#method #dl-svg')} ${!!document.querySelector('#method #dl-json')} ${!!document.querySelector('#method #notes')} ${!!document.querySelector('#advanced #notes')} ${document.getElementById('notes').children.length > 0} ${/rated films have a Letterboxd crowd average/.test(document.getElementById('advanced').textContent)}`, 'true true false true true true');
+  out('coverage cell', drows[0].cells[2].textContent, '210 of 250 films');
   const img = document.getElementById('card');
   await img.decode();
   out('img', `${img.naturalWidth}x${img.naturalHeight} ${img.src.slice(0, 5)}`, '1080x1350 blob:');
@@ -121,10 +180,11 @@ try {
   HTMLAnchorElement.prototype.click = function () { dls.push([this.download, fetch(this.href).then((r) => r.arrayBuffer())]); };
   const heads = { 'card.png': '89 50 4e 47 d a 1a a', 'card.svg': '3c 73 76 67 20 78 6d 6c', 'stand.json': '7b a 20 20 22 61 62 69' };
   out('share bar is under the card', document.getElementById('card').getBoundingClientRect().bottom <= document.getElementById('share').getBoundingClientRect().top, true);
-  out('share bar order', [...document.querySelectorAll('#share button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
+  out('share bar order', [...document.querySelectorAll('#share > button:not([hidden])')].map((b) => b.id).join(' '), (v) => /^dl-png copy-img( share-btn)?( copy-link)?$/.test(v));
+  out('share bar: the theme toggle comes after the buttons', document.getElementById('share').lastElementChild.previousElementSibling === document.getElementById('theme') || document.getElementById('theme').previousElementSibling === document.getElementById('copy-link'), true);
   out('Download SVG and JSON are text links in the method section', ['dl-svg', 'dl-json'].map((id) => document.getElementById(id).tagName + document.getElementById(id).closest('#method').tagName).join(' '), 'ASECTION ASECTION');
-  out('card theme select is displayed after a drop', document.getElementById('theme').offsetParent !== null, true);
-  out('Advanced is collapsed, in the method section', (() => { const d = document.querySelector('details.opts'); return !d.open && !!d.closest('#method'); })(), true);
+  out('card theme toggle is displayed after a drop, in the share bar', document.getElementById('theme').offsetParent !== null && !!document.getElementById('theme').closest('#share'), true);
+  out('Advanced is collapsed, its own block after the method section, with the username and join date fields and the counts', (() => { const d = document.getElementById('advanced'); return !d.open && d.parentElement.tagName === 'MAIN' && !d.closest('#method') && !!d.querySelector('#username') && !!d.querySelector('#joined') && /34,523 Letterboxd users/.test(d.textContent) && /9,787 films/.test(d.textContent); })(), true);
   out('order after a drop: file line, card, share bar, Why these grades', ['filebar', 'figure', 'share', 'result'].map((id) => document.getElementById(id).getBoundingClientRect().top).every((t, i, a) => !i || a[i - 1] < t), true);
   out('Share is hidden exactly where the API cannot share files', document.getElementById('share-btn').hidden, !(navigator.share && navigator.canShare && navigator.canShare({ files: [new File([new Uint8Array(1)], 'a.png', { type: 'image/png' })] })));
   // Copy image puts a PNG on the clipboard
@@ -141,7 +201,7 @@ try {
     window.ClipboardItem = Item;
     const head = [...new Uint8Array(await (await fetch(URL.createObjectURL(await copied['image/png']))).arrayBuffer()).slice(0, 8)].map((x) => x.toString(16)).join(' ');
     out('Copy image puts a PNG on the clipboard', `${Object.keys(copied).join()} ${head}`, 'image/png 89 50 4e 47 d a 1a a');
-    out('Copy image says so', document.getElementById('sharenote').textContent, 'Image copied.');
+    out('Copy image says so, in the toast', document.getElementById('toast').textContent, 'Image copied');
   }
   for (const [n, id] of [[1, 'dl-png'], [2, 'dl-svg'], [3, 'dl-json']]) {
     document.getElementById(id).click();
@@ -165,7 +225,10 @@ try {
   const colours = cardColours(await (await fetch(img.src)).text());
   out('accent is the card ground', root.getPropertyValue('--accent').trim(), colours.ground);
   out('the field is the card ground too, with the card ink and muted ink', [root.getPropertyValue('--field'), root.getPropertyValue('--field-ink')].map((x) => x.trim()).join(' '), `${colours.ground} ${colours.ink}`);
-  out('with reduced motion the reveal is not played: no inline card, no flash, the image shows', `${!document.getElementById('cardlive')} ${!img.classList.contains('playing')} ${!document.getElementById('field').classList.contains('flash')} ${matchMedia('(prefers-reduced-motion: reduce)').matches}`, 'true true true true');
+  await until('the calm reveal to end', () => !document.getElementById('cardlive'), 3000);
+  out('with reduced motion the reveal is calm: it played, and it is over (the image shows, the field is no longer fading)', `${calm.seen} ${!img.classList.contains('playing')} ${!document.getElementById('field').classList.contains('fading')} ${matchMedia('(prefers-reduced-motion: reduce)').matches}`, 'true true true true');
+  out('calm reveal: the card fades in over 400 ms and the six grades fade in together over 300 ms after it, nothing else animates', [...new Set(calm.anims)].sort().join(' | '), 'fadeIn 300 400 grade | fadeIn 400 0 card');
+  out('calm reveal: the field fades (no flash) and the percentile numbers are final, no count-up', `${calm.fading} ${calm.flash} ${calm.pcts}`, 'true false true');
   out('text on the accent is the card ink', root.getPropertyValue('--on-accent').trim(), colours.ink);
   out('accent label contrast', contrast(colours.ground, colours.ink).toFixed(2), (x) => Number(x) >= 4.5);
   out('Download PNG is the one primary button', document.querySelectorAll('button.primary').length, 1);
@@ -188,8 +251,36 @@ try {
   await until('Copy link to write', () => copiedText, 5000);
   out('link', copiedText.replace(/#c=.{12,}$/, '#c=…'), `${location.origin}${location.pathname}#c=…`);
   out('link payload is base64url', /#c=[A-Za-z0-9_-]{100,900}$/.test(copiedText), true);
-  out('Copy link says so', document.getElementById('sharenote').textContent, 'Link copied.');
-  out('next to Copy link: what the link contains', document.getElementById('linknote').textContent.includes('The link contains your username and grades'), true);
+  out('Copy link says so, in the toast', document.getElementById('toast').textContent, 'Link copied');
+  out('the toast is an aria-live status region and is shown', `${document.getElementById('toast').getAttribute('role')} ${document.getElementById('toast').getAttribute('aria-live')} ${document.getElementById('toast').classList.contains('show')} ${getComputedStyle(document.getElementById('toast')).position}`, 'status polite true fixed');
+  out('no share note in the share bar', !!document.getElementById('sharenote'), false);
+  await sleep(2300);
+  out('the toast is gone after 2 s', `${document.getElementById('toast').textContent === ''} ${document.getElementById('toast').classList.contains('show')}`, 'true false');
+  Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async () => { throw new Error('denied'); } });
+  document.getElementById('copy-link').click();
+  await until('the error toast', () => document.getElementById('toast').textContent !== '', 5000);
+  out('a failed copy says so in the toast', document.getElementById('toast').textContent, 'Could not copy the link');
+  Object.defineProperty(navigator.clipboard, 'writeText', { configurable: true, value: async (t) => { copiedText = t; } });
+  // Share: the PNG and the fixed text, with the site's fixed address (not location.origin, not the #c= card link), in text and no url; without the file
+  // when the API refuses a file together with text. The API is replaced (headless Chrome has none); a click on a hidden button still runs the handler.
+  const shared = [];
+  const SHARE_TEXT = 'My JoJo Stand, from my Letterboxd. Find yours: https://standuser.pages.dev';
+  const resBefore = performance.getEntriesByType('resource').length;
+  Object.defineProperty(navigator, 'share', { configurable: true, value: async (d) => { shared.push(d); } });
+  Object.defineProperty(navigator, 'canShare', { configurable: true, value: (d) => !d.text || !d.files });
+  document.getElementById('share-btn').click();
+  await until('Share without the file to be called', () => shared.length >= 1, 5000);
+  out('Share, files refused with text: text', shared[0].text, SHARE_TEXT);
+  out('Share, files refused with text: no file, no url', `${'files' in shared[0]} ${'url' in shared[0]}`, 'false false');
+  Object.defineProperty(navigator, 'canShare', { configurable: true, value: () => true });
+  document.getElementById('share-btn').click();
+  await until('Share with the file to be called', () => shared.length >= 2, 5000);
+  out('Share: text', shared[1].text, SHARE_TEXT);
+  out('Share: one PNG file, no url', `${shared[1].files.length} ${shared[1].files[0].type} ${'url' in shared[1]}`, '1 image/png false');
+  out('Share: the PNG file is a PNG', [...new Uint8Array(await shared[1].files[0].arrayBuffer()).slice(0, 4)].map((b) => b.toString(16)).join(' '), '89 50 4e 47');
+  out('Share text has no #c= card link and no location.origin', `${shared[0].text.includes('#c=')} ${shared[1].text.includes('#c=')} ${shared[1].text.includes(location.origin)}`, 'false false false');
+  out('Share makes no request', performance.getEntriesByType('resource').length, resBefore);
+  out('no link note under the share bar', `${!!document.getElementById('linknote')} ${document.getElementById('share').textContent.includes('The link contains')}`, 'false false');
   // opening the link: the card with no file, and no request beyond the page's own load
   const open = async (hash) => {
     const f = document.createElement('iframe');
@@ -199,6 +290,9 @@ try {
     await new Promise((r) => f.addEventListener('load', r, { once: true }));
     const d = () => f.contentDocument;
     await until('the linked page to boot', () => d().getElementById('status') && d().getElementById('status').textContent === '' && !d().getElementById('drop').classList.contains('loading') && d().getElementById('card').src.startsWith('blob:'), 20000);
+    // a hidden iframe can start with the wrong colour scheme and be corrected a moment later (the page's change listener redraws the card);
+    // the card is compared only once the iframe's theme is the one its own system setting asks for
+    await until('the linked page to follow its colour scheme', () => d().getElementById('theme').dataset.value === (f.contentWindow.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'), 5000);
     return f;
   };
   const fr = await open(copiedText.slice(copiedText.indexOf('#')));
@@ -207,32 +301,37 @@ try {
   const names = () => fr.contentWindow.performance.getEntriesByType('resource').map((r) => new URL(r.name).pathname);
   const atLoad = names();
   out('opened link: card label', fd.getElementById('cardlabel').textContent, 'Shared card');
+  out('opened link: How the card was built is displayed', fd.getElementById('method').hidden, false);
   out('opened link: card', `${fd.getElementById('card').naturalWidth}x${fd.getElementById('card').naturalHeight}`, '1080x1350');
-  out('opened link: same card as the file made', (await (await fetch(fd.getElementById('card').src)).text()) === (await (await fetch(img.src)).text()), true);
+  const svgA = await (await fetch(fd.getElementById('card').src)).text(), svgB = await (await fetch(img.src)).text();
+  let kk = 0; while (kk < svgA.length && svgA[kk] === svgB[kk]) kk++;
+  out('opened link: same card as the file made', svgA === svgB ? true : `differs at ${kk} of ${svgA.length}/${svgB.length}: ${JSON.stringify(svgA.slice(Math.max(0, kk - 40), kk + 60))} vs ${JSON.stringify(svgB.slice(Math.max(0, kk - 40), kk + 60))}`, true);
   out('opened link: share bar visible, why section hidden', `${!fd.getElementById('share').hidden} ${fd.getElementById('result').hidden}`, 'true true');
   await sleep(1500);
   out('opened link: requests after the page load', names().filter((n) => !atLoad.includes(n)).length, 0);
-  out('opened link: only the page\'s own files', [...new Set(names())].filter((n) => !/^\/(accent\.js|app\.js|films\.json|names\.json|sample\.json|style\.css|tmdb\.svg|pkg\/.*|fonts\/.*)$/.test(n)).join(' '), '');
+  out('opened link: only the page\'s own files', [...new Set(names())].filter((n) => !/^\/(accent\.js|app\.js|early\.js|films\.json|names\.json|sample\.json|style\.css|tmdb\.svg|pkg\/.*|fonts\/.*)$/.test(n)).join(' '), '');
   out('opened link: no file was read', fd.getElementById('filebar').hidden && !fd.getElementById('drop').hidden, true);
   fr.remove();
   // a malformed fragment shows the normal page
   for (const bad of ['#c=%21%21%21', '#c=e30', '#c=', '#c=' + 'A'.repeat(5000), '#x=1']) {
     const g = await open(bad);
     const gd = g.contentDocument;
-    out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden}`, 'Sample false true');
+    out(`malformed ${bad.slice(0, 12)}: normal page`, `${gd.getElementById('cardlabel').textContent} ${gd.getElementById('drop').hidden} ${gd.getElementById('share').hidden} ${gd.getElementById('method').hidden}`, 'Sample false true true');
     g.remove();
   }
-  // theme switch: the card image changes to a new blob
-  const sel = document.getElementById('theme');
-  out('card theme options', [...sel.options].map((o) => o.textContent).join(' | '), 'Light card | Dark card');
-  out('card theme starts as the system', sel.value, matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
-  if (sel.value === 'dark') { sel.value = 'light'; sel.dispatchEvent(new Event('change')); await sleep(50); }
+  // theme switch: the Light / Dark toggle in the share bar; the card image changes to a new blob
+  const tg = document.getElementById('theme');
+  const sys = matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+  const pressed = () => [...tg.querySelectorAll('button')].map((b) => `${b.textContent}:${b.getAttribute('aria-pressed')}`).join(' ');
+  out('card theme toggle: Light and Dark buttons', [...tg.querySelectorAll('button')].map((b) => b.textContent).join(' | '), 'Light | Dark');
+  out('card theme starts as the system', `${tg.dataset.value} ${pressed()}`, sys === 'dark' ? 'dark Light:false Dark:true' : 'light Light:true Dark:false');
+  if (tg.dataset.value === 'dark') { tg.querySelector('[data-v=light]').click(); await sleep(50); }
   const was = img.src;
-  sel.value = 'dark';
-  sel.dispatchEvent(new Event('change'));
+  tg.querySelector('[data-v=dark]').click();
   await until('the card to change theme', () => img.src !== was);
   await img.decode();
   out('after theme change img', img.src.slice(0, 5) + (img.naturalWidth === 1080 ? ' 1080 wide' : ' wrong size'), 'blob: 1080 wide');
+  out('card theme toggle shows the choice', `${tg.dataset.value} ${pressed()}`, 'dark Light:false Dark:true');
 } catch (e) {
   log.push(`ERROR: ${(e && e.stack) || e}`);
 }
